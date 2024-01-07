@@ -1,5 +1,9 @@
 __pycache__
 _old
+_exports
 ffmpeg
+ffmpeg_reverse_engineering
 *.blend
 *.blend1
+*.mp3
+*.mp4

@@ -1,6 +1,7 @@
 import bpy
 import os
 import subprocess
+import json
 
 
 def timestring_to_seconds(timestring):
@@ -57,6 +58,8 @@ def apply_spectrogram_preset(preset):
         'Baked Volume',
         'Image',
         'Material',
+        'max_volume_dB',
+        'max_intensity',
     ]
 
     if preset == {}:
@@ -68,10 +71,12 @@ def apply_spectrogram_preset(preset):
         for i in stm_modifier.node_group.inputs:
             if i.identifier != 'Input_0' and i.name not in exclude_inputs:
                 if i.name in preset:
-                    set_geonode_value(stm_modifier, i, preset[i.name])
+                    value = preset[i.name]
 
-                else:
-                    set_geonode_value(stm_modifier, i, i.default_value)
+                    if value == 'reset':
+                        set_geonode_value(stm_modifier, i, i.default_value)
+                    else:
+                        set_geonode_value(stm_modifier, i, value)
 
 
     stm_modifier.show_viewport = False
@@ -128,9 +133,9 @@ def append_from_blend_file(blendfile, section, target):
 
         return result
 
-def ffshowspectrumpic(ffmpegPath, audioPath, outputPath, width=1024, height=512, fscale='lin', colorModeDropdown='intensity'):
+def ffshowspectrumpic(ffmpegPath, audioPath, outputPath, width=1024, height=512, scale='log', fscale='lin', colorMode='intensity', drange=120, limit=0):
 
-    imagePath = outputPath + os.path.basename(audioPath)+'_%ix%i.png'%(width, height)
+    imagePath = outputPath + os.path.basename(audioPath)+'_%ix%i_%s_%s.png'%(width, height, scale, colorMode)
 
     print('-INF- launching ffmpeg')
     try:
@@ -140,7 +145,7 @@ def ffshowspectrumpic(ffmpegPath, audioPath, outputPath, width=1024, height=512,
                             ' -y -i "',
                             audioPath,
                             '" -lavfi showspectrumpic=s='+str(width)+'x'+str(height),
-                            ':mode=combined:legend=disabled:fscale='+fscale+':color='+colorModeDropdown+' "',
+                            ':mode=combined:legend=disabled:scale=%s:fscale=%s:color=%s:drange=%s:limit=%s'%(scale, fscale, colorMode, drange, limit)+' -qscale:v 1 "',
                             imagePath,
                             '" -loglevel quiet'
                         ))
@@ -235,6 +240,57 @@ def ffvolumedetect(ffmpegPath, audioPath):
     except:
         return None
 
+def ffastats(ffmpegPath, audioPath):
+    ffmCMD = '%s -i "%s" -af astats=measure_perchannel=none -f null -'%(ffmpegPath, audioPath)
+
+    try:
+        ffmCMD_out = subprocess.run(ffmCMD, check=True, capture_output=True).stderr.decode('utf-8').split('\n')
+
+        #subprocess.call(ffmCMD)
+
+        json_output = {}
+
+        for line in ffmCMD_out:
+
+            if line.startswith('[') and ':' in line:
+
+                name = line.split(']')[1].split(':')[0].strip()
+                value = line.split(':')[1].strip()
+
+                json_output[name] = value
+
+        return json_output
+
+    except:
+        return None
+
+
+def ffsignalstats(ffmpegPath, imagePath, target_key):
+
+    ffmCMD = ''.join((
+                        ffmpegPath,
+                        ' -y -i "',
+                        imagePath,
+                        '" -vf "signalstats,metadata=print"'
+                        ' -hide_banner -an -f null -'
+                        #'" -loglevel quiet'
+                    ))
+
+    ffmCMD_out = subprocess.run(ffmCMD, check=True, capture_output=True).stderr.decode('utf-8')
+    metadata = [line for line in ffmCMD_out.strip().split('\n')]
+
+    json = {}
+
+    for line in metadata:
+        if line.startswith('[Parsed_metadata') and 'lavfi.signalstats.' in line:
+            data = line.split('lavfi.signalstats.')[1]
+            key = data.split('=')[0]
+            value = data.split('=')[1].strip()
+
+            json[key] = value
+
+    return json[target_key]
+
 def get_first_match_from_metadata(metadata, match, exclude=None):
 
     result = ''
@@ -315,7 +371,7 @@ def create_new_object(name, coll=bpy.context.scene.collection):
 
     return obj
 
-def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, action):
+def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, peak_brightness, action):
 
     if action == 'GENERATE':
         print('-INF- generating spectrogram')
@@ -337,6 +393,8 @@ def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, 
     stm_GN["Input_60"] = os.path.basename(audioPath)
 
     spectro_image = bpy.data.images.load(imagePath, check_existing=True)
+    # spectro_image.colorspace_settings.name = "Linear"
+    spectro_image.colorspace_settings.name = "sRGB"
     stm_GN["Input_2"] = spectro_image
 
     mat_spectrogram = bpy.data.materials['STM_rawTexture']
@@ -345,6 +403,7 @@ def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, 
 
     stm_GN["Input_45"] = duration_seconds
     stm_GN["Input_64"] = max_volume_dB
+    stm_GN["Input_75"] = peak_brightness
 
     stm_GN.show_viewport = False
     stm_GN.show_viewport = True
@@ -365,9 +424,129 @@ def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, 
         wave_GN.show_viewport = True
 
     # select stm_obj only
-    bpy.ops.object.select_all(action='DESELECT')
-    stm_obj.select_set(True)
-    bpy.context.view_layer.objects.active = stm_obj
+    # bpy.ops.object.select_all(action='DESELECT')
+    # stm_obj.select_set(True)
+    # bpy.context.view_layer.objects.active = stm_obj
 
 
     return stm_obj
+
+
+def apply_gradient_preset(self, context):
+    print('-INF- Applying gradient preset')
+
+    cr_node = bpy.data.materials['STM_rawTexture'].node_tree.nodes['STM_gradient']
+    cr = cr_node.color_ramp
+
+    #RESET COLOR RAMP
+    #Delete all stops, starting from the end, until 2 remain
+
+    for i in range (0, len(cr.elements)-2):
+        cr.elements.remove(cr.elements[len(cr.elements)-1])
+
+    #move and set color for remaining two stops
+    cr.elements[0].position = (0)
+    cr.elements[0].color = (0,0,0,1)
+
+    cr.elements[1].position = (1)
+    cr.elements[1].color = (1,1,1,1)
+
+
+
+    john = [
+                    [0.000, [0.000000, 0.000000, 1.000000, 1.000000]],
+                    [0.333, [1.000000, 1.000000, 1.000000, 1.000000]],
+                    [0.666, [1.000000, 0.643065, 0.000000, 1.000000]],
+                    [1.000, [1.000000, 0.000000, 0.000000, 1.000000]],
+                ]
+
+    larry = [
+                    [0.000, [0.000000, 0.000000, 0.890006, 1.000000]],
+                    [0.333, [0.000000, 0.787412, 0.000000, 1.000000]],
+                    [0.666, [1.000000, 1.000000, 0.000000, 1.000000]],
+                    [1.000, [1.000000, 0.000000, 0.000000, 1.000000]],
+                ]
+
+    billy = [
+                    [0.000, [0.007932, 0.007932, 0.169989, 1.000000]],
+                    [0.055, [0.213292, 0.009234, 0.213292, 1.000000]],
+                    [0.254, [0.000000, 0.182045, 1.000000, 1.000000]],
+                    [0.623, [0.000000, 0.692071, 0.000000, 1.000000]],
+                    [1.000, [1.000000, 0.000000, 0.000000, 1.000000]],
+                ]
+
+    matthew = [
+                    [0.000, [0.007932, 0.007932, 0.169989, 1.000000]],
+                    [0.020, [0.158359, 0.039370, 0.432185, 1.000000]],
+                    [0.150, [0.145225, 0.300832, 1.000000, 1.000000]],
+                    [0.500, [1.000000, 1.000000, 0.115179, 1.000000]],
+                    [1.000, [1.000000, 0.000000, 0.000000, 1.000000]],
+                ]
+
+    intensity = [
+                    [0.000, [0.000000, 0.000000, 0.000000, 1.000000]],
+                    [0.13,  [0.00784, 0.00000, 0.35686, 1.00000]],
+                    [0.30,  [0.38431, 0.01568, 0.54509, 1.00000]],
+                    [0.60,  [0.81960, 0.07058, 0.00000, 1.00000]],
+                    [0.73,  [0.93725, 0.66274, 0.00000, 1.00000]],
+                    [0.78,  [0.95686, 0.83529, 0.00000, 1.00000]],
+                    [0.91,  [0.99215, 1.00000, 0.53725, 1.00000]],
+                    [1.0,   [1.00000, 1.00000, 1.00000, 1.00000]],
+                ]
+
+    preset = ''
+
+    if bpy.context.scene.gradientPreset == 'john':
+        preset = john
+    elif bpy.context.scene.gradientPreset == 'larry':
+        preset = larry
+    elif bpy.context.scene.gradientPreset == 'billy':
+        preset = billy
+    elif bpy.context.scene.gradientPreset == 'matthew':
+        preset = matthew
+    elif bpy.context.scene.gradientPreset == 'intensity':
+        preset = intensity
+
+
+    for i in range(0,len(preset)):
+        position = preset[i][0]
+        color = preset[i][1]
+
+        #print(position)
+
+        if position == 0 or position == 1:
+            cr.elements[i].color = color
+        else:
+            cr.elements.new(position)
+            cr.elements[i].color = color
+
+
+def reset_stm_curve(preset_name):
+    print('-INF- reset STM curve')
+
+    with open(r'%s'%bpy.context.scene.eq_curve_presets_json_file,'r') as f:
+        presets=json.load(f)
+
+    preset = presets[preset_name]
+
+    curve_node = bpy.data.node_groups['STM_spectrogram'].nodes['MACURVE']
+    points = curve_node.mapping.curves[0].points
+
+    preset_points = [preset[value] for value in preset]
+
+    # Keep only 2
+    while len(points) > 2:
+        points.remove(points[1]) #Can't remove at 0 (don't know why)
+
+    # create as many points as needed
+    while len(points) < len(preset_points):
+        points.new(0,0)
+
+    # set location for each point
+    for i, p in enumerate(preset_points):
+        points[i].location = (p[0], p[1])
+        points[i].handle_type = 'AUTO_CLAMPED'
+
+
+    curve_node.mapping.update()
+    curve_node.update()

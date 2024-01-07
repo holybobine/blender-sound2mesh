@@ -53,6 +53,21 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
 
         return {'FINISHED'}
 
+class STM_OT_reset_audio_file(Operator):
+    """Reset audio file"""
+    bl_idname = "stm.reset_audio_file"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_label = "Reset audio file"
+
+
+
+    def execute(self, context):
+
+        bpy.context.scene.audio_file_path = ''
+
+        funcs.redraw_all_viewports()
+
+        return {'FINISHED'}
+
 class STM_OT_add_audio_to_scene(Operator):
     """Apply preset"""
     bl_idname = "stm.add_audio_to_scene"
@@ -86,6 +101,175 @@ class STM_OT_generate_spectrogram(Operator):
     bl_label = "Generate spectrogram"
     bl_options = {'UNDO'}
 
+    scale: bpy.props.EnumProperty(
+            items= (
+                        ('lin', "Lin", ""),
+                        ('sqrt', "sqrt", ""),
+                        ('cbrt', "cbrt", ""),
+                        ('log', "Log", ""),
+                        ('4thrt', "4thrt", ""),
+                        ('5thrt', "5thrt", "")
+                    ),
+            description = "Set intensity scale to use to generate spectrogram",
+            name = "Intensity scale",
+            default='lin'
+        )
+
+    fscale: bpy.props.EnumProperty(
+            items= (
+                        ('lin', "Lin", ""),
+                        ('log', "Log", "")
+                    ),
+            description = "Set frequency scale to use to generate spectrogram",
+            name = "Frequency scale",
+            default='lin'
+        )
+
+
+
+    resolutionPreset: bpy.props.EnumProperty(
+            items= (
+                        ('1024x512', "1K", "1024x512"),
+                        ('2048x1024', "2K", "2048x1024"),
+                        ('4096x2048', "4K", "4096x2048"),
+                        ('8192x4096', "8K", "8192x4096"),
+                        ('16384x8192', "16K", "16384x8192"),
+                        ('custom', "Custom Resolution", "")
+                    ),
+            name = "resolution preset",
+            default='4096x2048'
+        )
+    colorMode: bpy.props.EnumProperty(
+            items= (
+                        ('channel', "channel", ""),
+                        ('intensity', "intensity", ""),
+                        ('rainbow', "rainbow", ""),
+                        ('moreland', "moreland", ""),
+                        ('nebulae', "nebulae", ""),
+                        ('fire', "fire", ""),
+                        ('fiery', "fiery", ""),
+                        ('fruit', "fruit", ""),
+                        ('cool', "cool", ""),
+                        ('magma', "magma", ""),
+                        ('green', "green", ""),
+                        ('viridis', "viridis", ""),
+                        ('plasma', "plasma", ""),
+                        ('cividis', "cividis", ""),
+                        ('terrain', "terrain", "")
+                    ),
+            description = "Set style used to generate spectgrogram",
+            name = "color mode",
+            default='channel'
+        )
+    drange: bpy.props.IntProperty(default=120, min=0, max=120)
+
+    userWidth: bpy.props.IntProperty(default=4096)
+    userHeight: bpy.props.IntProperty(default=2048)
+
+    def draw(self, context):
+
+        scn = context.scene
+        layout = self.layout
+
+        layout.separator()
+
+        row = layout.row()
+
+        split = row.split(factor=0.3)
+        col_1 = split.column()
+        col_2 = split.column(align=True)
+
+        col_1.label(text='Audio File :', icon='FILE_SOUND')
+        box = col_2.box()
+        box.label(text=os.path.basename(scn.audio_file_path))
+
+        # layout.separator()
+
+
+        # col = layout.column()
+        # split = col.split(factor=0.4)
+        # col_1 = split.column()
+        # col_2 = split.column(align=True)
+        #
+        # col_1.label(text='Color Mode :')
+        # col_2.prop(scn, 'colorMode', text='')
+        #
+        # col = layout.column()
+        # split = col.split(factor=0.4)
+        # col_1 = split.column()
+        # col_2 = split.column(align=True)
+        #
+        # col_1.label(text='Intensity Scale :')
+        # col_2.prop(scn, 'scale', text='')
+        #
+        # col = layout.column()
+        # split = col.split(factor=0.4)
+        # col_1 = split.column()
+        # col_2 = split.column(align=True)
+        #
+        # col_1.label(text='Freq Scale :')
+        # col_2.prop(scn, 'fscale', text='')
+        #
+        # col = layout.column()
+        # split = col.split(factor=0.4)
+        # col_1 = split.column()
+        # col_2 = split.column(align=True)
+        #
+        # col_1.label(text='drange :')
+        # col_2.prop(scn, 'drange', text='')
+        #
+        # layout.separator()
+
+        col = layout.column()
+
+        split = col.split(factor=0.3)
+        col_1 = split.column()
+        col_2 = split.column(align=True)
+
+        col_1.label(text='Resolution :', icon='TEXTURE')
+
+
+        row = col_2.row(align=True)
+        row.scale_y=1.5
+        row.prop_enum(scn, 'resolutionPreset', '1024x512')
+        row.prop_enum(scn, 'resolutionPreset', '2048x1024')
+        row.prop_enum(scn, 'resolutionPreset', '4096x2048')
+        row.prop_enum(scn, 'resolutionPreset', '8192x4096')
+        row.prop_enum(scn, 'resolutionPreset', '16384x8192')
+        row = col_2.row(align=True)
+        row.scale_y=1.5
+        row.prop_enum(scn, 'resolutionPreset', 'custom', text='Custom')
+
+        if scn.resolutionPreset == 'custom':
+                #col = box.column(align=True)
+                ccol = col_2.column(align=True)
+                ccol.prop(scn, 'userWidth', text='Width')
+                ccol.prop(scn, 'userHeight', text='Height')
+
+
+
+
+
+        # col_2.separator()
+        #
+        # dirSize = get_dir_size(outputPath)
+        # dirSize = bytesto(dirSize, 'm')
+        #
+        # col = col_2.column()
+        #
+        # row = col.row()
+        # row.label(text='Diskspace used : ')
+        # row.label(text=dirSize)
+        #
+        # col.operator("user.open_image_folder", icon="FILEBROWSER")
+        #
+        # layout.separator()
+
+
+    def invoke(self, context, event):
+
+        return context.window_manager.invoke_props_dialog(self)
+
     def execute(self, context):
 
         audioPath = bpy.context.scene.audio_file_path
@@ -95,24 +279,56 @@ class STM_OT_generate_spectrogram(Operator):
 
         data_raw = funcs.ffmetadata(ffmpegPath, audioPath)
         volume_data_raw = funcs.ffvolumedetect(ffmpegPath, audioPath)
+        astats = funcs.ffastats(ffmpegPath, audioPath)
 
-        artist = funcs.get_first_match_from_metadata(data_raw['metadata'], match='artist')
-        album = funcs.get_first_match_from_metadata(data_raw['metadata'], match='album', exclude='artist')
-        title = funcs.get_first_match_from_metadata(data_raw['metadata'], match='title')
+
+        artist, album, title = '', '', ''
+
+        if data_raw != None:
+            artist = funcs.get_first_match_from_metadata(data_raw['metadata'], match='artist')
+            album = funcs.get_first_match_from_metadata(data_raw['metadata'], match='album', exclude='artist')
+            title = funcs.get_first_match_from_metadata(data_raw['metadata'], match='title')
 
         max_volume_dB = float(volume_data_raw['max_volume'])
         mean_volume_dB = float(volume_data_raw['mean_volume'])
+        peak_level_dB = round(float(astats['Peak level dB']), 2)
 
         print('artist :', artist)
         print('album :', album)
         print('title :', title)
-        print('max_volume_dB :', max_volume_dB)
-        print('mean_volume_dB :', mean_volume_dB)
+        print('max_volume_dB :', peak_level_dB)
 
 
-        spectrogram_filepath = funcs.ffshowspectrumpic(ffmpegPath, audioPath, outputPath)
+        w = 0
+        h = 0
+
+        scn = bpy.context.scene
+
+        if scn.resolutionPreset == 'custom':
+            w = scn.userWidth
+            h = scn.userHeight
+        else:
+            w = int(scn.resolutionPreset.split('x')[0])
+            h = int(scn.resolutionPreset.split('x')[1])
+
+        spectrogram_filepath = funcs.ffshowspectrumpic(
+            ffmpegPath,
+            audioPath,
+            outputPath,
+            width=w,
+            height=h,
+            scale=scn.scale,
+            fscale=scn.fscale,
+            colorMode=scn.colorMode,
+            drange=scn.drange,
+            limit=max_volume_dB
+        )
 
         if spectrogram_filepath is not None:
+
+
+
+            peak_brightness = int(funcs.ffsignalstats(ffmpegPath, spectrogram_filepath, 'YMAX'))
 
             fps = bpy.context.scene.render.fps
 
@@ -123,7 +339,8 @@ class STM_OT_generate_spectrogram(Operator):
 
             # generate stm_obj
             action =  'GENERATE' if bpy.context.scene.stm_object == None else 'UPDATE'
-            stm_obj = funcs.generate_spectrogram(audioPath, spectrogram_filepath, duration_seconds, max_volume_dB, action)
+            #stm_obj = funcs.generate_spectrogram(audioPath, spectrogram_filepath, duration_seconds, max_volume_dB, action)
+            stm_obj = funcs.generate_spectrogram(audioPath, spectrogram_filepath, duration_seconds, peak_level_dB, peak_brightness, action)
 
 
             context.scene.frame_end = duration_frames + fps
@@ -136,6 +353,100 @@ class STM_OT_generate_spectrogram(Operator):
 
 
         return {'FINISHED'}
+
+
+class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
+    """Select audio file to be used"""
+    bl_idname = 'wm.new_spectrogram'
+    bl_label = 'Select Audio File'
+
+    #queue = bpy.props.StringProperty(None)
+
+    def execute(self, context):
+
+        #by default, create new spectrogram
+        context.scene.userAction='createNew'
+
+        #if object already selected, and contains 'STM_spectrogram' or 'STM_waveform' modifier, rebuild
+        if check_if_only_active_obj_selected():
+            if check_for_modifier('STM_spectrogram') or check_for_modifier('STM_waveform'):
+                context.scene.userAction='rebuild'
+
+
+        bpy.ops.stm.create_new_stm('INVOKE_DEFAULT')
+
+
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+
+        layout = self.layout
+
+        layout.separator()
+
+        row = layout.row()
+
+        split = row.split(factor=0.3)
+        col_1 = split.column()
+        col_2 = split.column(align=True)
+
+        col_1.label(text='Audio File :', icon='FILE_SOUND')
+        box = col_2.box()
+        box.label(text=os.path.basename(context.scene.audioFilePath))
+
+        layout.separator()
+
+
+        col = layout.column()
+
+        split = col.split(factor=0.3)
+        col_1 = split.column()
+        col_2 = split.column(align=True)
+
+        col_1.label(text='Resolution :', icon='TEXTURE')
+
+
+        row = col_2.row(align=True)
+        row.scale_y=1.5
+        row.prop_enum(context.scene, 'resolutionPreset', '1K')
+        row.prop_enum(context.scene, 'resolutionPreset', '2K')
+        row.prop_enum(context.scene, 'resolutionPreset', '4K')
+        row.prop_enum(context.scene, 'resolutionPreset', '8K')
+        row.prop_enum(context.scene, 'resolutionPreset', '16K')
+        row = col_2.row(align=True)
+        row.scale_y=1.5
+        row.prop_enum(context.scene, 'resolutionPreset', 'custom', text='Custom')
+
+        if context.scene.resolutionPreset == 'custom':
+                #col = box.column(align=True)
+                ccol = col_2.column(align=True)
+                ccol.prop(context.scene, 'userWidth')
+                ccol.prop(context.scene, 'userHeight')
+
+        col_2.separator()
+
+        outputPath = context.scene.outputPath
+
+        dirSize = get_dir_size(outputPath)
+        dirSize = bytesto(dirSize, 'm')
+
+        col = col_2.column()
+
+        row = col.row()
+        row.label(text='Diskspace used : ')
+        row.label(text=dirSize)
+
+        col.operator("user.open_image_folder", icon="FILEBROWSER")
+
+        layout.separator()
+
+
+    def invoke(self, context, event):
+
+        return context.window_manager.invoke_props_dialog(self)
+
+
 
 class STM_OT_select_stm_in_viewport(Operator):
     """"""
@@ -241,40 +552,91 @@ class STM_OT_reset_spectrogram_gn(Operator):
         preset = {}
 
         funcs.apply_spectrogram_preset(preset)
+        funcs.reset_stm_curve('reset_5')
 
 
         return {'FINISHED'}
 
-class STM_OT_reset_stm_curve(Operator):
-    """Reset STM curve"""
+
+class STM_OT_reset_gn_geometry_values(Operator):
+    """Reset"""
+    bl_idname = 'stm.reset_gn_geometry_values'
+    bl_label=''
+
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        preset = {
+            'Size X': 'reset',
+            'Size Y': 'reset',
+            'Resolution X': 'reset',
+            'Resolution Y': 'reset',
+            'Base Height': 'reset',
+            'Smooth': 'reset',
+            'Smooth Level': 'reset',
+            'Noise': 'reset',
+            'Noise Scale': 'reset',
+            'Height Multiplier': 'reset',
+            'Contrast': 'reset',
+        }
+
+        funcs.apply_spectrogram_preset(preset)
+
+
+        return {'FINISHED'}
+
+class STM_OT_apply_eq_curve_preset(Operator):
+    """Apply EQ curve preset"""
     bl_idname = 'stm.reset_stm_curve'
     bl_label='Reset STM curve'
 
     bl_options = {'UNDO'}
 
+    eq_curve_preset: bpy.props.EnumProperty(
+            items= (
+                    ('reset_5', "Reset 5", ""),
+                    ('reset_10', "Reset 10", ""),
+                    ('flatten_edges', "Flatten Edges", ""),
+                    ('lowpass', "Low Pass", ""),
+                    ('highpass', "High Pass", ""),
+                ),
+                default='reset_5'
+    )
+
     def execute(self, context):
-        print('-INF- reste STM curve')
 
-        curve_node = bpy.data.node_groups['STM_spectrogram'].nodes['MACURVE']
+        with open(r'%s'%bpy.context.scene.eq_curve_presets_json_file,'r') as f:
+            presets=json.load(f)
 
-        points = curve_node.mapping.curves[0].points
+        funcs.reset_stm_curve(self.eq_curve_preset)
 
-        # Keep only 2
-        while len(points) > 2:
-            points.remove(points[1]) #Can't remove at 0 (don't know why)
+        return {'FINISHED'}
 
-        while len(points) < 5:
-            points.new(0,0)
 
-        # Reset locations
-        points[0].location = (0,0.5)
-        points[1].location = (0.25,0.5)
-        points[2].location = (0.5,0.5)
-        points[3].location = (0.75,0.5)
-        points[4].location = (1,0.5)
+class STM_OT_reset_gradient(Operator):
+    """Reset gradient"""
+    bl_idname = 'stm.reset_gradient'
+    bl_label ='Reset gradient'
 
-        curve_node.mapping.update()
-        curve_node.update()
+    bl_options = {'UNDO'}
 
+    def execute(self, context):
+        print('-INF- Reset gradient')
+
+        cr_node = bpy.data.materials['STM_rawTexture'].node_tree.nodes['STM_gradient']
+        cr = cr_node.color_ramp
+
+        #RESET COLOR RAMP
+        #Delete all stops, starting from the end, until 2 remain
+
+        for i in range (0, len(cr.elements)-2):
+            cr.elements.remove(cr.elements[len(cr.elements)-1])
+
+        #move and set color for remaining two stops
+        cr.elements[0].position = (0)
+        cr.elements[0].color = (0,0,0,1)
+
+        cr.elements[1].position = (1)
+        cr.elements[1].color = (1,1,1,1)
 
         return {'FINISHED'}
