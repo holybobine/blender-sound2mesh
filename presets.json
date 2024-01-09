@@ -1,5 +1,5 @@
 {
-  "p1":{
+  "preset1":{
     "name":"Preset #1",
     "preset":{
       "Clip Lows" : 0.08,
@@ -10,11 +10,11 @@
     }
   },
 
-  "p2":{
+  "preset2":{
     "name":"Preset #2",
     "preset":{
       "Freq Max (Hz)" : 12.0,
-      "Audio Sample" : 2.0,
+      "Audio Sample (s)" : 2.0,
       "Smooth" : 1.0,
       "Smooth Level" : 10,
       "Contrast" : 0.5,
@@ -22,12 +22,12 @@
     }
   },
 
-  "p3":{
+  "preset3":{
     "name":"Preset #3",
     "preset":{
       "Resolution X" : 100,
       "Freq Max (Hz)" : 12.0,
-      "Audio Sample" : 0.00001,
+      "Audio Sample (s)" : 0.00001,
       "Lows" : 0.25,
       "Lower Bass" : 0.25,
       "Smooth" : 1.0,

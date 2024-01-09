@@ -101,174 +101,6 @@ class STM_OT_generate_spectrogram(Operator):
     bl_label = "Generate spectrogram"
     bl_options = {'UNDO'}
 
-    scale: bpy.props.EnumProperty(
-            items= (
-                        ('lin', "Lin", ""),
-                        ('sqrt', "sqrt", ""),
-                        ('cbrt', "cbrt", ""),
-                        ('log', "Log", ""),
-                        ('4thrt', "4thrt", ""),
-                        ('5thrt', "5thrt", "")
-                    ),
-            description = "Set intensity scale to use to generate spectrogram",
-            name = "Intensity scale",
-            default='lin'
-        )
-
-    fscale: bpy.props.EnumProperty(
-            items= (
-                        ('lin', "Lin", ""),
-                        ('log', "Log", "")
-                    ),
-            description = "Set frequency scale to use to generate spectrogram",
-            name = "Frequency scale",
-            default='lin'
-        )
-
-
-
-    resolutionPreset: bpy.props.EnumProperty(
-            items= (
-                        ('1024x512', "1K", "1024x512"),
-                        ('2048x1024', "2K", "2048x1024"),
-                        ('4096x2048', "4K", "4096x2048"),
-                        ('8192x4096', "8K", "8192x4096"),
-                        ('16384x8192', "16K", "16384x8192"),
-                        ('custom', "Custom Resolution", "")
-                    ),
-            name = "resolution preset",
-            default='4096x2048'
-        )
-    colorMode: bpy.props.EnumProperty(
-            items= (
-                        ('channel', "channel", ""),
-                        ('intensity', "intensity", ""),
-                        ('rainbow', "rainbow", ""),
-                        ('moreland', "moreland", ""),
-                        ('nebulae', "nebulae", ""),
-                        ('fire', "fire", ""),
-                        ('fiery', "fiery", ""),
-                        ('fruit', "fruit", ""),
-                        ('cool', "cool", ""),
-                        ('magma', "magma", ""),
-                        ('green', "green", ""),
-                        ('viridis', "viridis", ""),
-                        ('plasma', "plasma", ""),
-                        ('cividis', "cividis", ""),
-                        ('terrain', "terrain", "")
-                    ),
-            description = "Set style used to generate spectgrogram",
-            name = "color mode",
-            default='channel'
-        )
-    drange: bpy.props.IntProperty(default=120, min=0, max=120)
-
-    userWidth: bpy.props.IntProperty(default=4096)
-    userHeight: bpy.props.IntProperty(default=2048)
-
-    def draw(self, context):
-
-        scn = context.scene
-        layout = self.layout
-
-        layout.separator()
-
-        row = layout.row()
-
-        split = row.split(factor=0.3)
-        col_1 = split.column()
-        col_2 = split.column(align=True)
-
-        col_1.label(text='Audio File :', icon='FILE_SOUND')
-        box = col_2.box()
-        box.label(text=os.path.basename(scn.audio_file_path))
-
-        # layout.separator()
-
-
-        # col = layout.column()
-        # split = col.split(factor=0.4)
-        # col_1 = split.column()
-        # col_2 = split.column(align=True)
-        #
-        # col_1.label(text='Color Mode :')
-        # col_2.prop(scn, 'colorMode', text='')
-        #
-        # col = layout.column()
-        # split = col.split(factor=0.4)
-        # col_1 = split.column()
-        # col_2 = split.column(align=True)
-        #
-        # col_1.label(text='Intensity Scale :')
-        # col_2.prop(scn, 'scale', text='')
-        #
-        # col = layout.column()
-        # split = col.split(factor=0.4)
-        # col_1 = split.column()
-        # col_2 = split.column(align=True)
-        #
-        # col_1.label(text='Freq Scale :')
-        # col_2.prop(scn, 'fscale', text='')
-        #
-        # col = layout.column()
-        # split = col.split(factor=0.4)
-        # col_1 = split.column()
-        # col_2 = split.column(align=True)
-        #
-        # col_1.label(text='drange :')
-        # col_2.prop(scn, 'drange', text='')
-        #
-        # layout.separator()
-
-        col = layout.column()
-
-        split = col.split(factor=0.3)
-        col_1 = split.column()
-        col_2 = split.column(align=True)
-
-        col_1.label(text='Resolution :', icon='TEXTURE')
-
-
-        row = col_2.row(align=True)
-        row.scale_y=1.5
-        row.prop_enum(scn, 'resolutionPreset', '1024x512')
-        row.prop_enum(scn, 'resolutionPreset', '2048x1024')
-        row.prop_enum(scn, 'resolutionPreset', '4096x2048')
-        row.prop_enum(scn, 'resolutionPreset', '8192x4096')
-        row.prop_enum(scn, 'resolutionPreset', '16384x8192')
-        row = col_2.row(align=True)
-        row.scale_y=1.5
-        row.prop_enum(scn, 'resolutionPreset', 'custom', text='Custom')
-
-        if scn.resolutionPreset == 'custom':
-                #col = box.column(align=True)
-                ccol = col_2.column(align=True)
-                ccol.prop(scn, 'userWidth', text='Width')
-                ccol.prop(scn, 'userHeight', text='Height')
-
-
-
-
-
-        # col_2.separator()
-        #
-        # dirSize = get_dir_size(outputPath)
-        # dirSize = bytesto(dirSize, 'm')
-        #
-        # col = col_2.column()
-        #
-        # row = col.row()
-        # row.label(text='Diskspace used : ')
-        # row.label(text=dirSize)
-        #
-        # col.operator("user.open_image_folder", icon="FILEBROWSER")
-        #
-        # layout.separator()
-
-
-    def invoke(self, context, event):
-
-        return context.window_manager.invoke_props_dialog(self)
 
     def execute(self, context):
 
@@ -530,6 +362,8 @@ class STM_OT_apply_preset_spectrogram_gn(Operator):
             presets=json.load(f)
 
             p = bpy.context.scene.preset_spectrogram
+            p = bpy.context.scene.preset_thumbnails.replace('.png', '')
+
 
             values = presets[p]["preset"]
 
@@ -638,5 +472,44 @@ class STM_OT_reset_gradient(Operator):
 
         cr.elements[1].position = (1)
         cr.elements[1].color = (1,1,1,1)
+
+        return {'FINISHED'}
+
+
+class THUMB_OT_next_preset(Operator):
+    """Tooltip"""
+    bl_idname = "preset.next"
+    bl_label = "Move to next item in property list"
+
+    def execute(self, context):
+
+        items = [item.identifier for item in context.scene.bl_rna.properties['preset_thumbnails'].enum_items]
+        idx = items.index(context.scene.preset_thumbnails)
+
+        idx += 1
+        if idx == len(items):
+            idx = 0
+
+        context.scene.preset_thumbnails = items[idx]
+
+
+        return {'FINISHED'}
+
+class THUMB_OT_prev_preset(Operator):
+    """Tooltip"""
+    bl_idname = "preset.prev"
+    bl_label = "Move to previous item in property list"
+
+    def execute(self, context):
+
+        items = [item.identifier for item in context.scene.bl_rna.properties['preset_thumbnails'].enum_items]
+        idx = items.index(context.scene.preset_thumbnails)
+
+        idx -= 1
+        if idx < 0:
+            idx = len(items)-1
+
+        context.scene.preset_thumbnails = items[idx]
+
 
         return {'FINISHED'}

@@ -52,6 +52,7 @@ def apply_spectrogram_preset(preset):
     stm_modifier = stm_obj.modifiers['STM_spectrogram']
 
     exclude_inputs = [
+        'Geometry',
         'Audio Duration',
         'Log to Lin',
         'Audio Filename',
@@ -63,13 +64,16 @@ def apply_spectrogram_preset(preset):
     ]
 
     if preset == {}:
-        for i in stm_modifier.node_group.inputs:
-            if i.type not in ['GEOMETRY'] and i.name not in exclude_inputs:
+        for i in stm_modifier.node_group.interface.items_tree:
+            if i.name not in exclude_inputs:
                 set_geonode_value(stm_modifier, i, i.default_value)
 
     else:
-        for i in stm_modifier.node_group.inputs:
-            if i.identifier != 'Input_0' and i.name not in exclude_inputs:
+        for i in stm_modifier.node_group.interface.items_tree:
+            if i.name not in exclude_inputs and i.name not in ['Size X', 'Size Y']:
+
+                set_geonode_value(stm_modifier, i, i.default_value)
+
                 if i.name in preset:
                     value = preset[i.name]
 
