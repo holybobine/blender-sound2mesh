@@ -70,17 +70,13 @@ def apply_spectrogram_preset(preset):
 
     else:
         for i in stm_modifier.node_group.interface.items_tree:
-            if i.name not in exclude_inputs and i.name not in ['Size X', 'Size Y']:
+            if i.name in preset:
+                value = preset[i.name]
 
-                set_geonode_value(stm_modifier, i, i.default_value)
-
-                if i.name in preset:
-                    value = preset[i.name]
-
-                    if value == 'reset':
-                        set_geonode_value(stm_modifier, i, i.default_value)
-                    else:
-                        set_geonode_value(stm_modifier, i, value)
+                if value == 'reset':
+                    set_geonode_value(stm_modifier, i, i.default_value)
+                else:
+                    set_geonode_value(stm_modifier, i, value)
 
 
     stm_modifier.show_viewport = False
@@ -557,3 +553,15 @@ def reset_stm_curve(preset_name):
 
     curve_node.mapping.update()
     curve_node.update()
+
+def is_stm_object_selected():
+
+    is_stm = False
+
+    if bpy.context.selected_objects != []:
+        if bpy.context.object.type == 'MESH':
+            # if bpy.context.object.modifiers.get('STM_spectrogram'):
+            if any([m.name.startswith('STM_spectrogram') for m in bpy.context.object.modifiers]):
+                is_stm = True
+
+    return is_stm

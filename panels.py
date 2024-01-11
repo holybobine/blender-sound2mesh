@@ -2,6 +2,8 @@ import bpy
 import os
 from bpy.types import Panel
 from bpy.types import UIList
+import funcs
+from funcs import *
 
 
 def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, label=True,icon='NONE'):
@@ -39,78 +41,58 @@ def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, 
 
         row.enabled = enabled
 
-
-class STM_UL_items(UIList):
-
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-
-        obj = item
-
-        custom_icon = 'SMOOTHCURVE'
-
-        row = layout.row(align=True)
-        row.prop(obj, "name", text="", emboss=False, translate=False, icon='SMOOTHCURVE')
-        row.prop(obj, "hide_viewport", text="", emboss=False, translate=False)
-        row.prop(obj, "hide_render", text="", emboss=False, translate=False)
-
-
-    def filter_items(self, context, data, propname):
-        """
-            Filter only items with at leats one modifer which name starts with 'STM_'
-        """
-
-        filtered = []
-        ordered = []
-        items = getattr(data, propname)
-
-
-        filtered = [self.bitflag_filter_item] * len(items)
-
-        for i, item in enumerate(items):
-            if not item.modifiers:                          # if no modifers
-                filtered[i] &= ~self.bitflag_filter_item    # exclude item
-            else:
-                if any([m.name.startswith('STM_waveform') for m in item.modifiers]):    # if any modifier starts with 'STM_'
-                    pass                                                        # pass
-                else:                                                           # else
-                    filtered[i] &= ~self.bitflag_filter_item                    # exclude item
-
-
-        return filtered, ordered
-
-    def invoke(self, context, event):
-        pass
-
 class STM_PT_spectrogram(Panel):
-    bl_label = "Spectrogram"
+    bl_label = "Sound To Mesh"
     bl_idname = "STM_PT_spectrogram"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "STM"
 
+    # def draw_header(self, context):
+    #     layout = self.layout
+    #     layout.label(text='Sound To Mesh', icon='NONE')
+
     def draw(self, context):
         layout = self.layout
         scn = context.scene
 
+        box = layout.box()
+        col = box.column()
+        col.scale_y = 1.2
+        row = col.row()
+        row.label(text='Spectrogram', icon='SEQ_HISTOGRAM')
+        row.operator('stm.add_waveform', text='New', icon='ADD')
+
+        row = col.row()
+        row.label(text='Waveform', icon='RNDCURVE')
+        row.operator('stm.add_waveform', text='New', icon='ADD')
+
+        layout.separator()
+
         audio_ok = False
-        audio_filename = ''
 
-
-
-        # box = col.box()
-        #
         if scn.audio_file_path == '':
             info_audio = '[no audio selected]'
         elif not os.path.isfile(scn.audio_file_path):
             info_audio = '[invalid file path]'
         else:
-            info_audio = os.path.basename(scn.audio_file_path)
             info_audio = scn.audio_file_path
             audio_ok = True
-        #
-        # row = box.row()
-        # row.label(text=info_audio, icon='INFO' if audio_ok else 'ERROR')
-        # row.enabled = False
+
+        stm_ok = False
+
+        if scn.audio_file_path == '':
+            info_operator = '[select audio file]'
+        elif not os.path.isfile(scn.audio_file_path):
+            info_operator = '[invalid audio file path]'
+        elif not funcs.is_stm_object_selected():
+            info_operator = '[select spectrogram object]'
+        else:
+            info_operator = 'Generate'
+            stm_ok = True
+
+
+
 
         box = layout.box()
         box.label(text='Select audio file :', icon='FILE_SOUND')
@@ -141,121 +123,16 @@ class STM_PT_spectrogram(Panel):
         col2.label(text=scn.album)
         col1.enabled = False
 
-        box = layout.box()
-        box.label(text='Spectrogram settings:', icon='TEXTURE')
-
-        col = box.column(align=True)
-
-        row = col.row(align=True)
-        row.scale_y=1.5
-        row.prop_enum(scn, 'resolutionPreset', '1024x512')
-        row.prop_enum(scn, 'resolutionPreset', '2048x1024')
-        row.prop_enum(scn, 'resolutionPreset', '4096x2048')
-        row.prop_enum(scn, 'resolutionPreset', '8192x4096')
-        row.prop_enum(scn, 'resolutionPreset', '16384x8192')
-        row = col.row(align=True)
-        row.scale_y=1.5
-        row.prop_enum(scn, 'resolutionPreset', 'custom', text='Custom Resolution')
-
-        if scn.resolutionPreset == 'custom':
-            #col = box.column(align=True)
-            ccol = col.column(align=True)
-            ccol.prop(scn, 'userWidth', text='Width')
-            ccol.prop(scn, 'userHeight', text='Height')
-
-        bbox = box.box()
-        row = bbox.row()
-        # row.label(text='Main Settings', icon='OPTIONS')
-        row.prop(scn, 'bool_advanced_spectrogram_settings', text='Advanced Settings', icon='TRIA_DOWN' if scn.bool_advanced_spectrogram_settings else 'TRIA_RIGHT', emboss=False)
-
-        if scn.bool_advanced_spectrogram_settings:
-            split = bbox.split(factor=0.5)
-            col1 = split.column()
-            col2 = split.column()
-            col1.label(text='Intensity Scale :')
-            col2.prop(scn, 'scale', text='')
-            col1.label(text='Frequency Scale :')
-            col2.prop(scn, 'fscale', text='')
-            col1.label(text='Color Mode :')
-            col2.prop(scn, 'colorMode', text='')
-            col1.label(text='Dynamic Range :')
-            col2.prop(scn, 'drange', text='')
-
-
-        # split = layout.split(factor=0.7,align=True)
-        # split.scale_y = 2
-        # col1 = split.column(align=True)
-        # col2 = split.column(align=True)
-        # col1.operator(
-        #     'stm.generate_spectrogram',
-        #     text='Build Spectrogram',
-        #     icon='FILE_REFRESH' if scn.stm_object is not None else 'IMPORT',
-        # )
-        # col2.prop(scn, 'resolutionPreset', text='')
-        # col1.enabled = audio_ok
 
         row = layout.row()
         row.scale_y = 2
+        row.operator('stm.generate_spectrogram', text=info_operator, icon='SHADERFX')
+        row.enabled = audio_ok and stm_ok
 
-        row.operator('stm.generate_spectrogram', text='Build Spectrogram', icon='SEQ_HISTOGRAM')
-        row.operator('stm.add_waveform', text='Add Waveform', icon='SMOOTHCURVE')
 
-class STM_PT_stm_objects(Panel):
-    bl_label = ""
-    bl_idname = "STM_PT_stm_objects"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "STM"
-    bl_parent_id = 'STM_PT_spectrogram'
 
-    def draw_header(self, context):
-        layout = self.layout
-        layout.label(text='Spectrogram Objects', icon='OBJECT_DATA')
 
-    def draw(self, context):
 
-        layout = self.layout
-        scn = context.scene
-
-        # box.label(text='Spectrogram Object')
-
-        col = layout.column(align=True)
-        row = col.row(align=True)
-        row.scale_y = 1.5
-        row.prop(scn, 'stm_object', text='')
-
-        if scn.stm_object is not None:
-            row.prop(scn.stm_object, 'hide_viewport', text='', emboss=True)
-            row.prop(scn.stm_object, 'hide_render', text='',  emboss=True)
-
-            row = col.row(align=True)
-            row.operator('stm.select_stm_in_viewport', text='Select spectrogram', icon='RESTRICT_SELECT_OFF')
-
-            stm_objs = []
-
-            obj = context.object
-            obj_allowed_types = ["MESH","CURVE","EMPTY"]
-
-            if scn.stm_object.modifiers.get('STM_spectrogram'):
-
-                rows = 5
-                row = layout.row(align=True)
-                row.template_list("STM_UL_items", "", scn, "objects", scn, "stm_obj_list_index", rows=rows)
-
-                col = row.column(align=True)
-                col.operator('stm.add_waveform', text='', icon='ADD')
-                col.operator('stm.remove_waveform', text='', icon='REMOVE')
-            else:
-                box = layout.box()
-                box.label(text='-ERROR-', icon='ERROR')
-
-                col = box.column()
-                col.label(text='Can\'t find STM_spectrogram modifier')
-                col.label(text='on selected object.')
-        else:
-            row = col.row(align=True)
-            row.operator('stm.select_stm_in_viewport', text='Select spectrogram', icon='RESTRICT_SELECT_OFF')
-            row.enabled = True if scn.stm_object is not None else False
 
 class STM_PT_geometry_nodes(Panel):
     bl_label = ""

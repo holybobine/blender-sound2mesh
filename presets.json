@@ -17,8 +17,7 @@
       "Audio Sample (s)" : 2.0,
       "Smooth" : 1.0,
       "Smooth Level" : 10,
-      "Contrast" : 0.5,
-      "Flatten Edges" : 0.5
+      "Contrast" : 0.5
     }
   },
 
@@ -32,8 +31,7 @@
       "Lower Bass" : 0.25,
       "Smooth" : 1.0,
       "Smooth Level" : 10,
-      "Contrast" : 0.5,
-      "Flatten Edges" : 0.5
+      "Contrast" : 0.5
     }
   }
 }

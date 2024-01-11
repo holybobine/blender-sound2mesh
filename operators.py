@@ -32,7 +32,7 @@ class STM_OT_hello(bpy.types.Operator):
         return {'FINISHED'}
 
 class STM_OT_import_audio_file(Operator, ImportHelper):
-    """This appears in the tooltip of the operator and in the generated docs"""
+    """Select an audio file to import"""
     bl_idname = "stm.import_audio_file"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Import audio file"
 
@@ -112,14 +112,91 @@ class STM_OT_open_image_folder(Operator):
         return {'FINISHED'}
 
 
-
-
 class STM_OT_generate_spectrogram(Operator):
     """Generate spectrogram"""
     bl_idname = "stm.generate_spectrogram"
     bl_label = "Generate spectrogram"
-    bl_options = {'UNDO'}
+    bl_options = {'REGISTER', 'UNDO'}
 
+
+    def draw(self, context):
+
+        layout = self.layout
+        scn = context.scene
+
+        layout.separator()
+
+        split = layout.split(factor=0.3)
+        col_L = split.column()
+        col_R = split.column()
+
+
+        col_L.label(text='Audio file :', icon='FILE_SOUND')
+
+        box = col_R.box()
+        split = box.split(factor=0.2)
+        col1 = split.column(align=True)
+        col2 = split.column(align=True)
+        col1.label(text='Title :')
+        col2.label(text=scn.title)
+        col1.label(text='Artist :')
+        col2.label(text=scn.artist)
+        col1.label(text='Album :')
+        col2.label(text=scn.album)
+        col1.enabled = False
+
+        layout.separator()
+
+        split = layout.split(factor=0.3)
+        col_L = split.column()
+        col_R = split.column(align=True)
+
+
+        col_L.label(text='Spectrogram:', icon='TEXTURE')
+
+
+        row = col_R.row(align=True)
+        row.scale_y=1.5
+        row.prop_enum(scn, 'resolutionPreset', '1024x512')
+        row.prop_enum(scn, 'resolutionPreset', '2048x1024')
+        row.prop_enum(scn, 'resolutionPreset', '4096x2048')
+        row.prop_enum(scn, 'resolutionPreset', '8192x4096')
+        row.prop_enum(scn, 'resolutionPreset', '16384x8192')
+        row = col_R.row(align=True)
+        row.scale_y=1.5
+        row.prop_enum(scn, 'resolutionPreset', 'custom', text='Custom Resolution')
+
+        if scn.resolutionPreset == 'custom':
+            #col = box.column(align=True)
+            ccol = col_R.column(align=True)
+            ccol.prop(scn, 'userWidth', text='Width')
+            ccol.prop(scn, 'userHeight', text='Height')
+
+        col_R.separator()
+
+        box = col_R.box()
+        row = box.row()
+        # row.label(text='Main Settings', icon='OPTIONS')
+        row.prop(scn, 'bool_advanced_spectrogram_settings', text='Advanced Settings', icon='TRIA_DOWN' if scn.bool_advanced_spectrogram_settings else 'TRIA_RIGHT', emboss=False)
+
+        if scn.bool_advanced_spectrogram_settings:
+            split = box.split(factor=0.5)
+            col1 = split.column()
+            col2 = split.column()
+            col1.label(text='Intensity Scale :')
+            col2.prop(scn, 'scale', text='')
+            col1.label(text='Frequency Scale :')
+            col2.prop(scn, 'fscale', text='')
+            col1.label(text='Color Mode :')
+            col2.prop(scn, 'colorMode', text='')
+            col1.label(text='Dynamic Range :')
+            col2.prop(scn, 'drange', text='')
+
+        layout.separator()
+
+    def invoke(self, context, event):
+
+        return context.window_manager.invoke_props_dialog(self, width=350)
 
     def execute(self, context):
 
@@ -204,6 +281,9 @@ class STM_OT_generate_spectrogram(Operator):
 
 
         return {'FINISHED'}
+
+
+
 
 
 class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
