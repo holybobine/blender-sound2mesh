@@ -47,7 +47,21 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
 
     def execute(self, context):
 
-        bpy.context.scene.audio_file_path = self.filepath
+        scn = context.scene    # print(scn.audio_file_path)
+        filepath = self.filepath
+
+        scn.audio_file_path = self.filepath
+
+        mdata = funcs.ffmetadata(scn.ffmpegPath, self.filepath)
+
+        if mdata != None:
+            scn.title = funcs.get_first_match_from_metadata(mdata['metadata'], match='title')
+            scn.album = funcs.get_first_match_from_metadata(mdata['metadata'], match='album', exclude='artist')
+            scn.artist = funcs.get_first_match_from_metadata(mdata['metadata'], match='artist')
+
+            scn.title = os.path.basename(scn.audio_file_path) if scn.title == '' else scn.title
+            scn.album = '[unkown]' if scn.album == '' else scn.album
+            scn.artist = '[unkown]' if scn.artist == '' else scn.artist
 
         funcs.redraw_all_viewports()
 
@@ -62,7 +76,12 @@ class STM_OT_reset_audio_file(Operator):
 
     def execute(self, context):
 
-        bpy.context.scene.audio_file_path = ''
+        scn = context.scene
+
+        scn.audio_file_path = ''
+        scn.title = ''
+        scn.album = ''
+        scn.artist = ''
 
         funcs.redraw_all_viewports()
 
@@ -104,10 +123,12 @@ class STM_OT_generate_spectrogram(Operator):
 
     def execute(self, context):
 
-        audioPath = bpy.context.scene.audio_file_path
+        scn = bpy.context.scene
+
+        audioPath = scn.audio_file_path
         outputPath = "C:/tmp/23_spectrogram/___output/"
 
-        ffmpegPath = bpy.path.abspath("//ffmpeg/ffmpeg.exe")
+        ffmpegPath = scn.ffmpegPath
 
         data_raw = funcs.ffmetadata(ffmpegPath, audioPath)
         volume_data_raw = funcs.ffvolumedetect(ffmpegPath, audioPath)
@@ -133,8 +154,6 @@ class STM_OT_generate_spectrogram(Operator):
 
         w = 0
         h = 0
-
-        scn = bpy.context.scene
 
         if scn.resolutionPreset == 'custom':
             w = scn.userWidth

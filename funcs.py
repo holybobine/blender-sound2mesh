@@ -171,10 +171,16 @@ def ffshowspectrumpic(ffmpegPath, audioPath, outputPath, width=1024, height=512,
         return None
 
 def ffmetadata(ffmpegPath, audioPath):
+
+
+    print(ffmpegPath)
+    print(audioPath)
+
     try:
         ffmCMD = '%s -i "%s" -f ffmetadata -hide_banner -'%(ffmpegPath, audioPath)
         ffmCMD_out = subprocess.run(ffmCMD, check=True, capture_output=True).stderr.decode('utf-8')
         #subprocess.call(ffmCMD)
+
 
         sub1 = os.path.basename(audioPath) + "':"
         sub2 = "Output #0, ffmetadata, to 'pipe:':"
@@ -267,7 +273,6 @@ def ffastats(ffmpegPath, audioPath):
 
     except:
         return None
-
 
 def ffsignalstats(ffmpegPath, imagePath, target_key):
 
@@ -435,7 +440,6 @@ def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, 
 
     return stm_obj
 
-
 def apply_gradient_preset(self, context):
     print('-INF- Applying gradient preset')
 
@@ -523,7 +527,6 @@ def apply_gradient_preset(self, context):
         else:
             cr.elements.new(position)
             cr.elements[i].color = color
-
 
 def reset_stm_curve(preset_name):
     print('-INF- reset STM curve')

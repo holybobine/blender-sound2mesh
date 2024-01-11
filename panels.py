@@ -105,6 +105,7 @@ class STM_PT_spectrogram(Panel):
             info_audio = '[invalid file path]'
         else:
             info_audio = os.path.basename(scn.audio_file_path)
+            info_audio = scn.audio_file_path
             audio_ok = True
         #
         # row = box.row()
@@ -112,7 +113,7 @@ class STM_PT_spectrogram(Panel):
         # row.enabled = False
 
         box = layout.box()
-        box.label(text='Select audio :', icon='FILE_SOUND')
+        box.label(text='Select audio file :', icon='FILE_SOUND')
 
         row = box.row(align=True)
         # row.scale_y = 1.5
@@ -129,8 +130,19 @@ class STM_PT_spectrogram(Panel):
         row.operator('stm.import_audio_file', text='', icon='FILEBROWSER')
         row.operator('stm.reset_audio_file', text='', icon='PANEL_CLOSE')
 
+        split = box.split(factor=0.2)
+        col1 = split.column(align=True)
+        col2 = split.column(align=True)
+        col1.label(text='Title :')
+        col2.label(text=scn.title)
+        col1.label(text='Artist :')
+        col2.label(text=scn.artist)
+        col1.label(text='Album :')
+        col2.label(text=scn.album)
+        col1.enabled = False
+
         box = layout.box()
-        box.label(text='Spectrogram :', icon='TEXTURE')
+        box.label(text='Spectrogram settings:', icon='TEXTURE')
 
         col = box.column(align=True)
 
@@ -143,13 +155,32 @@ class STM_PT_spectrogram(Panel):
         row.prop_enum(scn, 'resolutionPreset', '16384x8192')
         row = col.row(align=True)
         row.scale_y=1.5
-        row.prop_enum(scn, 'resolutionPreset', 'custom', text='Custom')
+        row.prop_enum(scn, 'resolutionPreset', 'custom', text='Custom Resolution')
 
         if scn.resolutionPreset == 'custom':
             #col = box.column(align=True)
             ccol = col.column(align=True)
             ccol.prop(scn, 'userWidth', text='Width')
             ccol.prop(scn, 'userHeight', text='Height')
+
+        bbox = box.box()
+        row = bbox.row()
+        # row.label(text='Main Settings', icon='OPTIONS')
+        row.prop(scn, 'bool_advanced_spectrogram_settings', text='Advanced Settings', icon='TRIA_DOWN' if scn.bool_advanced_spectrogram_settings else 'TRIA_RIGHT', emboss=False)
+
+        if scn.bool_advanced_spectrogram_settings:
+            split = bbox.split(factor=0.5)
+            col1 = split.column()
+            col2 = split.column()
+            col1.label(text='Intensity Scale :')
+            col2.prop(scn, 'scale', text='')
+            col1.label(text='Frequency Scale :')
+            col2.prop(scn, 'fscale', text='')
+            col1.label(text='Color Mode :')
+            col2.prop(scn, 'colorMode', text='')
+            col1.label(text='Dynamic Range :')
+            col2.prop(scn, 'drange', text='')
+
 
         # split = layout.split(factor=0.7,align=True)
         # split.scale_y = 2
