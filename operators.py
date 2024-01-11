@@ -460,7 +460,6 @@ class STM_OT_apply_preset_spectrogram_gn(Operator):
         with open(r'%s'%bpy.context.scene.presets_json_file,'r') as f:
             presets=json.load(f)
 
-            p = bpy.context.scene.preset_spectrogram
             p = bpy.context.scene.preset_thumbnails.replace('.png', '')
 
 

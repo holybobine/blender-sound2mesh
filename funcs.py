@@ -437,92 +437,49 @@ def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, 
     return stm_obj
 
 def apply_gradient_preset(self, context):
+
     print('-INF- Applying gradient preset')
 
-    cr_node = bpy.data.materials['STM_rawTexture'].node_tree.nodes['STM_gradient']
-    cr = cr_node.color_ramp
+    scn = bpy.context.scene
 
-    #RESET COLOR RAMP
-    #Delete all stops, starting from the end, until 2 remain
+    with open(r'%s'%scn.gradient_presets_json_file,'r') as f:
+        presets=json.load(f)
 
-    for i in range (0, len(cr.elements)-2):
-        cr.elements.remove(cr.elements[len(cr.elements)-1])
-
-    #move and set color for remaining two stops
-    cr.elements[0].position = (0)
-    cr.elements[0].color = (0,0,0,1)
-
-    cr.elements[1].position = (1)
-    cr.elements[1].color = (1,1,1,1)
+        p = scn.gradient_preset
+        preset = presets[p]
 
 
 
-    john = [
-                    [0.000, [0.000000, 0.000000, 1.000000, 1.000000]],
-                    [0.333, [1.000000, 1.000000, 1.000000, 1.000000]],
-                    [0.666, [1.000000, 0.643065, 0.000000, 1.000000]],
-                    [1.000, [1.000000, 0.000000, 0.000000, 1.000000]],
-                ]
+        cr_node = bpy.data.materials['STM_rawTexture'].node_tree.nodes['STM_gradient']
+        cr = cr_node.color_ramp
 
-    larry = [
-                    [0.000, [0.000000, 0.000000, 0.890006, 1.000000]],
-                    [0.333, [0.000000, 0.787412, 0.000000, 1.000000]],
-                    [0.666, [1.000000, 1.000000, 0.000000, 1.000000]],
-                    [1.000, [1.000000, 0.000000, 0.000000, 1.000000]],
-                ]
+        #RESET COLOR RAMP
+        #Delete all stops, starting from the end, until 2 remain
 
-    billy = [
-                    [0.000, [0.007932, 0.007932, 0.169989, 1.000000]],
-                    [0.055, [0.213292, 0.009234, 0.213292, 1.000000]],
-                    [0.254, [0.000000, 0.182045, 1.000000, 1.000000]],
-                    [0.623, [0.000000, 0.692071, 0.000000, 1.000000]],
-                    [1.000, [1.000000, 0.000000, 0.000000, 1.000000]],
-                ]
+        for i in range (0, len(cr.elements)-2):
+            cr.elements.remove(cr.elements[len(cr.elements)-1])
 
-    matthew = [
-                    [0.000, [0.007932, 0.007932, 0.169989, 1.000000]],
-                    [0.020, [0.158359, 0.039370, 0.432185, 1.000000]],
-                    [0.150, [0.145225, 0.300832, 1.000000, 1.000000]],
-                    [0.500, [1.000000, 1.000000, 0.115179, 1.000000]],
-                    [1.000, [1.000000, 0.000000, 0.000000, 1.000000]],
-                ]
+        #move and set color for remaining two stops
+        cr.elements[0].position = (0)
+        cr.elements[0].color = (0,0,0,1)
 
-    intensity = [
-                    [0.000, [0.000000, 0.000000, 0.000000, 1.000000]],
-                    [0.13,  [0.00784, 0.00000, 0.35686, 1.00000]],
-                    [0.30,  [0.38431, 0.01568, 0.54509, 1.00000]],
-                    [0.60,  [0.81960, 0.07058, 0.00000, 1.00000]],
-                    [0.73,  [0.93725, 0.66274, 0.00000, 1.00000]],
-                    [0.78,  [0.95686, 0.83529, 0.00000, 1.00000]],
-                    [0.91,  [0.99215, 1.00000, 0.53725, 1.00000]],
-                    [1.0,   [1.00000, 1.00000, 1.00000, 1.00000]],
-                ]
+        cr.elements[1].position = (1)
+        cr.elements[1].color = (1,1,1,1)
 
-    preset = ''
+        for i in range(0,len(preset)):
+            position = preset[i][0]
+            color = preset[i][1]
 
-    if bpy.context.scene.gradientPreset == 'john':
-        preset = john
-    elif bpy.context.scene.gradientPreset == 'larry':
-        preset = larry
-    elif bpy.context.scene.gradientPreset == 'billy':
-        preset = billy
-    elif bpy.context.scene.gradientPreset == 'matthew':
-        preset = matthew
-    elif bpy.context.scene.gradientPreset == 'intensity':
-        preset = intensity
+            #print(position)
 
+            if position == 0 or position == 1:
+                cr.elements[i].color = color
+            else:
+                cr.elements.new(position)
+                cr.elements[i].color = color
 
-    for i in range(0,len(preset)):
-        position = preset[i][0]
-        color = preset[i][1]
+    # funcs.apply_spectrogram_preset(values)
 
-        #print(position)
-
-        if position == 0 or position == 1:
-            cr.elements[i].color = color
-        else:
-            cr.elements.new(position)
-            cr.elements[i].color = color
 
 def reset_stm_curve(preset_name):
     print('-INF- reset STM curve')
@@ -565,3 +522,13 @@ def is_stm_object_selected():
                 is_stm = True
 
     return is_stm
+
+
+
+def update_stm_material(self, context):
+
+    obj = context.object
+    mat = bpy.data.materials["STM_rawTexture"] if obj.material_type == 'gradient' else obj.material_custom
+
+    obj.modifiers['STM_spectrogram']["Input_12"] = mat
+    obj.data.materials[0] = mat
