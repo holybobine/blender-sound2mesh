@@ -266,9 +266,7 @@ class STM_OT_generate_spectrogram(Operator):
             duration_seconds = duration_frames/fps
 
             # generate stm_obj
-            action =  'GENERATE' if bpy.context.scene.stm_object == None else 'UPDATE'
-            #stm_obj = funcs.generate_spectrogram(audioPath, spectrogram_filepath, duration_seconds, max_volume_dB, action)
-            stm_obj = funcs.generate_spectrogram(audioPath, spectrogram_filepath, duration_seconds, peak_level_dB, peak_brightness, action)
+            stm_obj = funcs.generate_spectrogram(audioPath, spectrogram_filepath, duration_seconds, peak_level_dB, peak_brightness)
 
 
             context.scene.frame_end = duration_frames + fps
@@ -281,10 +279,6 @@ class STM_OT_generate_spectrogram(Operator):
 
 
         return {'FINISHED'}
-
-
-
-
 
 class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
     """Select audio file to be used"""
@@ -396,6 +390,39 @@ class STM_OT_select_stm_in_viewport(Operator):
 
         return {'FINISHED'}
 
+class STM_OT_add_spectrogram(Operator):
+    """Add a new spectrogram object"""
+    bl_idname = "stm.add_spectrogram"
+    bl_label = ''
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+
+        print('-INF- add spectrogram object')
+
+        assetFile = bpy.context.scene.assetFilePath
+
+        append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
+        append_from_blend_file(assetFile, 'Material', 'STM_rawTexture')
+
+        mesh = bpy.data.meshes.new('STM_spectrogram')
+        obj = bpy.data.objects.new("STM_spectrogram", mesh)
+        bpy.context.collection.objects.link(obj)
+
+        mod = obj.modifiers.new("STM_spectrogram", 'NODES')
+        mod.node_group = bpy.data.node_groups['STM_spectrogram']
+
+        mod["Input_12"] = bpy.data.materials['STM_rawTexture']
+
+        bpy.ops.object.select_all(action='DESELECT')
+
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+
+        print('-INF- added spectrogram object <%s>'%obj.name)
+
+        return {'FINISHED'}
+
 class STM_OT_add_waveform(Operator):
     """Add waveform"""
     bl_idname = "stm.add_waveform"
@@ -406,6 +433,14 @@ class STM_OT_add_waveform(Operator):
 
         print('-INF- add waveform')
 
+        assetFile = bpy.context.scene.assetFilePath
+
+        stm_object = context.object if is_stm_object_selected() else None
+
+
+        append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
+        append_from_blend_file(assetFile, 'Material', '_waveform')
+
         mesh = bpy.data.meshes.new('STM_waveform')
         obj = bpy.data.objects.new("STM_waveform", mesh)
         bpy.context.collection.objects.link(obj)
@@ -413,8 +448,11 @@ class STM_OT_add_waveform(Operator):
         mod = obj.modifiers.new("STM_waveform", 'NODES')
         mod.node_group = bpy.data.node_groups['STM_waveform']
 
-        mod["Input_16"] = context.scene.stm_object
+
         mod["Input_15"] = bpy.data.materials['_waveform']
+
+        if stm_object != None:
+            mod["Input_16"] = stm_object
 
         bpy.ops.object.select_all(action='DESELECT')
 

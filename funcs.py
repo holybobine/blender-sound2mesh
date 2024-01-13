@@ -376,24 +376,23 @@ def create_new_object(name, coll=bpy.context.scene.collection):
 
     return obj
 
-def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, peak_brightness, action):
+def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, peak_brightness):
 
-    if action == 'GENERATE':
-        print('-INF- generating spectrogram')
-    elif action == 'UPDATE':
-        print('-INF- updating spectrogram')
+    print('-INF- updating spectrogram')
 
-    assetFile = 'C:/tmp/23_spectrogram/test_import/testImport_v108.blend'
+
+
+    # assetFile = 'C:/tmp/23_spectrogram/test_import/testImport_v108.blend'
+    # assetFile = f'C:\tmp\23_spectrogram\spectro_b3.6\asset_files\asset_files_v00.blend'
+    assetFile = bpy.context.scene.assetFilePath
 
     append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
     append_from_blend_file(assetFile, 'Material', 'STM_rawTexture')
 
 
-    stm_obj = create_new_object('STM_spectrogram_boyyyyy') if action == 'GENERATE' else bpy.context.active_object
-    stm_GN = stm_obj.modifiers.new("STM_spectrogram", 'NODES') if action == 'GENERATE' else stm_obj.modifiers['STM_spectrogram']
+    stm_obj = bpy.context.active_object
+    stm_GN = stm_obj.modifiers['STM_spectrogram']
     stm_GN.node_group = bpy.data.node_groups['STM_spectrogram']
-
-    bpy.context.scene.stm_object = stm_obj
 
     stm_GN["Input_60"] = os.path.basename(audioPath)
 
@@ -415,18 +414,18 @@ def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, 
 
 
 
-    if action == 'GENERATE':
-        append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
-
-        wave_obj = create_new_object('STM_waveform_boyyyyyy')
-        wave_GN = wave_obj.modifiers.new("STM_waveform", 'NODES')
-        wave_GN.node_group = bpy.data.node_groups['STM_waveform']
-
-        wave_GN["Input_16"] = stm_obj
-        wave_GN["Input_15"] = bpy.data.materials['_waveform']
-
-        wave_GN.show_viewport = False
-        wave_GN.show_viewport = True
+    # if action == 'GENERATE':
+    #     append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
+    #
+    #     wave_obj = create_new_object('STM_waveform_boyyyyyy')
+    #     wave_GN = wave_obj.modifiers.new("STM_waveform", 'NODES')
+    #     wave_GN.node_group = bpy.data.node_groups['STM_waveform']
+    #
+    #     wave_GN["Input_16"] = stm_obj
+    #     wave_GN["Input_15"] = bpy.data.materials['_waveform']
+    #
+    #     wave_GN.show_viewport = False
+    #     wave_GN.show_viewport = True
 
     # select stm_obj only
     # bpy.ops.object.select_all(action='DESELECT')
@@ -531,4 +530,8 @@ def update_stm_material(self, context):
     mat = bpy.data.materials["STM_rawTexture"] if obj.material_type == 'gradient' else obj.material_custom
 
     obj.modifiers['STM_spectrogram']["Input_12"] = mat
-    obj.data.materials[0] = mat
+
+    if obj.data.materials:                      # if obj has slots
+        obj.data.materials[0] = mat             # assign to 1st material slot
+    else:                                       # else
+        obj.data.materials.append(mat)          # append mat

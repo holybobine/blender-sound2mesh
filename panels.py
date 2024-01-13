@@ -8,8 +8,6 @@ from funcs import *
 
 def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, label=True,icon='NONE'):
 
-    bpy.data.objects["00"].modifiers["STM_spectrogram"]["Input_57"]
-
     # input_id = next(i.identifier for i in gn_modifier.node_group.inputs if i.name == input_name)                  # 3.6
     input_id = next(i.identifier for i in gn_modifier.node_group.interface.items_tree if i.name == input_name)      # 4.0
 
@@ -61,7 +59,7 @@ class STM_PT_spectrogram(Panel):
         col.scale_y = 1.2
         row = col.row()
         row.label(text='Spectrogram', icon='SEQ_HISTOGRAM')
-        row.operator('stm.add_waveform', text='New', icon='ADD')
+        row.operator('stm.add_spectrogram', text='New', icon='ADD')
 
         row = col.row()
         row.label(text='Waveform', icon='RNDCURVE')
@@ -95,7 +93,7 @@ class STM_PT_spectrogram(Panel):
 
 
         box = layout.box()
-        box.label(text='Select audio file :', icon='FILE_SOUND')
+        box.label(text='Audio file :', icon='FILE_SOUND')
 
         row = box.row(align=True)
         # row.scale_y = 1.5
@@ -347,6 +345,18 @@ class STM_PT_geometry_nodes(Panel):
                         row = box.row()
                         row.scale_y = 1.5
                         row.prop(context.object, 'material_custom', text='')
+
+                        box.separator()
+                        box.separator()
+                        box.separator()
+                        box.separator()
+                        box.separator()
+                        box.separator()
+                        box.separator()
+                        box.separator()
+                        box.separator()
+                        box.separator()
+                        box.separator()
 
 
 
