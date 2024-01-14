@@ -28,7 +28,7 @@
       "Resolution X" : 100,
       "Freq Max (Hz)" : 12.0,
       "Lin To Log" : 0.914,
-      "Audio Sample (s)" : 0.00001,
+      "Audio Sample (s)" : 0.1,
       "Lows" : 0.25,
       "Lower Bass" : 0.25,
       "Smooth" : 1.0,

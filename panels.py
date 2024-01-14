@@ -255,10 +255,6 @@ class STM_PT_geometry_nodes(Panel):
                 if scn.bool_geometry_settings:
 
                     col = box.column(align=True)
-                    prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Size X')
-                    prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Size Y')
-
-                    col = box.column(align=True)
                     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Resolution X')
                     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Resolution Y')
 
@@ -266,6 +262,8 @@ class STM_PT_geometry_nodes(Panel):
 
                     col = box.column(align=True)
                     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Base Height')
+
+                    col = box.column(align=True)
                     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Height Multiplier')
                     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Contrast')
 
