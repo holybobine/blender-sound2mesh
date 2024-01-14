@@ -230,6 +230,9 @@ class STM_PT_geometry_nodes(Panel):
                     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Freq Max (Hz)')
 
                     col = box.column(align=True)
+                    prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Lin To Log')
+
+                    col = box.column(align=True)
                     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Audio Sample (s)')
 
                     col = box.column(align=True)
@@ -238,9 +241,9 @@ class STM_PT_geometry_nodes(Panel):
                     # col = box.column(align=True)
                     # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Intensity Lin / Log')
 
-                    col = box.column(align=True)
-                    prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Clip Lows')
-                    prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Clip Highs')
+                    # col = box.column(align=True)
+                    # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Clip Lows')
+                    # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Clip Highs')
 
                 box = layout.box()
                 row = box.row()
