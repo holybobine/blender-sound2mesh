@@ -414,11 +414,29 @@ class STM_PT_geometry_nodes(Panel):
 
                 modifier = obj.modifiers['STM_waveform']
 
+                col = layout.column()
+                prop_geonode(col, modifier, 'Object')
+                prop_geonode(col, modifier, 'Material')
+
+                col = layout.column()
                 prop_geonode(col, modifier, 'Style')
+                prop_geonode(col, modifier, 'Resolution Choice')
+                prop_geonode(col, modifier, 'Resolution')
+
+                col = layout.column()
+                prop_geonode(col, modifier, 'Smooth')
+                prop_geonode(col, modifier, 'Smooth Level')
 
                 col = layout.column()
                 prop_geonode(col, modifier, 'Thickness')
                 prop_geonode(col, modifier, 'Offset')
+                prop_geonode(col, modifier, 'Min Height')
+
+                col = layout.column()
+                prop_geonode(col, modifier, 'Merge Ends')
+                prop_geonode(col, modifier, 'Threshold')
+
+
 
 class STM_PT_material(Panel):
     bl_label = ""
