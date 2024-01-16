@@ -6,7 +6,7 @@ import funcs
 from funcs import *
 
 
-def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, label=True,icon='NONE'):
+def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, label=True, icon='NONE'):
 
     # input_id = next(i.identifier for i in gn_modifier.node_group.inputs if i.name == input_name)                  # 3.6
     input_id = next(i.identifier for i in gn_modifier.node_group.interface.items_tree if i.name == input_name)      # 4.0
@@ -18,12 +18,12 @@ def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, 
         if label:
             col = row.column(align=True)
             col.label(text=input_name)
-            col.enabled = False
+            # col.enabled = False
 
             row = row.row(align=True)
         row.prop(
             data = gn_modifier,
-            text = label_name if label_name != '' else input_name if not label else '',
+            text = label_name if label_name != '' else '' if not label else '',
             property = '["%s"]'%input_id,
             icon = icon,
             emboss = True
@@ -218,10 +218,12 @@ class STM_PT_geometry_nodes(Panel):
                 row.operator('stm.reset_spectrogram_gn', text='Reset All', icon='FILE_REFRESH')
 
 
+
                 box = layout.box()
                 row = box.row()
                 # row.label(text='Main Settings', icon='OPTIONS')
                 row.prop(scn, 'bool_main_settings', text='Main Settings', icon='TRIA_DOWN' if scn.bool_main_settings else 'TRIA_RIGHT', emboss=False)
+
 
                 if scn.bool_main_settings:
 
@@ -255,13 +257,53 @@ class STM_PT_geometry_nodes(Panel):
                 if scn.bool_geometry_settings:
 
                     col = box.column(align=True)
-                    prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Resolution X')
-                    prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Resolution Y')
-
+                    row = col.row(align=True)
+                    row.scale_y = 2
+                    row.prop_enum(obj, 'geometry_type', 'plane', icon='MESH_GRID')
+                    row.prop_enum(obj, 'geometry_type', 'cylinder', icon='MESH_CYLINDER')
 
 
                     col = box.column(align=True)
-                    prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Base Height')
+
+                    # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'showGrid')
+
+                    split = col.split(factor=0.495)
+                    row1 = split.row(align=True)
+                    row2 = split.row(align=True)
+                    row1.label(text='Grid')
+                    row2.prop_enum(obj, 'showGrid', 'off')
+                    row2.prop_enum(obj, 'showGrid', 'on')
+
+                    col.separator()
+
+                    # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'doExtrude')
+                    split = col.split(factor=0.495)
+                    col1 = split.column(align=True)
+                    col2 = split.column(align=True)
+                    col1.label(text='Extrude')
+                    row = col2.row(align=True)
+                    row.prop_enum(obj, 'doExtrude', 'off')
+                    row.prop_enum(obj, 'doExtrude', 'on')
+
+                    row1 = col1.row(align=True)
+                    row1.label(text='Base Height')
+                    row2 = col2.row(align=True)
+                    prop_geonode(row2, obj.modifiers['STM_spectrogram'], 'Base Height', label_name='', label=False)
+                    row1.enabled = True if obj.doExtrude == 'on' else False
+                    row2.enabled = True if obj.doExtrude == 'on' else False
+
+
+
+
+
+
+
+
+                    col.enabled = True if obj.geometry_type == 'plane' else False
+
+                    col = box.column(align=True)
+                    prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Resolution X')
+                    prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Resolution Y')
 
                     col = box.column(align=True)
                     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Height Multiplier')

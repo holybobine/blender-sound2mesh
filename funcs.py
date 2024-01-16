@@ -535,3 +535,17 @@ def update_stm_material(self, context):
         obj.data.materials[0] = mat             # assign to 1st material slot
     else:                                       # else
         obj.data.materials.append(mat)          # append mat
+
+
+def set_geometry_type(self, context):
+    obj = context.object
+    obj.modifiers['STM_spectrogram']['Input_48'] = True if obj.geometry_type == 'cylinder' else False
+
+def set_doExtrude(self, context):
+    obj = context.object
+    obj.modifiers['STM_spectrogram']['Input_52'] = True if obj.doExtrude == 'on' else False
+
+
+def set_showGrid(self, context):
+    obj = context.object
+    obj.modifiers['STM_spectrogram']['Input_58'] = True if obj.showGrid == 'on' else False
