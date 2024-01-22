@@ -87,6 +87,25 @@ class STM_OT_reset_audio_file(Operator):
 
         return {'FINISHED'}
 
+class STM_OT_reset_spectrogram_settings(Operator):
+    """Reset spectrogram_settings"""
+    bl_idname = "stm.reset_spectrogram_settings"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_label = "Reset spectrogram_settings"
+
+
+
+    def execute(self, context):
+
+        print('-INF- reset spectrogram settings')
+        scn = context.scene
+
+        scn.spectro_scale = 'log'
+        scn.spectro_fscale = 'lin'
+        scn.spectro_colorMode = 'intensity'
+        scn.spectro_drange = 120
+
+        return {'FINISHED'}
+
 class STM_OT_add_audio_to_scene(Operator):
     """Apply preset"""
     bl_idname = "stm.add_audio_to_scene"
@@ -178,19 +197,20 @@ class STM_OT_generate_spectrogram(Operator):
         row = box.row()
         # row.label(text='Main Settings', icon='OPTIONS')
         row.prop(scn, 'bool_advanced_spectrogram_settings', text='Advanced Settings', icon='TRIA_DOWN' if scn.bool_advanced_spectrogram_settings else 'TRIA_RIGHT', emboss=False)
-
+        row.operator('stm.reset_spectrogram_settings', text='', icon='FILE_REFRESH')
         if scn.bool_advanced_spectrogram_settings:
             split = box.split(factor=0.5)
             col1 = split.column()
             col2 = split.column()
             col1.label(text='Intensity Scale :')
-            col2.prop(scn, 'scale', text='')
+            col2.prop(scn, 'spectro_scale', text='')
             col1.label(text='Frequency Scale :')
-            col2.prop(scn, 'fscale', text='')
+            col2.prop(scn, 'spectro_fscale', text='')
             col1.label(text='Color Mode :')
-            col2.prop(scn, 'colorMode', text='')
+            col2.prop(scn, 'spectro_colorMode', text='')
             col1.label(text='Dynamic Range :')
-            col2.prop(scn, 'drange', text='')
+            col2.prop(scn, 'spectro_drange', text='')
+
 
         layout.separator()
 
@@ -203,7 +223,8 @@ class STM_OT_generate_spectrogram(Operator):
         scn = bpy.context.scene
 
         audioPath = scn.audio_file_path
-        outputPath = "C:/tmp/23_spectrogram/___output/"
+        # outputPath = "C:/tmp/23_spectrogram/___output/"
+        outputPath = scn.outputPath
 
         ffmpegPath = scn.ffmpegPath
 
@@ -245,16 +266,14 @@ class STM_OT_generate_spectrogram(Operator):
             outputPath,
             width=w,
             height=h,
-            scale=scn.scale,
-            fscale=scn.fscale,
-            colorMode=scn.colorMode,
-            drange=scn.drange,
+            scale=scn.spectro_scale,
+            fscale=scn.spectro_fscale,
+            colorMode=scn.spectro_colorMode,
+            drange=scn.spectro_drange,
             limit=max_volume_dB
         )
 
         if spectrogram_filepath is not None:
-
-
 
             peak_brightness = int(funcs.ffsignalstats(ffmpegPath, spectrogram_filepath, 'YMAX'))
 

@@ -121,6 +121,19 @@ class STM_PT_spectrogram(Panel):
         col2.label(text=scn.album)
         col1.enabled = False
 
+        box = layout.box()
+        box.label(text='Output Path :', icon='FILEBROWSER')
+        row = box.row()
+        row.scale_y = 1.5
+        row.prop(scn, 'outputPath', text='')
+
+        dirSize_bit = funcs.get_dir_size(scn.outputPath)
+        if dirSize_bit > 1073741824:
+            dirSize = funcs.convert_size(dirSize_bit)
+            row = box.row()
+            row.label(text=f"Disk space used : {dirSize}", icon='INFO')
+            row.enabled = False
+
 
         row = layout.row()
         row.scale_y = 2
@@ -418,19 +431,33 @@ class STM_PT_geometry_nodes(Panel):
                 prop_geonode(col, modifier, 'Object')
                 prop_geonode(col, modifier, 'Material')
 
+                # col = layout.column()
+                # prop_geonode(col, modifier, 'Style')
+
+                col = layout.column(align=True)
+                col.scale_y = 1.5
+                row = col.row(align=True)
+                row.prop_enum(obj, 'waveform_style', 'line', icon='RNDCURVE')
+                row.prop_enum(obj, 'waveform_style', 'dots', icon='OUTLINER_OB_POINTCLOUD')
+                row.prop_enum(obj, 'waveform_style', 'plane', icon='SNAP_FACE')
+                row = col.row(align=True)
+                row.prop_enum(obj, 'waveform_style', 'cubes', icon='MESH_CUBE')
+                row.prop_enum(obj, 'waveform_style', 'tubes', icon='MESH_CYLINDER')
+                row = col.row(align=True)
+                row.prop_enum(obj, 'waveform_style', 'zigzag', icon='NONE')
+                row.prop_enum(obj, 'waveform_style', 'zigzag_smooth', icon='NONE')
+
                 col = layout.column()
-                prop_geonode(col, modifier, 'Style')
                 prop_geonode(col, modifier, 'Resolution Choice')
                 prop_geonode(col, modifier, 'Resolution')
 
-                col = layout.column()
+                col = layout.column(align=True)
                 prop_geonode(col, modifier, 'Smooth')
                 prop_geonode(col, modifier, 'Smooth Level')
 
                 col = layout.column()
                 prop_geonode(col, modifier, 'Thickness')
                 prop_geonode(col, modifier, 'Offset')
-                prop_geonode(col, modifier, 'Min Height')
 
                 col = layout.column()
                 prop_geonode(col, modifier, 'Merge Ends')

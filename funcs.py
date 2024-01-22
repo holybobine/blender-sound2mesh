@@ -1,6 +1,7 @@
 import bpy
 import os
 import subprocess
+import math
 import json
 
 
@@ -549,3 +550,29 @@ def set_doExtrude(self, context):
 def set_showGrid(self, context):
     obj = context.object
     obj.modifiers['STM_spectrogram']['Input_58'] = True if obj.showGrid == 'on' else False
+
+def set_waveform_style(self, context):
+    obj = context.object
+    style = obj.waveform_style
+    style_arr = ['line', 'dots', 'plane', 'cubes', 'tubes', 'zigzag', 'zigzag_smooth']
+    obj.modifiers['STM_waveform']['Input_8'] = style_arr.index(style)
+
+def convert_size(size_bytes):
+   if size_bytes == 0:
+       return "0B"
+   size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+   i = int(math.floor(math.log(size_bytes, 1024)))
+   p = math.pow(1024, i)
+   s = round(size_bytes / p, 2)
+   return "%s %s" % (s, size_name[i])
+
+def get_dir_size(path='.'):
+    total = 0
+    with os.scandir(path) as it:
+        for entry in it:
+            if entry.is_file():
+                total += entry.stat().st_size
+            elif entry.is_dir():
+                total += get_dir_size(entry.path)
+
+    return total
