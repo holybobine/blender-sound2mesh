@@ -122,13 +122,18 @@ class STM_PT_spectrogram(Panel):
         col1.enabled = False
 
         box = layout.box()
-        box.label(text='Output Path :', icon='FILEBROWSER')
+        # box.label(text='Output Path :', icon='FILEBROWSER')
         row = box.row()
-        row.scale_y = 1.5
-        row.prop(scn, 'outputPath', text='')
+        row.prop(scn, 'bool_output_path', text='Output Path', icon='TRIA_DOWN' if scn.bool_output_path else 'TRIA_RIGHT', emboss=False)
 
-        dirSize_bit = funcs.get_dir_size(scn.outputPath)
-        if dirSize_bit > 1073741824:
+
+        if scn.bool_output_path:
+            row = box.row()
+            row.scale_y = 1.5
+            row.prop(scn, 'outputPath', text='')
+
+            dirSize_bit = funcs.get_dir_size(scn.outputPath)
+            # if dirSize_bit > 1073741824:
             dirSize = funcs.convert_size(dirSize_bit)
             row = box.row()
             row.label(text=f"Disk space used : {dirSize}", icon='INFO')
