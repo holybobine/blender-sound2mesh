@@ -215,27 +215,92 @@ class STM_PT_geometry_nodes(Panel):
 
                 col = layout.column(align=True)
                 col.scale_y=1.5
-                row = col.row(align=True)
+
+                # gallery_scale = 4.0
+                #
+                # row = col.row(align=True)
+                # #row.scale_y=5
+                #
+                # col1 = row.column(align=True)
+                # col2 = row.column(align=True)
+                # col3 = row.column(align=True)
+                #
+                # col1.scale_y=gallery_scale
+                # col3.scale_y=gallery_scale
+                #
+                # col1.operator('preset.prev', text='', icon='TRIA_LEFT')
+                # col2.template_icon_view(context.scene, "preset_thumbnails", show_labels=True, scale=gallery_scale, scale_popup=6.0)
+                # col3.operator('preset.next', text='', icon='TRIA_RIGHT')
+
+                box = layout.box()
+                col = box.column(align=True)
+
+                gallery_scale = 4.0
+
+                split = col.split(factor=0.4)
                 #row.scale_y=5
 
-                col1 = row.column(align=True)
-                col2 = row.column(align=True)
-                col3 = row.column(align=True)
+                col1 = split.column(align=True)
+                col2 = split.column()
 
-                col1.scale_y=6
-                col3.scale_y=6
+                col1.template_icon_view(context.scene, "preset_thumbnails", show_labels=True, scale=gallery_scale, scale_popup=6.0)
 
 
-                #row.prop(context.scene, 'preset_thumbnails')
-                col1.operator('preset.prev', text='', icon='TRIA_LEFT')
-                col2.template_icon_view(context.scene, "preset_thumbnails", show_labels=True, scale_popup=8.0)
-                col3.operator('preset.next', text='', icon='TRIA_RIGHT')
 
-                row = col.row(align=True)
-                row.operator('stm.apply_preset_spectrogram_gn', text='Apply Preset', icon='IMPORT')
+                row = col2.row(align=True)
+                row.scale_y = 2
+                row.operator('preset.prev', text='', icon='TRIA_LEFT')
+                row.operator('stm.apply_preset_spectrogram_gn', text='Apply', icon='IMPORT')
+                row.operator('preset.next', text='', icon='TRIA_RIGHT')
+
+
+                row = col2.row(align=True)
+                row.scale_y = 2
                 row.operator('stm.reset_spectrogram_gn', text='Reset All', icon='FILE_REFRESH')
 
 
+                box = layout.box()
+                row = box.row()
+                # row.label(text='Main Settings', icon='OPTIONS')
+                row.prop(scn, 'bool_material_settings', text='Material', icon='TRIA_DOWN' if scn.bool_material_settings else 'TRIA_RIGHT', emboss=False)
+
+                if scn.bool_material_settings:
+
+                    row = box.row()
+                    row.prop(context.object, 'material_type', expand=True)
+                    row.scale_y = 1.5
+
+                    split = box.split(factor=0.3)
+                    split.scale_y = 1.5
+                    col1 = split.column()
+                    col2 = split.column()
+                    col1.label(text='Material :')
+
+                    if context.object.material_type == 'gradient' or context.object.material_type == 'raw':
+                        prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Material', label=False)
+
+                    elif context.object.material_type == 'custom':
+                        col2.prop(context.object, 'material_custom', text='')
+
+
+
+                    if context.object.material_type == 'gradient':
+                        bbox = box.box()
+                        row = bbox.row()
+
+                        split = row.split(factor=0.25)
+                        col_1 = split.column()
+                        col_2 = split.column()
+
+
+                        col_1.label(text='Preset :')
+                        col_2.prop(context.scene, 'gradient_preset', text='')
+
+                        cr_node = bpy.data.materials['STM_gradient'].node_tree.nodes['STM_gradient']
+                        bbox.template_color_ramp(cr_node, "color_ramp", expand=False)
+
+                        row = box.row()
+                        row.operator('stm.reset_gradient', text='Reset Gradient', icon='FILE_REFRESH')
 
                 box = layout.box()
                 row = box.row()
@@ -368,50 +433,7 @@ class STM_PT_geometry_nodes(Panel):
 
 
 
-                box = layout.box()
-                row = box.row()
-                # row.label(text='Main Settings', icon='OPTIONS')
-                row.prop(scn, 'bool_material_settings', text='Material', icon='TRIA_DOWN' if scn.bool_material_settings else 'TRIA_RIGHT', emboss=False)
 
-                if scn.bool_material_settings:
-
-                    row = box.row()
-                    row.prop(context.object, 'material_type', expand=True)
-                    row.scale_y = 1.5
-
-                    split = box.split(factor=0.3)
-                    split.scale_y = 1.5
-                    col1 = split.column()
-                    col2 = split.column()
-                    col1.label(text='Material :')
-
-                    if context.object.material_type == 'gradient' or context.object.material_type == 'raw':
-                        prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Material', label=False)
-                        box.separator()
-
-                    elif context.object.material_type == 'custom':
-                        col2.prop(context.object, 'material_custom', text='')
-                        box.separator()
-
-
-
-                    if context.object.material_type == 'gradient':
-                        bbox = box.box()
-                        row = bbox.row()
-
-                        split = row.split(factor=0.25)
-                        col_1 = split.column()
-                        col_2 = split.column()
-
-
-                        col_1.label(text='Preset :')
-                        col_2.prop(context.scene, 'gradient_preset', text='')
-
-                        cr_node = bpy.data.materials['STM_gradient'].node_tree.nodes['STM_gradient']
-                        bbox.template_color_ramp(cr_node, "color_ramp", expand=False)
-
-                        row = box.row()
-                        row.operator('stm.reset_gradient', text='Reset Gradient', icon='FILE_REFRESH')
 
 
 
