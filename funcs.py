@@ -98,7 +98,10 @@ def set_geonode_value(gn_modifier, input, value):
     else:
         print('-ERR- invalid type. can\'t apply %s (%s) on input "%s" (%s)'%(value, value_type, input.name, input_type))
 
-def append_from_blend_file(blendfile, section, target):
+def append_from_blend_file(blendfile, section, target, forceImport=False):
+
+    obj_selection = bpy.context.selected_objects
+    obj_active = bpy.context.object
 
     doAppend = True
     result = True
@@ -115,24 +118,38 @@ def append_from_blend_file(blendfile, section, target):
 
     alreadyExist = dataSet.get(target)
 
-    if alreadyExist:
+    if alreadyExist and not forceImport:
         print('-INF- import cancelled. '+section+' "'+target+'" already in scene')
     else:
         #append command, with added backslashes to fit python filepath formating
-        bpy.ops.wm.append(
-            filepath=blendfile + "\\"+section+"\\" + target,
-            directory=blendfile + "\\"+section+"\\",
-            filename=target
-            )
 
-        #check if target exists in current blendfile after import
-        if dataSet.get(target):
-            result = True
-        else:
+
+        old_set = set(dataSet[:])
+
+        result = bpy.ops.wm.append(
+                                    filepath=blendfile + "\\"+section+"\\" + target,
+                                    directory=blendfile + "\\"+section+"\\",
+                                    filename=target
+                                )
+
+        new_set = set(dataSet[:]) - old_set
+        new_datablock = list(new_set)[0]
+
+        if not new_datablock:
             print('-ERR- Failed importing '+section+' "'+target+'" from "'+blendfile+'"')
             result = False
+        else:
+            print(f'-INF- successfully imported {new_datablock}')
+            result = new_datablock
+
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in obj_selection:
+            o.select_set(True)
+
+        bpy.context.view_layer.objects.active = obj_active
 
         return result
+
 
 def ffshowspectrumpic(ffmpegPath, audioPath, outputPath, width=1024, height=512, scale='log', fscale='lin', colorMode='intensity', drange=120, limit=0):
 
@@ -377,64 +394,52 @@ def create_new_object(name, coll=bpy.context.scene.collection):
 
     return obj
 
-def generate_spectrogram(audioPath, imagePath, duration_seconds, max_volume_dB, peak_brightness):
+def generate_spectrogram(stm_obj, audioPath, imagePath, duration_seconds, max_volume_dB, peak_brightness):
 
     print('-INF- updating spectrogram')
 
 
-
-    # assetFile = 'C:/tmp/23_spectrogram/test_import/testImport_v108.blend'
-    # assetFile = f'C:\tmp\23_spectrogram\spectro_b3.6\asset_files\asset_files_v00.blend'
     assetFile = bpy.context.scene.assetFilePath
 
     append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
-    append_from_blend_file(assetFile, 'Material', 'STM_rawTexture')
 
+    print(f'{stm_obj =}')
 
-    stm_obj = bpy.context.active_object
+    spectro_image = bpy.data.images.load(imagePath, check_existing=True)
+    spectro_image.colorspace_settings.name = "sRGB"
+
     stm_GN = stm_obj.modifiers['STM_spectrogram']
     stm_GN.node_group = bpy.data.node_groups['STM_spectrogram']
 
-    stm_GN["Input_60"] = os.path.basename(audioPath)
 
-    spectro_image = bpy.data.images.load(imagePath, check_existing=True)
-    # spectro_image.colorspace_settings.name = "Linear"
-    spectro_image.colorspace_settings.name = "sRGB"
+
     stm_GN["Input_2"] = spectro_image
-
-    mat_spectrogram = bpy.data.materials['STM_rawTexture']
-    mat_spectrogram.node_tree.nodes['spectro_image'].image = spectro_image
-    stm_GN["Input_12"] = mat_spectrogram
-
     stm_GN["Input_45"] = duration_seconds
+    stm_GN["Input_60"] = os.path.basename(audioPath)
     stm_GN["Input_64"] = max_volume_dB
     stm_GN["Input_75"] = peak_brightness
+
+
+
+
+    mat_raw = get_stm_material(stm_obj, 'STM_rawTexture')
+    mat_gradient = get_stm_material(stm_obj, 'STM_gradient')
+
+    mat = mat_raw if stm_obj.material_type == 'raw' else mat_gradient if stm_obj.material_type == 'gradient' else stm_obj.material_custom
+
+    stm_GN["Input_12"] = mat
+
+
+    if stm_obj.data.materials:
+        stm_obj.data.materials[0] = mat
+    else:
+        stm_obj.data.materials.append(mat)
 
     stm_GN.show_viewport = False
     stm_GN.show_viewport = True
 
 
-
-    # if action == 'GENERATE':
-    #     append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
-    #
-    #     wave_obj = create_new_object('STM_waveform_boyyyyyy')
-    #     wave_GN = wave_obj.modifiers.new("STM_waveform", 'NODES')
-    #     wave_GN.node_group = bpy.data.node_groups['STM_waveform']
-    #
-    #     wave_GN["Input_16"] = stm_obj
-    #     wave_GN["Input_15"] = bpy.data.materials['_waveform']
-    #
-    #     wave_GN.show_viewport = False
-    #     wave_GN.show_viewport = True
-
-    # select stm_obj only
-    # bpy.ops.object.select_all(action='DESELECT')
-    # stm_obj.select_set(True)
-    # bpy.context.view_layer.objects.active = stm_obj
-
-
-    return stm_obj
+    return True
 
 def apply_gradient_preset(self, context):
 
@@ -448,9 +453,14 @@ def apply_gradient_preset(self, context):
         p = scn.gradient_preset
         preset = presets[p]
 
+        mat_gradient = None
 
+        for m in bpy.data.materials:
+            if m.get('STM_material_type') and m.get('STM_object'):
+                if m['STM_material_type'] == 'STM_gradient' and m['STM_object'] == context.object:
+                    mat_gradient = m
 
-        cr_node = bpy.data.materials['STM_rawTexture'].node_tree.nodes['STM_gradient']
+        cr_node = mat_gradient.node_tree.nodes['STM_gradient']
         cr = cr_node.color_ramp
 
         #RESET COLOR RAMP
@@ -528,7 +538,17 @@ def is_stm_object_selected():
 def update_stm_material(self, context):
 
     obj = context.object
-    mat = bpy.data.materials["STM_rawTexture"] if obj.material_type == 'gradient' else obj.material_custom
+    assetFile = bpy.context.scene.assetFilePath
+    mat = None
+
+    if obj.material_type == 'gradient':
+        mat = get_stm_material(obj, 'STM_gradient')
+
+    elif obj.material_type == 'raw':
+        mat = get_stm_material(obj, 'STM_rawTexture')
+
+    elif obj.material_type == 'custom':
+        mat = obj.material_custom
 
     obj.modifiers['STM_spectrogram']["Input_12"] = mat
 
@@ -576,3 +596,28 @@ def get_dir_size(path='.'):
                 total += get_dir_size(entry.path)
 
     return total
+
+
+def get_stm_material(stm_obj, mat_name):
+
+    assetFile = bpy.context.scene.assetFilePath
+    mat = None
+
+    for m in bpy.data.materials:
+        if m.get('STM_material_type') and m.get('STM_object'):
+            if m['STM_material_type'] == mat_name and m['STM_object'] == stm_obj:
+
+                print('-INF- found matching rawTexture material to apply, skipping import')
+                mat = m
+
+    if mat is None:
+        print('-INF- importing new rawTexture material')
+
+        mat = append_from_blend_file(assetFile, 'Material', mat_name, forceImport=True)
+        mat['STM_object'] = stm_obj
+
+    if mat_name == 'STM_rawTexture':
+        mat.node_tree.nodes['spectro_image'].image = stm_obj.modifiers['STM_spectrogram']['Input_2']
+
+
+    return mat

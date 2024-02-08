@@ -285,7 +285,7 @@ class STM_OT_generate_spectrogram(Operator):
             duration_seconds = duration_frames/fps
 
             # generate stm_obj
-            stm_obj = funcs.generate_spectrogram(audioPath, spectrogram_filepath, duration_seconds, peak_level_dB, peak_brightness)
+            funcs.generate_spectrogram(context.object, audioPath, spectrogram_filepath, duration_seconds, peak_level_dB, peak_brightness)
 
 
             context.scene.frame_end = duration_frames + fps
@@ -422,7 +422,6 @@ class STM_OT_add_spectrogram(Operator):
         assetFile = bpy.context.scene.assetFilePath
 
         append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
-        append_from_blend_file(assetFile, 'Material', 'STM_rawTexture')
 
         mesh = bpy.data.meshes.new('STM_spectrogram')
         obj = bpy.data.objects.new("STM_spectrogram", mesh)
@@ -431,7 +430,7 @@ class STM_OT_add_spectrogram(Operator):
         mod = obj.modifiers.new("STM_spectrogram", 'NODES')
         mod.node_group = bpy.data.node_groups['STM_spectrogram']
 
-        mod["Input_12"] = bpy.data.materials['STM_rawTexture']
+        # mod["Input_12"] = bpy.data.materials['STM_rawTexture']
 
         bpy.ops.object.select_all(action='DESELECT')
 

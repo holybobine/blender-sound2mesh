@@ -379,6 +379,20 @@ class STM_PT_geometry_nodes(Panel):
                     row.prop(context.object, 'material_type', expand=True)
                     row.scale_y = 1.5
 
+                    split = box.split(factor=0.3)
+                    split.scale_y = 1.5
+                    col1 = split.column()
+                    col2 = split.column()
+                    col1.label(text='Material :')
+
+                    if context.object.material_type == 'gradient' or context.object.material_type == 'raw':
+                        prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Material', label=False)
+                        box.separator()
+
+                    elif context.object.material_type == 'custom':
+                        col2.prop(context.object, 'material_custom', text='')
+                        box.separator()
+
 
 
                     if context.object.material_type == 'gradient':
@@ -393,31 +407,11 @@ class STM_PT_geometry_nodes(Panel):
                         col_1.label(text='Preset :')
                         col_2.prop(context.scene, 'gradient_preset', text='')
 
-                        cr_node = bpy.data.materials['STM_rawTexture'].node_tree.nodes['STM_gradient']
+                        cr_node = bpy.data.materials['STM_gradient'].node_tree.nodes['STM_gradient']
                         bbox.template_color_ramp(cr_node, "color_ramp", expand=False)
 
                         row = box.row()
                         row.operator('stm.reset_gradient', text='Reset Gradient', icon='FILE_REFRESH')
-
-
-
-                    else:
-                        # box.label(text='Custom Material :')
-                        row = box.row()
-                        row.scale_y = 1.5
-                        row.prop(context.object, 'material_custom', text='')
-
-                        box.separator()
-                        box.separator()
-                        box.separator()
-                        box.separator()
-                        box.separator()
-                        box.separator()
-                        box.separator()
-                        box.separator()
-                        box.separator()
-                        box.separator()
-                        box.separator()
 
 
 
