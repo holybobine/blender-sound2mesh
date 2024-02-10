@@ -544,7 +544,7 @@ class STM_OT_apply_gradient_preset(Operator):
 
 class STM_OT_reset_spectrogram_full(Operator):
     """Reset"""
-    bl_idname = 'stm.reset_spectrogram_gn'
+    bl_idname = 'stm.reset_spectrogram_full'
     bl_label='Reset'
 
     bl_options = {'UNDO'}
@@ -552,7 +552,9 @@ class STM_OT_reset_spectrogram_full(Operator):
     def execute(self, context):
 
         funcs.reset_spectrogram_values(resetAll=True)
-        funcs.reset_stm_curve('reset_5')
+        context.scene.presets_eq_curve = 'flat_5.png'
+
+        funcs.apply_eq_curve_preset(self, context)
 
         context.object.showGrid = 'on'
         context.object.doExtrude = 'on'
@@ -652,5 +654,45 @@ class STM_OT_reset_gradient(Operator):
 
         cr.elements[1].position = (1)
         cr.elements[1].color = (1,1,1,1)
+
+        return {'FINISHED'}
+
+
+
+class THUMB_OT_next_waveform_style(Operator):
+    """Tooltip"""
+    bl_idname = "stm.next_waveform_style"
+    bl_label = "Move to next item in property list"
+
+    def execute(self, context):
+
+        items = [item.identifier for item in context.object.bl_rna.properties['presets_waveform_style'].enum_items]
+        idx = items.index(context.object.presets_waveform_style)
+
+        idx += 1
+        if idx == len(items):
+            idx = 0
+
+        context.object.presets_waveform_style = items[idx]
+
+
+        return {'FINISHED'}
+
+class THUMB_OT_previous_waveform_style(Operator):
+    """Tooltip"""
+    bl_idname = "stm.previous_waveform_style"
+    bl_label = "Move to previous item in property list"
+
+    def execute(self, context):
+
+        items = [item.identifier for item in context.object.bl_rna.properties['presets_waveform_style'].enum_items]
+        idx = items.index(context.object.presets_waveform_style)
+
+        idx -= 1
+        if idx < 0:
+            idx = len(items)-1
+
+        context.object.presets_waveform_style = items[idx]
+
 
         return {'FINISHED'}

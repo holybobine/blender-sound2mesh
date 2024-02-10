@@ -54,7 +54,14 @@ class STM_PT_spectrogram(Panel):
         layout = self.layout
         scn = context.scene
 
+
+
+
+
         box = layout.box()
+
+        # box.label(text='1. Add STM object :', icon='NONE')
+
         col = box.column()
         col.scale_y = 1.2
         row = col.row()
@@ -65,7 +72,7 @@ class STM_PT_spectrogram(Panel):
         row.label(text='Waveform', icon='RNDCURVE')
         row.operator('stm.add_waveform', text='New', icon='ADD')
 
-        layout.separator()
+        # layout.separator()
 
         audio_ok = False
 
@@ -92,8 +99,13 @@ class STM_PT_spectrogram(Panel):
 
 
 
+
+
+
+
+
         box = layout.box()
-        box.label(text='Audio file :', icon='FILE_SOUND')
+        box.label(text='Audio File :', icon='FILE_SOUND')
 
         row = box.row(align=True)
         # row.scale_y = 1.5
@@ -103,12 +115,13 @@ class STM_PT_spectrogram(Panel):
 
         bbox = col1.box()
         row = bbox.row()
-        row.label(text=info_audio)
+        row.label(text=info_audio, icon='NONE')
         row.enabled = False
 
         row = col2.row(align=True)
         row.operator('stm.import_audio_file', text='', icon='FILEBROWSER')
         row.operator('stm.reset_audio_file', text='', icon='PANEL_CLOSE')
+        # bbox = col.box()
 
         split = box.split(factor=0.2)
         col1 = split.column(align=True)
@@ -121,23 +134,28 @@ class STM_PT_spectrogram(Panel):
         col2.label(text=scn.album)
         col1.enabled = False
 
-        box = layout.box()
-        # box.label(text='Output Path :', icon='FILEBROWSER')
-        row = box.row()
-        row.prop(scn, 'bool_output_path', text='Output Path', icon='TRIA_DOWN' if scn.bool_output_path else 'TRIA_RIGHT', emboss=False)
 
-
-        if scn.bool_output_path:
-            row = box.row()
-            row.scale_y = 1.5
-            row.prop(scn, 'outputPath', text='')
-
-            dirSize_bit = funcs.get_dir_size(scn.outputPath)
-            # if dirSize_bit > 1073741824:
-            dirSize = funcs.convert_size(dirSize_bit)
-            row = box.row()
-            row.label(text=f"Disk space used : {dirSize}", icon='INFO')
-            row.enabled = False
+        # box = layout.box()
+        # row = box.row()
+        # split = row.split(factor=0.5)
+        # split.scale_y = 1.5
+        #
+        # split.label(text='Output Path :', icon='FILEBROWSER')
+        # row = split.row(align=True)
+        # row.prop_enum(scn, 'bool_output_path', 'default', icon='NONE')
+        # row.prop_enum(scn, 'bool_output_path', 'custom', icon='NONE')
+        #
+        # if scn.bool_output_path == 'custom':
+        #     row = box.row()
+        #     row.scale_y = 1.5
+        #     row.prop(scn, 'outputPath', text='')
+        #
+        #     dirSize_bit = funcs.get_dir_size(scn.outputPath)
+        #     # if dirSize_bit > 1073741824:
+        #     dirSize = funcs.convert_size(dirSize_bit)
+        #     row = box.row()
+        #     row.label(text=f"Disk space used : {dirSize}", icon='INFO')
+        #     row.enabled = False
 
 
         row = layout.row()
@@ -185,17 +203,11 @@ class STM_PT_geometry_nodes(Panel):
         row = col.row(align=True)
         row.scale_x = 5
         row.scale_y = 1.5
-        row.prop_enum(scn, 'addon_tabs', 'spectrogram', text='', icon='SEQ_HISTOGRAM')
-        row.prop_enum(scn, 'addon_tabs', 'geonodes', text='', icon='GEOMETRY_NODES')
-        row.prop_enum(scn, 'addon_tabs', 'material', text='', icon='MATERIAL')
 
         obj = context.object
         obj_allowed_types = ["MESH","CURVE","EMPTY"]
 
-        layout = col.box()
-        layout.enabled = obj and obj.type in obj_allowed_types
-
-
+        layout = layout.box()
 
 
         if obj and obj.type in obj_allowed_types:
@@ -204,12 +216,16 @@ class STM_PT_geometry_nodes(Panel):
                 gn_node_tree = bpy.data.node_groups['STM_spectrogram']
                 exclude_inputs = ['Geometry']
 
-                layout.operator('stm.reset_spectrogram_gn', text='Reset all', icon='FILE_REFRESH')
+
 
 
                 split = layout.split(factor=0.3)
                 split.label(text='Preset :')
                 split.template_icon_view(context.scene, "presets_spectrogram", show_labels=False, scale=5.0, scale_popup=6.0)
+
+                box = layout.box()
+                box.scale_y = 1.5
+                box.operator('stm.reset_spectrogram_full', text='Reset All', icon='FILE_REFRESH')
 
 
 
@@ -360,30 +376,79 @@ class STM_PT_geometry_nodes(Panel):
                 # col = layout.column()
                 # prop_geonode(col, modifier, 'Style')
 
+                # col = layout.column(align=True)
+                # col.scale_y = 1.5
+                # row = col.row(align=True)
+                # row.prop_enum(obj, 'waveform_style', 'line', icon='RNDCURVE')
+                # row.prop_enum(obj, 'waveform_style', 'dots', icon='OUTLINER_OB_POINTCLOUD')
+                # row.prop_enum(obj, 'waveform_style', 'plane', icon='SNAP_FACE')
+                # row = col.row(align=True)
+                # row.prop_enum(obj, 'waveform_style', 'cubes', icon='MESH_CUBE')
+                # row.prop_enum(obj, 'waveform_style', 'tubes', icon='MESH_CYLINDER')
+                # row = col.row(align=True)
+                # row.prop_enum(obj, 'waveform_style', 'zigzag', icon='NONE')
+                # row.prop_enum(obj, 'waveform_style', 'zigzag_smooth', icon='NONE')
+
+
+
+                split = layout.split(factor=0.5)
+                split.label(text='Style :')
+                # split.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=4.0, scale_popup=5.0)
+
+                row = split.row(align=True)
+                #row.scale_y=5
+
+                col1 = row.column(align=True)
+                col2 = row.column(align=True)
+                col3 = row.column(align=True)
+
+                col1.scale_y=4.0
+                col3.scale_y=4.0
+
+
+                #row.prop(context.scene, 'preset_thumbnails')
+                col1.operator('stm.previous_waveform_style', text='', icon='TRIA_LEFT')
+                col2.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=4.0, scale_popup=8.0)
+                col3.operator('stm.next_waveform_style', text='', icon='TRIA_RIGHT')
+
+
+
+
+
+
                 col = layout.column(align=True)
-                col.scale_y = 1.5
-                row = col.row(align=True)
-                row.prop_enum(obj, 'waveform_style', 'line', icon='RNDCURVE')
-                row.prop_enum(obj, 'waveform_style', 'dots', icon='OUTLINER_OB_POINTCLOUD')
-                row.prop_enum(obj, 'waveform_style', 'plane', icon='SNAP_FACE')
-                row = col.row(align=True)
-                row.prop_enum(obj, 'waveform_style', 'cubes', icon='MESH_CUBE')
-                row.prop_enum(obj, 'waveform_style', 'tubes', icon='MESH_CYLINDER')
-                row = col.row(align=True)
-                row.prop_enum(obj, 'waveform_style', 'zigzag', icon='NONE')
-                row.prop_enum(obj, 'waveform_style', 'zigzag_smooth', icon='NONE')
+                prop_geonode(col, modifier, 'Thickness')
+                prop_geonode(col, modifier, 'Offset')
 
                 col = layout.column()
-                prop_geonode(col, modifier, 'Resolution Choice')
-                prop_geonode(col, modifier, 'Resolution')
+                # prop_geonode(col, modifier, 'Resolution Choice')
+                row = col.row()
+
+                # row = col.row(align=True)
+                # prop_geonode(row, modifier, 'Resolution')
+                # row.enabled = True if obj.waveform_resolution_choice == 'custom' else False
+
+                split = col.split(factor=0.495)
+                col1 = split.column(align=True)
+                col2 = split.column(align=True)
+
+                row = col1.row()
+                row.scale_y = 1.5
+                row.label(text='Resolution :')
+                row = col2.row(align=True)
+                row.scale_y = 1.5
+                row.prop(obj, 'waveform_resolution_choice', expand=True)
+
+
+                row2 = col2.row(align=True)
+                prop_geonode(row2, modifier, 'Resolution', label_name='', label=False)
+                row2.enabled = True if obj.waveform_resolution_choice == 'custom' else False
 
                 col = layout.column(align=True)
                 prop_geonode(col, modifier, 'Smooth')
                 prop_geonode(col, modifier, 'Smooth Level')
 
-                col = layout.column()
-                prop_geonode(col, modifier, 'Thickness')
-                prop_geonode(col, modifier, 'Offset')
+
 
                 col = layout.column()
                 prop_geonode(col, modifier, 'Merge Ends')
@@ -423,6 +488,8 @@ class STM_PT_material(Panel):
         layout = self.layout
         scn = context.scene
 
+        layout = layout.box()
+
         obj = bpy.context.active_object
         obj_type = ''
 
@@ -453,6 +520,7 @@ class STM_PT_material(Panel):
                 raw_texture = obj.modifiers['STM_spectrogram']['Input_2']
 
                 box = layout.box()
+                box.enabled = False
 
                 split = box.split(factor=split_fac)
                 split.scale_y = 1.5
@@ -499,7 +567,7 @@ class STM_PT_material(Panel):
                 split.label(text='Preset :')
 
                 # col1.prop(context.scene, 'gradient_preset', text='')
-                split.template_icon_view(context.scene, "presets_gradient", show_labels=False, scale=5.0, scale_popup=6.0)
+                split.template_icon_view(context.object, "presets_gradient", show_labels=False, scale=5.0, scale_popup=6.0)
 
 
                 box = layout.box()

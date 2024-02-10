@@ -86,6 +86,18 @@ def apply_spectrogram_preset(self, context):
     stm_modifier.show_viewport = True
 
 
+def apply_waveform_style(self, context):
+    print('-INF- apply GN preset')
+
+
+    style = context.object.presets_waveform_style.split('_')[0]
+
+    stm_modifier = context.object.modifiers['STM_waveform']
+    stm_modifier['Input_8'] = int(style)
+
+    stm_modifier.show_viewport = False
+    stm_modifier.show_viewport = True
+
 def reset_spectrogram_values(resetAll=False, values=[]):
 
     exclude_inputs = [
@@ -488,7 +500,7 @@ def apply_gradient_preset(self, context):
         presets=json.load(f)
 
         # p = scn.gradient_preset
-        p = scn.presets_gradient.replace('.png', '')
+        p = context.object.presets_gradient.replace('.png', '')
         preset = presets[p]
 
         mat_gradient = None
@@ -620,6 +632,11 @@ def set_waveform_style(self, context):
     style = obj.waveform_style
     style_arr = ['line', 'dots', 'plane', 'cubes', 'tubes', 'zigzag', 'zigzag_smooth']
     obj.modifiers['STM_waveform']['Input_8'] = style_arr.index(style)
+
+def set_waveform_resolution_choice(self, context):
+    obj = context.object
+
+    obj.modifiers['STM_waveform']['Input_17'] = True if obj.waveform_resolution_choice == 'custom' else False
 
 def convert_size(size_bytes):
    if size_bytes == 0:
