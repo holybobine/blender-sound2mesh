@@ -125,8 +125,31 @@ class STM_OT_open_image_folder(Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
+        image_path = context.object.modifiers['STM_spectrogram']['Input_2'].filepath
 
-        print('-INF- open image folder')
+        if os.path.exists(image_path):
+            print('-INF- open image folder')
+            dir_path = os.path.dirname(image_path)
+            os.startfile(dir_path)
+        else:
+            print(f'-ERR- can\'t open folder for file "{image_path}"')
+
+        return {'FINISHED'}
+
+class STM_OT_open_image(Operator):
+    """Apply preset"""
+    bl_idname = "stm.open_image"
+    bl_label = "Open image"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        image_path = context.object.modifiers['STM_spectrogram']['Input_2'].filepath
+
+        if os.path.exists(image_path):
+            print('-INF- open image')
+            os.startfile(image_path)
+        else:
+            print(f'-ERR- can\'t open file "{image_path}"')
 
         return {'FINISHED'}
 
@@ -504,32 +527,22 @@ class STM_OT_remove_waveform(Operator):
 
         return {'FINISHED'}
 
-class STM_OT_apply_preset_spectrogram_gn(Operator):
-    """Apply preset"""
-    bl_idname = 'stm.apply_preset_spectrogram_gn'
-    bl_label='Apply preset'
+
+class STM_OT_apply_gradient_preset(Operator):
+    """Apply gradient preset"""
+    bl_idname = 'stm.apply_gradient_preset'
+    bl_label='Apply gradient preset'
 
     bl_options = {'UNDO'}
 
     def execute(self, context):
 
-        with open(r'%s'%bpy.context.scene.presets_json_file,'r') as f:
-            presets=json.load(f)
-
-            p = bpy.context.scene.preset_thumbnails.replace('.png', '')
-
-
-            values = presets[p]["preset"]
-
-
-            print(values)
-
-        funcs.apply_spectrogram_preset(values)
-
+        apply_gradient_preset(self, context)
 
         return {'FINISHED'}
 
-class STM_OT_reset_spectrogram_gn(Operator):
+
+class STM_OT_reset_spectrogram_full(Operator):
     """Reset"""
     bl_idname = 'stm.reset_spectrogram_gn'
     bl_label='Reset'
@@ -537,66 +550,79 @@ class STM_OT_reset_spectrogram_gn(Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        preset = {}
 
-        funcs.apply_spectrogram_preset(preset)
+        funcs.reset_spectrogram_values(resetAll=True)
         funcs.reset_stm_curve('reset_5')
+
+        context.object.showGrid = 'on'
+        context.object.doExtrude = 'on'
 
 
         return {'FINISHED'}
 
-
-class STM_OT_reset_gn_geometry_values(Operator):
-    """Reset"""
-    bl_idname = 'stm.reset_gn_geometry_values'
+class STM_OT_reset_spectrogram_main_settings(Operator):
+    """Reset main settings"""
+    bl_idname = 'stm.reset_spectrogram_main_settings'
     bl_label=''
 
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        preset = {
-            'Size X': 'reset',
-            'Size Y': 'reset',
-            'Resolution X': 'reset',
-            'Resolution Y': 'reset',
-            'Base Height': 'reset',
-            'Smooth': 'reset',
-            'Smooth Level': 'reset',
-            'Noise': 'reset',
-            'Noise Scale': 'reset',
-            'Height Multiplier': 'reset',
-            'Contrast': 'reset',
-        }
+        values = [
+            'Freq Min (Hz)',
+            'Freq Max (Hz)',
+            'Lin To Log',
+            'Audio Sample (s)',
+            'Gain',
+        ]
 
-        funcs.apply_spectrogram_preset(preset)
+        funcs.reset_spectrogram_values(values=values)
 
 
         return {'FINISHED'}
 
-class STM_OT_apply_eq_curve_preset(Operator):
+class STM_OT_reset_spectrogram_geometry_values(Operator):
+    """Reset geometry values"""
+    bl_idname = 'stm.reset_spectrogram_geometry_values'
+    bl_label=''
+
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        values = [
+            'showGrid',
+            'doExtrude',
+            'Resolution X',
+            'Resolution Y',
+            'Base Height',
+            'Smooth',
+            'Smooth Level',
+            'Noise',
+            'Noise Scale',
+            'Height Multiplier',
+            'Contrast',
+        ]
+
+        funcs.reset_spectrogram_values(values=values)
+
+        context.object.showGrid = 'on'
+        context.object.doExtrude = 'on'
+
+        return {'FINISHED'}
+
+class STM_OT_reset_eq_curve(Operator):
     """Apply EQ curve preset"""
     bl_idname = 'stm.reset_stm_curve'
     bl_label='Reset STM curve'
 
     bl_options = {'UNDO'}
 
-    eq_curve_preset: bpy.props.EnumProperty(
-            items= (
-                    ('reset_5', "Reset 5", ""),
-                    ('reset_10', "Reset 10", ""),
-                    ('flatten_edges', "Flatten Edges", ""),
-                    ('lowpass', "Low Pass", ""),
-                    ('highpass', "High Pass", ""),
-                ),
-                default='reset_5'
-    )
 
     def execute(self, context):
 
-        with open(r'%s'%bpy.context.scene.eq_curve_presets_json_file,'r') as f:
-            presets=json.load(f)
+        context.scene.presets_eq_curve = 'flat_5.png'
 
-        funcs.reset_stm_curve(self.eq_curve_preset)
+        funcs.apply_eq_curve_preset(self, context)
 
         return {'FINISHED'}
 
@@ -611,7 +637,7 @@ class STM_OT_reset_gradient(Operator):
     def execute(self, context):
         print('-INF- Reset gradient')
 
-        cr_node = bpy.data.materials['STM_rawTexture'].node_tree.nodes['STM_gradient']
+        cr_node = bpy.data.materials['STM_gradient'].node_tree.nodes['STM_gradient']
         cr = cr_node.color_ramp
 
         #RESET COLOR RAMP
@@ -626,44 +652,5 @@ class STM_OT_reset_gradient(Operator):
 
         cr.elements[1].position = (1)
         cr.elements[1].color = (1,1,1,1)
-
-        return {'FINISHED'}
-
-
-class THUMB_OT_next_preset(Operator):
-    """Tooltip"""
-    bl_idname = "preset.next"
-    bl_label = "Move to next item in property list"
-
-    def execute(self, context):
-
-        items = [item.identifier for item in context.scene.bl_rna.properties['preset_thumbnails'].enum_items]
-        idx = items.index(context.scene.preset_thumbnails)
-
-        idx += 1
-        if idx == len(items):
-            idx = 0
-
-        context.scene.preset_thumbnails = items[idx]
-
-
-        return {'FINISHED'}
-
-class THUMB_OT_prev_preset(Operator):
-    """Tooltip"""
-    bl_idname = "preset.prev"
-    bl_label = "Move to previous item in property list"
-
-    def execute(self, context):
-
-        items = [item.identifier for item in context.scene.bl_rna.properties['preset_thumbnails'].enum_items]
-        idx = items.index(context.scene.preset_thumbnails)
-
-        idx -= 1
-        if idx < 0:
-            idx = len(items)-1
-
-        context.scene.preset_thumbnails = items[idx]
-
 
         return {'FINISHED'}

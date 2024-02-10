@@ -43,8 +43,16 @@ def redraw_all_viewports():
         if area.type == 'VIEW_3D':
             area.tag_redraw()
 
-def apply_spectrogram_preset(preset):
+def apply_spectrogram_preset(self, context):
     print('-INF- apply GN preset')
+
+    with open(r'%s'%bpy.context.scene.presets_json_file,'r') as f:
+        presets=json.load(f)
+
+        p = bpy.context.scene.presets_spectrogram.replace('.png', '')
+
+
+    preset = presets[p]["preset"]
 
 
     stm_obj = bpy.context.active_object
@@ -64,24 +72,53 @@ def apply_spectrogram_preset(preset):
         'max_intensity',
     ]
 
-    if preset == {}:
+    for i in stm_modifier.node_group.interface.items_tree:
+        if i.name in preset:
+            value = preset[i.name]
+
+            if value == 'reset':
+                set_geonode_value(stm_modifier, i, i.default_value)
+            else:
+                set_geonode_value(stm_modifier, i, value)
+
+
+    stm_modifier.show_viewport = False
+    stm_modifier.show_viewport = True
+
+
+def reset_spectrogram_values(resetAll=False, values=[]):
+
+    exclude_inputs = [
+        'Geometry',
+        'Audio Duration',
+        'Log to Lin',
+        'Audio Filename',
+        'Baked Volume',
+        'Image',
+        'Material',
+        'max_volume_dB',
+        'max_intensity',
+    ]
+
+    stm_modifier = bpy.context.object.modifiers['STM_spectrogram']
+
+    if resetAll:
+        print('-INF- reset all')
         for i in stm_modifier.node_group.interface.items_tree:
             if i.name not in exclude_inputs:
                 set_geonode_value(stm_modifier, i, i.default_value)
 
     else:
+        print('-INF- reset values')
         for i in stm_modifier.node_group.interface.items_tree:
-            if i.name in preset:
-                value = preset[i.name]
-
-                if value == 'reset':
-                    set_geonode_value(stm_modifier, i, i.default_value)
-                else:
-                    set_geonode_value(stm_modifier, i, value)
-
+            if i.name in values and i.name not in exclude_inputs:
+                set_geonode_value(stm_modifier, i, i.default_value)
 
     stm_modifier.show_viewport = False
     stm_modifier.show_viewport = True
+
+
+
 
 def set_geonode_value(gn_modifier, input, value):
 
@@ -450,7 +487,8 @@ def apply_gradient_preset(self, context):
     with open(r'%s'%scn.gradient_presets_json_file,'r') as f:
         presets=json.load(f)
 
-        p = scn.gradient_preset
+        # p = scn.gradient_preset
+        p = scn.presets_gradient.replace('.png', '')
         preset = presets[p]
 
         mat_gradient = None
@@ -491,13 +529,19 @@ def apply_gradient_preset(self, context):
     # funcs.apply_spectrogram_preset(values)
 
 
-def reset_stm_curve(preset_name):
+
+
+def apply_eq_curve_preset(self, context):
     print('-INF- reset STM curve')
 
     with open(r'%s'%bpy.context.scene.eq_curve_presets_json_file,'r') as f:
         presets=json.load(f)
 
+
+    preset_name = context.scene.presets_eq_curve.replace('.png', '')
     preset = presets[preset_name]
+
+
 
     curve_node = bpy.data.node_groups['STM_spectrogram'].nodes['MACURVE']
     points = curve_node.mapping.curves[0].points

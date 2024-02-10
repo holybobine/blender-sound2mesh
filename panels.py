@@ -163,10 +163,8 @@ class STM_PT_geometry_nodes(Panel):
         do_draw = False
 
         try:
-            obj = bpy.context.active_object
-
-            if obj.modifiers:
-                if any([m.name.startswith('STM_') for m in obj.modifiers]):
+            if context.object in context.selected_objects:
+                if any([m.name.startswith('STM_') for m in context.object.modifiers]):
                     do_draw = True
         except:
             pass
@@ -182,8 +180,23 @@ class STM_PT_geometry_nodes(Panel):
         layout = self.layout
         scn = context.scene
 
+        col = layout.column(align=True)
+
+        row = col.row(align=True)
+        row.scale_x = 5
+        row.scale_y = 1.5
+        row.prop_enum(scn, 'addon_tabs', 'spectrogram', text='', icon='SEQ_HISTOGRAM')
+        row.prop_enum(scn, 'addon_tabs', 'geonodes', text='', icon='GEOMETRY_NODES')
+        row.prop_enum(scn, 'addon_tabs', 'material', text='', icon='MATERIAL')
+
         obj = context.object
         obj_allowed_types = ["MESH","CURVE","EMPTY"]
+
+        layout = col.box()
+        layout.enabled = obj and obj.type in obj_allowed_types
+
+
+
 
         if obj and obj.type in obj_allowed_types:
             if any([m.name.startswith('STM_spectrogram') for m in obj.modifiers]):
@@ -191,121 +204,24 @@ class STM_PT_geometry_nodes(Panel):
                 gn_node_tree = bpy.data.node_groups['STM_spectrogram']
                 exclude_inputs = ['Geometry']
 
-                # row = layout.row(align=True)
-                # row.operator('stm.apply_preset_spectrogram_gn', text='Apply')
-                # row.prop(scn, 'preset_spectrogram')
-                # row = layout.row(align=True)
-                # row.operator('stm.reset_spectrogram_gn', text='Reset All')
+                layout.operator('stm.reset_spectrogram_gn', text='Reset all', icon='FILE_REFRESH')
 
-                # box = layout.box()
-                # row = box.row(align=True)
-                # row.prop(scn, 'stm_show_file_data', text='File Data', icon='FILEBROWSER', emboss=False)
-                # row.prop(scn, 'stm_show_file_data', text='', icon='TRIA_DOWN' if scn.stm_show_file_data else 'TRIA_LEFT', emboss=False)
-                #
-                #
-                # if scn.stm_show_file_data:
-                #     col = box.column(align=True)
-                #     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Audio Filename', enabled=False)
-                #     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Image')
-                #     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Material')
-                #     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Audio Duration', enabled=False)
+
+                split = layout.split(factor=0.3)
+                split.label(text='Preset :')
+                split.template_icon_view(context.scene, "presets_spectrogram", show_labels=False, scale=5.0, scale_popup=6.0)
 
 
 
 
-                col = layout.column(align=True)
-                col.scale_y=1.5
-
-                # gallery_scale = 4.0
-                #
-                # row = col.row(align=True)
-                # #row.scale_y=5
-                #
-                # col1 = row.column(align=True)
-                # col2 = row.column(align=True)
-                # col3 = row.column(align=True)
-                #
-                # col1.scale_y=gallery_scale
-                # col3.scale_y=gallery_scale
-                #
-                # col1.operator('preset.prev', text='', icon='TRIA_LEFT')
-                # col2.template_icon_view(context.scene, "preset_thumbnails", show_labels=True, scale=gallery_scale, scale_popup=6.0)
-                # col3.operator('preset.next', text='', icon='TRIA_RIGHT')
-
-                box = layout.box()
-                col = box.column(align=True)
-
-                gallery_scale = 4.0
-
-                split = col.split(factor=0.4)
-                #row.scale_y=5
-
-                col1 = split.column(align=True)
-                col2 = split.column()
-
-                col1.template_icon_view(context.scene, "preset_thumbnails", show_labels=True, scale=gallery_scale, scale_popup=6.0)
 
 
-
-                row = col2.row(align=True)
-                row.scale_y = 2
-                row.operator('preset.prev', text='', icon='TRIA_LEFT')
-                row.operator('stm.apply_preset_spectrogram_gn', text='Apply', icon='IMPORT')
-                row.operator('preset.next', text='', icon='TRIA_RIGHT')
-
-
-                row = col2.row(align=True)
-                row.scale_y = 2
-                row.operator('stm.reset_spectrogram_gn', text='Reset All', icon='FILE_REFRESH')
-
-
-                box = layout.box()
-                row = box.row()
-                # row.label(text='Main Settings', icon='OPTIONS')
-                row.prop(scn, 'bool_material_settings', text='Material', icon='TRIA_DOWN' if scn.bool_material_settings else 'TRIA_RIGHT', emboss=False)
-
-                if scn.bool_material_settings:
-
-                    row = box.row()
-                    row.prop(context.object, 'material_type', expand=True)
-                    row.scale_y = 1.5
-
-                    split = box.split(factor=0.3)
-                    split.scale_y = 1.5
-                    col1 = split.column()
-                    col2 = split.column()
-                    col1.label(text='Material :')
-
-                    if context.object.material_type == 'gradient' or context.object.material_type == 'raw':
-                        prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Material', label=False)
-
-                    elif context.object.material_type == 'custom':
-                        col2.prop(context.object, 'material_custom', text='')
-
-
-
-                    if context.object.material_type == 'gradient':
-                        bbox = box.box()
-                        row = bbox.row()
-
-                        split = row.split(factor=0.25)
-                        col_1 = split.column()
-                        col_2 = split.column()
-
-
-                        col_1.label(text='Preset :')
-                        col_2.prop(context.scene, 'gradient_preset', text='')
-
-                        cr_node = bpy.data.materials['STM_gradient'].node_tree.nodes['STM_gradient']
-                        bbox.template_color_ramp(cr_node, "color_ramp", expand=False)
-
-                        row = box.row()
-                        row.operator('stm.reset_gradient', text='Reset Gradient', icon='FILE_REFRESH')
 
                 box = layout.box()
                 row = box.row()
                 # row.label(text='Main Settings', icon='OPTIONS')
                 row.prop(scn, 'bool_main_settings', text='Main Settings', icon='TRIA_DOWN' if scn.bool_main_settings else 'TRIA_RIGHT', emboss=False)
+                row.operator('stm.reset_spectrogram_main_settings', text='', icon='FILE_REFRESH')
 
 
                 if scn.bool_main_settings:
@@ -334,7 +250,7 @@ class STM_PT_geometry_nodes(Panel):
                 row = box.row()
                 # row.label(text='Main Settings', icon='OPTIONS')
                 row.prop(scn, 'bool_geometry_settings', text='Geometry', icon='TRIA_DOWN' if scn.bool_geometry_settings else 'TRIA_RIGHT', emboss=False)
-                row.operator('stm.reset_gn_geometry_values', text='', icon='FILE_REFRESH')
+                row.operator('stm.reset_spectrogram_geometry_values', text='', icon='FILE_REFRESH')
 
 
                 if scn.bool_geometry_settings:
@@ -402,38 +318,27 @@ class STM_PT_geometry_nodes(Panel):
 
                 box = layout.box()
                 row = box.row()
-                # row.label(text='Main Settings', icon='OPTIONS')
-                row.prop(scn, 'bool_eqcurve_settings', text='EQ Curve', icon='TRIA_DOWN' if scn.bool_eqcurve_settings else 'TRIA_RIGHT', emboss=False)
+                row.prop(scn, 'bool_eq_curve_settings', text='EQ Curve', icon='TRIA_DOWN' if scn.bool_eq_curve_settings else 'TRIA_RIGHT', emboss=False)
                 row.operator('stm.reset_stm_curve', text='', icon='FILE_REFRESH')
 
-                if scn.bool_eqcurve_settings:
+                if scn.bool_eq_curve_settings:
 
                     # row = box.row()
                     # row.label(text='EQ Curve', icon='NORMALIZE_FCURVES')
 
+                    split = box.split(factor=0.5)
+                    split.label(text='Preset :')
+                    split.template_icon_view(context.scene, "presets_eq_curve", show_labels=True, scale=3.0, scale_popup=5.0)
 
-                    col = box.column(align=True)
+                    bbox = box.box()
                     curve = bpy.data.node_groups['STM_spectrogram'].nodes['MACURVE']
-                    col.template_curve_mapping(
+                    bbox.template_curve_mapping(
                         data=curve,
                         property="mapping",
                         levels=False,
                         brush=False,
                         show_tone=False,
                     )
-
-                    col = box.column(align=True)
-
-                    eq_preset = ['reset_5', 'reset_10', 'flatten_edges', 'lowpass', 'highpass']
-
-                    for p in eq_preset:
-                        row = col.row()
-                        op = row.operator('stm.reset_stm_curve', text=p)
-                        op.eq_curve_preset = p
-
-
-
-
 
 
 
@@ -528,52 +433,83 @@ class STM_PT_material(Panel):
                 obj_type = 'waveform'
 
         if obj_type == 'spectrogram':
-            box = layout.box()
-            box.label(text='Spectrogram mat', icon='SEQ_HISTOGRAM')
+            row = layout.row()
+            row.prop(context.object, 'material_type', expand=True)
+            row.scale_y = 1.5
 
-            box = layout.box()
-
-
-            # col = box.column(align=True)
-            #
-            # row = col.row(align=True)
-            # row.scale_y = 1.5
-            # row.prop_enum(context.object, 'userStyle', 'rawTexture', text='Raw Texture', icon='OUTLINER_OB_IMAGE')
-            # row.prop_enum(context.object, 'userStyle', 'custom', text='Custom', icon='SOLO_ON')
-            #
-            # matBox = col.box()
-            #
-            # row = matBox.row(align=True)
-            #
-            # split = row.split(factor=0.3)
-            # col_1 = split.column()
-            # col_2 = split.column()
-            #
-            # col_1.label(text='Material : ')
-            #
-            # if context.object.userStyle == 'custom':
-            #     col_2.prop(obj, 'pointerCustomMaterial', text='')
-            # else:
-            #     col_2.prop(obj, 'pointerCustomMaterialDummy', text='')
-            #
-            # matBox.enabled = True if context.object.userStyle == 'custom' else False
+            split_fac = 0.3
 
 
-            row = box.row()
 
-            split = row.split(factor=0.25)
-            col_1 = split.column()
-            col_2 = split.column()
+            if obj.material_type == 'gradient' or obj.material_type == 'raw':
+                split = layout.split(factor=split_fac)
+                split.scale_y = 1.5
 
 
-            col_1.label(text='Preset :')
-            col_2.prop(context.scene, 'gradientPreset', text='')
+                split.label(text='Material :')
+                prop_geonode(split, obj.modifiers['STM_spectrogram'], 'Material', label=False)
 
-            cr_node = bpy.data.materials['STM_rawTexture'].node_tree.nodes['STM_gradient']
-            box.template_color_ramp(cr_node, "color_ramp", expand=False)
+            if obj.material_type == 'raw':
+                raw_texture = obj.modifiers['STM_spectrogram']['Input_2']
 
-            row = box.row()
-            row.operator('stm.reset_gradient', text='Reset Gradient', icon='FILE_REFRESH')
+                box = layout.box()
+
+                split = box.split(factor=split_fac)
+                split.scale_y = 1.5
+                col1 = split.column()
+                col2 = split.column()
+
+
+                col1.label(text='Image :')
+                row = col2.row(align=True)
+                prop_geonode(row, obj.modifiers['STM_spectrogram'], 'Image', label=False)
+                row.operator('stm.open_image', text='', icon='FILE_IMAGE')
+
+                col1.label(text='Folder :')
+                row = col2.row(align=True)
+                row.label(text=f'{raw_texture.filepath}')
+                row.operator('stm.open_image_folder', text='', icon='FILEBROWSER')
+
+
+
+
+                col1.label(text='Resolution :')
+
+                width, height = raw_texture.size
+                col2.label(text=f'{width}x{height} px')
+
+
+                col1.label(text='File Size :')
+                filesize = os.path.getsize(raw_texture.filepath)
+                filesize = convert_size(filesize)
+                col2.label(text=f'{filesize}')
+
+            if obj.material_type == 'custom':
+                split = layout.split(factor=split_fac)
+                split.scale_y = 1.5
+
+                split.label(text='Material :')
+                split.prop(context.object, 'material_custom', text='')
+
+
+
+            if obj.material_type == 'gradient':
+
+                split = layout.split(factor=split_fac)
+                split.label(text='Preset :')
+
+                # col1.prop(context.scene, 'gradient_preset', text='')
+                split.template_icon_view(context.scene, "presets_gradient", show_labels=False, scale=5.0, scale_popup=6.0)
+
+
+                box = layout.box()
+                row = box.row()
+                # row.label(text='Main Settings', icon='OPTIONS')
+                row.prop(scn, 'bool_custom_gradient', text='Customize Gradient', icon='TRIA_DOWN' if scn.bool_custom_gradient else 'TRIA_RIGHT', emboss=False)
+                row.operator('stm.reset_gradient', text='', icon='FILE_REFRESH')
+                if scn.bool_custom_gradient:
+                    cr_node = bpy.data.materials['STM_gradient'].node_tree.nodes['STM_gradient']
+                    box.template_color_ramp(cr_node, "color_ramp", expand=False)
 
 
 
