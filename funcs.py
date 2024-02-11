@@ -213,34 +213,39 @@ def ffshowspectrumpic(ffmpegPath, audioPath, outputPath, width=1024, height=512,
 
     imagePath = outputPath + os.path.basename(audioPath)+'_%ix%i_%s_%s.png'%(width, height, scale, colorMode)
 
-    print('-INF- launching ffmpeg')
-    try:
-        #build ffmpeg command
-        ffmCMD = ''.join((
-                            ffmpegPath,
-                            ' -y -i "',
-                            audioPath,
-                            '" -lavfi showspectrumpic=s='+str(width)+'x'+str(height),
-                            ':mode=combined:legend=disabled:scale=%s:fscale=%s:color=%s:drange=%s:limit=%s'%(scale, fscale, colorMode, drange, limit)+' -qscale:v 1 "',
-                            imagePath,
-                            '" -loglevel quiet'
-                        ))
+    if os.path.exists(imagePath):
+        print('-INF- spectrogram image already exists with these parameters, skipping generation')
+        return imagePath
+    else:
+
+        print('-INF- launching ffmpeg')
+        try:
+            #build ffmpeg command
+            ffmCMD = ''.join((
+                                ffmpegPath,
+                                ' -y -i "',
+                                audioPath,
+                                '" -lavfi showspectrumpic=s='+str(width)+'x'+str(height),
+                                ':mode=combined:legend=disabled:scale=%s:fscale=%s:color=%s:drange=%s:limit=%s'%(scale, fscale, colorMode, drange, limit)+' -qscale:v 1 "',
+                                imagePath,
+                                '" -loglevel quiet'
+                            ))
 
 
-        #process ffmpeg command
-        subprocess.call(ffmCMD)
+            #process ffmpeg command
+            subprocess.call(ffmCMD)
 
-        if os.path.exists(imagePath):
-            print('-INF- generation successful !')
-            return imagePath
+            if os.path.exists(imagePath):
+                print('-INF- generation successful !')
+                return imagePath
 
-        else:
+            else:
+                print('-ERR- failed to generate spectrogram image')
+                return None
+
+        except:
             print('-ERR- failed to generate spectrogram image')
             return None
-
-    except:
-        print('-ERR- failed to generate spectrogram image')
-        return None
 
 def ffmetadata(ffmpegPath, audioPath):
 
@@ -460,7 +465,7 @@ def create_new_object(name, coll=bpy.context.scene.collection):
 
     return obj
 
-def generate_spectrogram(stm_obj, audioPath, imagePath, duration_seconds, max_volume_dB, peak_brightness):
+def generate_spectrogram(stm_obj, audioPath, imagePath, duration_seconds, max_volume_dB, peak_brightness=0):
 
     print('-INF- updating spectrogram')
 
@@ -721,18 +726,21 @@ def stm_01_volume_data():
     obj = bpy.context.object
     scn = bpy.context.scene
 
+    # get peak volume using ffvolumedetect() (less accurate but quicker)
+
     volume_data_raw = ffvolumedetect(scn.ffmpegPath, scn.audio_file_path)
-    astats = ffastats(scn.ffmpegPath, scn.audio_file_path)
-
     max_volume_dB = float(volume_data_raw['max_volume'])
-    mean_volume_dB = float(volume_data_raw['mean_volume'])
-    peak_level_dB = round(float(astats['Peak level dB']), 2)
-
-    print('max_volume_dB :', peak_level_dB)
-
     obj['max_volume_dB'] = max_volume_dB
-    obj['mean_volume_dB'] = mean_volume_dB
-    obj['peak_level_dB'] = peak_level_dB
+    print(f'{max_volume_dB = }')
+
+
+
+    # get peak volume using ffastats() (more accurate but longer)
+
+    # astats = ffastats(scn.ffmpegPath, scn.audio_file_path)
+    # peak_level_dB = round(float(astats['Peak level dB']), 2)
+    # obj['peak_level_dB'] = peak_level_dB
+    # print(f'{peak_level_dB = }')
 
 def stm_02_generate_spectrogram_img():
 
@@ -779,8 +787,12 @@ def stm_03_build_spectrogram():
     audioPath = scn.audio_file_path
     outputPath = scn.outputPath
 
-    peak_brightness = int(ffsignalstats(scn.ffmpegPath, obj['spectrogram_file_path'], 'YMAX'))
-    obj['peak_brightness'] = peak_brightness
+    # I used to analyze the image brightness to normalize the displacement
+    # but I don't need it anymore. Now I just analyze the max volume, and gives it
+    # to the ffshowspectrumpic() function.
+
+    # peak_brightness = int(ffsignalstats(scn.ffmpegPath, obj['spectrogram_file_path'], 'YMAX'))
+    # obj['peak_brightness'] = peak_brightness
 
     fps = bpy.context.scene.render.fps
 
@@ -797,8 +809,8 @@ def stm_03_build_spectrogram():
             audioPath=audioPath,
             imagePath=obj['spectrogram_file_path'],
             duration_seconds=duration_seconds,
-            max_volume_dB=obj['peak_level_dB'],
-            peak_brightness=obj['peak_brightness']
+            max_volume_dB=obj['max_volume_dB'],
+            # peak_brightness=obj['peak_brightness']
         )
 
 def stm_04_cleanup():

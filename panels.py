@@ -226,6 +226,7 @@ class STM_PT_geometry_nodes(Panel):
         obj_allowed_types = ["MESH","CURVE","EMPTY"]
 
         layout = layout.box()
+        layout.enabled = obj.progress == 0
 
 
         if obj and obj.type in obj_allowed_types:
@@ -387,35 +388,20 @@ class STM_PT_geometry_nodes(Panel):
 
             elif any([m.name.startswith('STM_waveform') for m in obj.modifiers]):
 
-                col = layout.column()
-
                 modifier = obj.modifiers['STM_waveform']
 
-                col = layout.column()
-                prop_geonode(col, modifier, 'Object')
-                prop_geonode(col, modifier, 'Material')
 
-                # col = layout.column()
-                # prop_geonode(col, modifier, 'Style')
-
-                # col = layout.column(align=True)
-                # col.scale_y = 1.5
-                # row = col.row(align=True)
-                # row.prop_enum(obj, 'waveform_style', 'line', icon='RNDCURVE')
-                # row.prop_enum(obj, 'waveform_style', 'dots', icon='OUTLINER_OB_POINTCLOUD')
-                # row.prop_enum(obj, 'waveform_style', 'plane', icon='SNAP_FACE')
-                # row = col.row(align=True)
-                # row.prop_enum(obj, 'waveform_style', 'cubes', icon='MESH_CUBE')
-                # row.prop_enum(obj, 'waveform_style', 'tubes', icon='MESH_CYLINDER')
-                # row = col.row(align=True)
-                # row.prop_enum(obj, 'waveform_style', 'zigzag', icon='NONE')
-                # row.prop_enum(obj, 'waveform_style', 'zigzag_smooth', icon='NONE')
+                split_fac = 0.3
 
 
-
-                split = layout.split(factor=0.5)
+                split = layout.split(factor=split_fac)
                 split.label(text='Style :')
-                # split.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=4.0, scale_popup=5.0)
+
+                col = layout.column()
+                col.scale_y = 1.5
+                prop_geonode(col, modifier, 'Object')
+
+                gallery_scale = 5.0
 
                 row = split.row(align=True)
                 #row.scale_y=5
@@ -424,13 +410,13 @@ class STM_PT_geometry_nodes(Panel):
                 col2 = row.column(align=True)
                 col3 = row.column(align=True)
 
-                col1.scale_y=4.0
-                col3.scale_y=4.0
+                col1.scale_y=gallery_scale
+                col3.scale_y=gallery_scale
 
 
                 #row.prop(context.scene, 'preset_thumbnails')
                 col1.operator('stm.previous_waveform_style', text='', icon='TRIA_LEFT')
-                col2.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=4.0, scale_popup=6.0)
+                col2.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=gallery_scale, scale_popup=6.0)
                 col3.operator('stm.next_waveform_style', text='', icon='TRIA_RIGHT')
 
 
@@ -450,7 +436,7 @@ class STM_PT_geometry_nodes(Panel):
                 # prop_geonode(row, modifier, 'Resolution')
                 # row.enabled = True if obj.waveform_resolution_choice == 'custom' else False
 
-                split = col.split(factor=0.495)
+                split = col.split(factor=0.49)
                 col1 = split.column(align=True)
                 col2 = split.column(align=True)
 
@@ -523,7 +509,7 @@ class STM_PT_material(Panel):
 
             raw_texture = obj.modifiers['STM_spectrogram']['Input_2']
 
-            layout.enabled = raw_texture != None
+            layout.enabled = raw_texture != None and  obj.progress == 0
 
             row = layout.row(align=True)
             row.scale_y = 1.5
@@ -648,5 +634,12 @@ class STM_PT_material(Panel):
 
 
         elif obj_type == 'waveform':
+
+            modifier = obj.modifiers['STM_waveform']
+
             box = layout.box()
             box.label(text='Waveform mat', icon='RNDCURVE')
+
+            col = layout.column()
+            col.scale_y = 1.5
+            prop_geonode(col, modifier, 'Material')

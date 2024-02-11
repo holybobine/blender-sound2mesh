@@ -251,11 +251,11 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
 
 Operations = {
-    "Retrieve metadata 1/2":stm_00_ffmetadata,
-    "Retrieve metadata 2/2":stm_01_volume_data,
-    "Generating spectrogram image":stm_02_generate_spectrogram_img,
-    "Building spectrogram":stm_03_build_spectrogram,
-    "Cleanup":stm_04_cleanup,
+    "Retrieve metadata...":stm_00_ffmetadata,
+    "Analyze audio...":stm_01_volume_data,
+    "Generating spectrogram image...":stm_02_generate_spectrogram_img,
+    "Building spectrogram...":stm_03_build_spectrogram,
+    "Cleanup...":stm_04_cleanup,
     "Done !":stm_05_sleep,
 }
 
