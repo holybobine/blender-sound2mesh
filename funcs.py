@@ -4,14 +4,48 @@ import subprocess
 import math
 import json
 import time
+import datetime
+
+_start_time = time.time()
+
+def start_time():
+    global _start_time
+    _start_time = time.time()
+    print(f'{_start_time = }')
+
+def end_time():
+    endtime = seconds_to_timestring(time.time() - _start_time)
+    return endtime
+
 
 
 def timestring_to_seconds(timestring):
     from datetime import datetime
-    pt = datetime.strptime(timestring,'%H:%M:%S,%f')
+    pt = datetime.strptime(timestring,'%H:%M:%S.%f')
     total_seconds = pt.microsecond/1000000 + pt.second + pt.minute*60 + pt.hour*3600
 
     return total_seconds
+
+
+def seconds_to_timestring(seconds):
+    if seconds is not None:
+
+        s = seconds % 3600 % 60
+
+        seconds = int(seconds)
+        d = seconds // (3600 * 24)
+        h = seconds // 3600 % 24
+        m = seconds % 3600 // 60
+
+        if d > 0:
+            return '{:02d}D {:02d}H {:02d}m {:02d}s'.format(d, h, m, int(s))
+        elif h > 0:
+            return '{:02d}H {:02d}m {:02d}s'.format(h, m, int(s))
+        elif m > 0:
+            return '{:02d}m {:02d}s'.format(m, int(s))
+        elif s > 0:
+            return '{:.2f}s'.format(s)
+    return
 
 def select_obj_from_list(self, context):
     scn = context.scene
@@ -276,9 +310,13 @@ def ffmetadata(ffmpegPath, audioPath):
 
             metadata_list[name] = value
 
-        duration = metadata_output.split('Duration:')[1].split('Stream #0:0:')[0]
-        # duration_time = duration.strip().split(',')[0]
-        # duration_seconds = timestring_to_seconds(duration_time.replace('.', ','))
+        duration = metadata_output.split('Duration:')[1].split('Stream #0:0:')[0].split(',')[0]
+        try:
+            duration = timestring_to_seconds(duration.strip())
+        except:
+            pass
+
+        bitrate = metadata_output.split('bitrate:')[1].split('Stream #0:0:')[0]
 
         stream0 = metadata_output.split('Stream #0:0:')[1].split('\n')[0]
         # stream1 = metadata_output.split('Stream #0:1:')[1].split('\n')[0]
@@ -289,6 +327,7 @@ def ffmetadata(ffmpegPath, audioPath):
         json_output['filename'] = os.path.basename(audioPath)
         json_output['metadata'] = metadata_list
         json_output['duration'] = duration
+        json_output['bitrate'] = bitrate.strip()
         json_output['stream0'] = stream0.strip()
         # json_output['stream1'] = stream1.strip()
 
@@ -815,6 +854,14 @@ def stm_03_build_spectrogram():
 
 def stm_04_cleanup():
     scn = bpy.context.scene
+
+    if scn.force_standard_view_transform:
+        print('-INF- setting scene view transform to "Standard"')
+        scn.view_settings.view_transform = 'Standard'
+
+    if scn.force_eevee_AO:
+        scn.eevee.use_gtao = True
+
 
     set_playback_to_audioSync(bpy.context)
     frame_clip_in_sequencer()

@@ -138,7 +138,19 @@ class STM_PT_spectrogram(Panel):
         col2.label(text=scn.artist)
         col1.label(text='Album :')
         col2.label(text=scn.album)
+        col1.label(text='Duration :')
+        col2.label(text=scn.duration_format)
         col1.enabled = False
+
+        if scn.duration_seconds > 1200:
+            bbox = box.box()
+            row = bbox.row()
+            col1=row.column(align=True)
+            # col1.scale_y = 2
+            col2=row.column(align=True)
+            col1.label(text='', icon='ERROR')
+            col2.label(text='Long audio file.')
+            # col2.label(text='Generation may take a while...')
 
 
         # box = layout.box()
@@ -168,17 +180,24 @@ class STM_PT_spectrogram(Panel):
         row.scale_y = 2
         # row.operator('stm.generate_spectrogram', text=info_operator, icon='SHADERFX')
 
+        draw_progress_bar = False
 
         if obj:
             if obj.progress != 0:
-                label = bpy.context.object.progress_label
-                row.prop(bpy.context.object,"progress", text=label)
-                # row.enabled = False
-            else:
-                row.operator('stm.prompt_spectrogram_popup', text=info_operator, icon='SHADERFX', depress=False)
-                row.enabled = audio_ok and stm_ok
+                draw_progress_bar = True
+
+        if draw_progress_bar:
+            label = bpy.context.object.progress_label
+            row.prop(bpy.context.object,"progress", text=label)
+            # row.enabled = False
         else:
+            # if scn.duration_seconds > 1200:
+            #     row.operator('stm.prompt_audio_warning', text=info_operator, icon='SHADERFX', depress=False)
+            # else:
+            #     row.operator('stm.prompt_spectrogram_popup', text=info_operator, icon='SHADERFX', depress=False)
+
             row.operator('stm.prompt_spectrogram_popup', text=info_operator, icon='SHADERFX', depress=False)
+
             row.enabled = audio_ok and stm_ok
 
 
@@ -592,7 +611,7 @@ class STM_PT_material(Panel):
 
                 col1.label(text='Resolution :')
 
-                resolution = f"{raw_texture.size[0]}x{raw_texture.size[0]}px" if raw_texture != None else ''
+                resolution = f"{raw_texture.size[0]}x{raw_texture.size[1]}px" if raw_texture != None else ''
                 col2.label(text=resolution)
 
                 split = box.split(factor=split_fac)

@@ -11,6 +11,7 @@ from bpy.props import (
     EnumProperty,
 )
 
+import datetime
 import json
 import funcs
 from funcs import *
@@ -51,14 +52,20 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
 
         mdata = funcs.ffmetadata(scn.ffmpegPath, self.filepath)
 
-        if mdata != None:
-            scn.title = funcs.get_first_match_from_metadata(mdata['metadata'], match='title')
-            scn.album = funcs.get_first_match_from_metadata(mdata['metadata'], match='album', exclude='artist')
-            scn.artist = funcs.get_first_match_from_metadata(mdata['metadata'], match='artist')
+        title = funcs.get_first_match_from_metadata(mdata['metadata'], match='title')
+        album = funcs.get_first_match_from_metadata(mdata['metadata'], match='album', exclude='artist')
+        artist = funcs.get_first_match_from_metadata(mdata['metadata'], match='artist')
+        duration = mdata['duration']
 
-            scn.title = os.path.basename(scn.audio_file_path) if scn.title == '' else scn.title
-            scn.album = '[unkown]' if scn.album == '' else scn.album
-            scn.artist = '[unkown]' if scn.artist == '' else scn.artist
+
+        scn.title = os.path.basename(scn.audio_file_path) if title == '' else title
+        scn.album = '[unkown]' if album == '' else album
+        scn.artist = '[unkown]' if artist == '' else artist
+        # scn.duration = str(datetime.timedelta(seconds=round(duration)))
+        scn.duration_seconds = duration
+        scn.duration_format = seconds_to_timestring(duration)
+
+        # print(f'{duration = }')
 
         funcs.redraw_all_viewports()
 
@@ -79,6 +86,8 @@ class STM_OT_reset_audio_file(Operator):
         scn.title = ''
         scn.album = ''
         scn.artist = ''
+        scn.duration_seconds = 0
+        scn.duration_format = ''
 
         funcs.redraw_all_viewports()
 
@@ -157,6 +166,35 @@ class STM_OT_open_image(Operator):
 
         return {'FINISHED'}
 
+# class STM_OT_prompt_audio_warning(Operator):
+#     """Generate spectrogram"""
+#     bl_idname = "stm.prompt_audio_warning"
+#     bl_label = "AUDIO WARNING"
+#     bl_options = {'UNDO'}
+#
+#
+#
+#     def draw(self, context):
+#
+#         layout = self.layout
+#         scn = context.scene
+#
+#         col = layout.column(align=True)
+#
+#         col.label(text='The selected audio file is very long.')
+#         col.label(text='Proceed anyway ?')
+#         layout.separator()
+#
+#     def invoke(self, context, event):
+#         return context.window_manager.invoke_props_dialog(self, width=350)
+#
+#     def execute(self, context):
+#
+#         bpy.ops.stm.prompt_spectrogram_popup('INVOKE_DEFAULT')
+#
+#         return {'FINISHED'}
+
+
 class STM_OT_prompt_spectrogram_popup(Operator):
     """Generate spectrogram"""
     bl_idname = "stm.prompt_spectrogram_popup"
@@ -171,7 +209,9 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
         layout.separator()
 
-        split = layout.split(factor=0.3)
+        split_fac = 0.3
+
+        split = layout.split(factor=split_fac)
         col_L = split.column()
         col_R = split.column()
 
@@ -179,7 +219,7 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         col_L.label(text='Audio file :', icon='FILE_SOUND')
 
         box = col_R.box()
-        split = box.split(factor=0.2)
+        split = box.split(factor=split_fac)
         col1 = split.column(align=True)
         col2 = split.column(align=True)
         col1.label(text='Title :')
@@ -188,11 +228,24 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         col2.label(text=scn.artist)
         col1.label(text='Album :')
         col2.label(text=scn.album)
+        col1.label(text='Duration :')
+        col2.label(text=scn.duration_format)
         col1.enabled = False
+
+        if scn.duration_seconds > 1200:
+            bbox = box.box()
+            row = bbox.row()
+            col1=row.column(align=True)
+            col2=row.column(align=True)
+            col1.label(text='', icon='ERROR')
+            col1.scale_y = 2
+            col2.label(text='Long audio file.')
+            col2.label(text='Generation may take a while...')
+
 
         layout.separator()
 
-        split = layout.split(factor=0.3)
+        split = layout.split(factor=split_fac)
         col_L = split.column()
         col_R = split.column(align=True)
 
@@ -240,8 +293,20 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
         layout.separator()
 
+        split = layout.split(factor=split_fac)
+        col_L = split.column()
+        col_R = split.column(align=True)
+
+        col_L.label(text='Scene settings :', icon='SCENE_DATA')
+
+        box = col_R.box()
+        box.prop(scn, 'force_standard_view_transform')
+        box.prop(scn, 'force_eevee_AO')
+
+        col1.enabled = False
+
     def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self, width=350)
+        return context.window_manager.invoke_props_dialog(self, width=400)
 
     def execute(self, context):
 
@@ -303,8 +368,8 @@ class STM_OT_generate_spectrogram_modal(Operator):
                 self.timer_count=0
 
                 if self.done:
-
-                    print("\n------------------         DONE !         ----------------------")
+                    process_time = funcs.end_time()
+                    print(f"\n------------------ Done in {process_time} ----------------------\n")
                     self.step = 0
                     context.object.progress = 0
                     context.window_manager.event_timer_remove(self.timer)
@@ -327,6 +392,8 @@ class STM_OT_generate_spectrogram_modal(Operator):
 
     def invoke(self, context, event):
         print("\n------------------ GENERATING SPECTROGRAM ----------------------\n")
+
+        funcs.start_time()
 
         #terermine max step
         global Operations
