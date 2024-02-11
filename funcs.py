@@ -161,7 +161,7 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
     dataSet = ''
 
     #choose correct data set from section name
-    if section == 'Objects':
+    if section == 'Object':
         dataSet = bpy.data.objects
     elif section == 'Material':
         dataSet = bpy.data.materials
@@ -175,6 +175,7 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
     else:
         #append command, with added backslashes to fit python filepath formating
 
+        new_datablock = None
 
         old_set = set(dataSet[:])
 
@@ -185,9 +186,10 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
                                 )
 
         new_set = set(dataSet[:]) - old_set
+
         new_datablock = list(new_set)[0]
 
-        if not new_datablock:
+        if new_datablock == None:
             print('-ERR- Failed importing '+section+' "'+target+'" from "'+blendfile+'"')
             result = False
         else:
@@ -199,6 +201,11 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
             o.select_set(True)
 
         bpy.context.view_layer.objects.active = obj_active
+
+        for lib in bpy.data.libraries:
+            if lib.name == os.path.basename(blendfile):
+                print(f'-INF- removing lib {lib}')
+                bpy.data.batch_remove(ids=(lib,))
 
         return result
 
@@ -381,7 +388,9 @@ def get_first_match_from_metadata(metadata, match, exclude=None):
 
     return result
 
-def add_new_sound(context, filepath, offset=0):
+def set_sound_in_scene(filepath, offset=0):
+
+    context = bpy.context
 
     filename = os.path.basename(filepath)
 
@@ -406,6 +415,9 @@ def set_playback_to_audioSync(context):
         print("-INF- set sync_mode to 'AUDIO_SYNC'")
 
 def frame_all_timeline():
+
+    print('-INF- frame_all_timeline()')
+
     for my_area in bpy.context.window.screen.areas:
 
         if my_area.type == 'DOPESHEET_EDITOR':
@@ -420,6 +432,9 @@ def frame_all_timeline():
                         bpy.ops.action.view_all()
 
 def frame_clip_in_sequencer():
+
+    print('-INF- frame_clip_in_sequencer()')
+
     for my_area in bpy.context.window.screen.areas:
 
 
@@ -688,16 +703,18 @@ def stm_00_ffmetadata():
         artist = get_first_match_from_metadata(data_raw['metadata'], match='artist')
         album = get_first_match_from_metadata(data_raw['metadata'], match='album', exclude='artist')
         title = get_first_match_from_metadata(data_raw['metadata'], match='title')
-    else:
-        artist, album, title = '', '', ''
 
     print('artist :', artist)
     print('album :', album)
     print('title :', title)
 
-    obj['title'] = title
-    obj['artist'] = artist
-    obj['album'] = album
+    scn['title'] = title
+    scn['artist'] = artist
+    scn['album'] = album
+
+    scn.title = title if title != '' else os.path.basename(scn.audio_file_path)
+    scn.album = album if scn.album != '' else '[unkown]'
+    scn.artist = artist if artist != '' else '[unkown]'
 
 def stm_01_volume_data():
 
@@ -768,7 +785,7 @@ def stm_03_build_spectrogram():
     fps = bpy.context.scene.render.fps
 
     # generate soundstrip
-    soundstrip = add_new_sound(bpy.context, audioPath, 0)
+    soundstrip = set_sound_in_scene(audioPath, 0)
     duration_frames = soundstrip.frame_final_duration
     duration_seconds = duration_frames/fps
 

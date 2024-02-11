@@ -105,7 +105,13 @@ class STM_PT_spectrogram(Panel):
 
 
         box = layout.box()
-        box.label(text='Audio File :', icon='FILE_SOUND')
+        row = box.row()
+        col1 = row.column()
+        col2 = row.column()
+        col1.label(text='Audio File :', icon='FILE_SOUND')
+        col2.operator('stm.set_sound_in_scene', text='Use in scene', icon='IMPORT')
+        col2.enabled = audio_ok
+
 
         row = box.row(align=True)
         # row.scale_y = 1.5
@@ -163,10 +169,14 @@ class STM_PT_spectrogram(Panel):
         # row.operator('stm.generate_spectrogram', text=info_operator, icon='SHADERFX')
 
 
-        if obj.progress != 0:
-            label = bpy.context.object.progress_label
-            row.prop(bpy.context.object,"progress", text=label)
-            # row.enabled = False
+        if obj:
+            if obj.progress != 0:
+                label = bpy.context.object.progress_label
+                row.prop(bpy.context.object,"progress", text=label)
+                # row.enabled = False
+            else:
+                row.operator('stm.prompt_spectrogram_popup', text=info_operator, icon='SHADERFX', depress=False)
+                row.enabled = audio_ok and stm_ok
         else:
             row.operator('stm.prompt_spectrogram_popup', text=info_operator, icon='SHADERFX', depress=False)
             row.enabled = audio_ok and stm_ok
@@ -477,10 +487,8 @@ class STM_PT_material(Panel):
         do_draw = False
 
         try:
-            obj = bpy.context.active_object
-
-            if obj.modifiers:
-                if any([m.name.startswith('STM_') for m in obj.modifiers]):
+            if context.object in context.selected_objects:
+                if any([m.name.startswith('STM_') for m in context.object.modifiers]):
                     do_draw = True
         except:
             pass
@@ -528,36 +536,75 @@ class STM_PT_material(Panel):
                 raw_texture = obj.modifiers['STM_spectrogram']['Input_2']
 
                 box = layout.box()
-                box.enabled = False
+                # box.enabled = False
+
+
 
                 split = box.split(factor=split_fac)
                 split.scale_y = 1.5
                 col1 = split.column()
                 col2 = split.column()
 
-
                 col1.label(text='Image :')
+
                 row = col2.row(align=True)
+                ccol1 = row.column(align=True)
+                ccol2 = row.column(align=True)
+
+                row = ccol1.row(align=True)
+                row.enabled = False
                 prop_geonode(row, obj.modifiers['STM_spectrogram'], 'Image', label=False)
-                row.operator('stm.open_image', text='', icon='FILE_IMAGE')
+
+                row = ccol2.row(align=True)
+                row.operator('stm.open_image', text='Open', icon='FILE_IMAGE')
+                row.enabled = raw_texture != None
+
+
+
+                split = box.split(factor=split_fac)
+                split.scale_y = 1
+                col1 = split.column()
+                col2 = split.column()
 
                 col1.label(text='Folder :')
+
                 row = col2.row(align=True)
-                row.label(text=f'{raw_texture.filepath}')
-                row.operator('stm.open_image_folder', text='', icon='FILEBROWSER')
+                ccol1 = row.column(align=True)
+                ccol2 = row.column(align=True)
+                ccol2.scale_y = 1.5
 
+                if raw_texture != None:
+                    filepath = os.path.dirname(raw_texture.filepath)
+                else:
+                    filepath = ''
 
+                row = ccol1.row(align=True)
+                row.enabled = False
+                bbox = row.box()
+                bbox.label(text=f'{filepath}')
+
+                row = ccol2.row(align=True)
+                row.operator('stm.open_image_folder', text='Open', icon='FILEBROWSER')
+                row.enabled = raw_texture != None
+
+                split = box.split(factor=split_fac)
+                split.scale_y = 1
+                col1 = split.column()
+                col2 = split.column()
 
 
                 col1.label(text='Resolution :')
 
-                width, height = raw_texture.size
-                col2.label(text=f'{width}x{height} px')
+                resolution = f"{raw_texture.size[0]}x{raw_texture.size[0]}px" if raw_texture != None else ''
+                col2.label(text=resolution)
 
+                split = box.split(factor=split_fac)
+                split.scale_y = 1
+                col1 = split.column()
+                col2 = split.column()
 
                 col1.label(text='File Size :')
-                filesize = os.path.getsize(raw_texture.filepath)
-                filesize = convert_size(filesize)
+                filesize = convert_size(os.path.getsize(raw_texture.filepath)) if raw_texture != None else ''
                 col2.label(text=f'{filesize}')
 
             if obj.material_type == 'custom':

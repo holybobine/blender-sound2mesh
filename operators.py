@@ -12,11 +12,8 @@ from bpy.props import (
 )
 
 import json
-
 import funcs
 from funcs import *
-
-
 
 class STM_OT_hello(bpy.types.Operator):
     """Hello"""
@@ -108,13 +105,20 @@ class STM_OT_reset_spectrogram_settings(Operator):
 
 class STM_OT_add_audio_to_scene(Operator):
     """Apply preset"""
-    bl_idname = "stm.add_audio_to_scene"
-    bl_label = "Add audio to scene"
+    bl_idname = "stm.set_sound_in_scene"
+    bl_label = "Set sound in scene"
     bl_options = {'UNDO'}
 
     def execute(self, context):
 
         print('-INF- add audio to scene')
+
+        set_sound_in_scene(
+            filepath=context.scene.audio_file_path,
+            offset=0
+        )
+
+        frame_clip_in_sequencer()
 
         return {'FINISHED'}
 
@@ -152,7 +156,6 @@ class STM_OT_open_image(Operator):
             print(f'-ERR- can\'t open file "{image_path}"')
 
         return {'FINISHED'}
-
 
 class STM_OT_prompt_spectrogram_popup(Operator):
     """Generate spectrogram"""
@@ -247,14 +250,13 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         return {'FINISHED'}
 
 
-
 Operations = {
     "Retrieve metadata 1/2":stm_00_ffmetadata,
     "Retrieve metadata 2/2":stm_01_volume_data,
     "Generating spectrogram image":stm_02_generate_spectrogram_img,
     "Building spectrogram":stm_03_build_spectrogram,
     "Cleanup":stm_04_cleanup,
-    "Cleanup":stm_05_sleep,
+    "Done !":stm_05_sleep,
 }
 
 class STM_OT_generate_spectrogram_modal(Operator):
@@ -263,86 +265,6 @@ class STM_OT_generate_spectrogram_modal(Operator):
     bl_label = "Generate spectrogram (modal)"
     # bl_options = {'REGISTER', 'UNDO'}
     bl_options = {'UNDO'}
-
-
-    # def draw(self, context):
-    #
-    #     layout = self.layout
-    #     scn = context.scene
-    #
-    #     layout.separator()
-    #
-    #     split = layout.split(factor=0.3)
-    #     col_L = split.column()
-    #     col_R = split.column()
-    #
-    #
-    #     col_L.label(text='Audio file :', icon='FILE_SOUND')
-    #
-    #     box = col_R.box()
-    #     split = box.split(factor=0.2)
-    #     col1 = split.column(align=True)
-    #     col2 = split.column(align=True)
-    #     col1.label(text='Title :')
-    #     col2.label(text=scn.title)
-    #     col1.label(text='Artist :')
-    #     col2.label(text=scn.artist)
-    #     col1.label(text='Album :')
-    #     col2.label(text=scn.album)
-    #     col1.enabled = False
-    #
-    #     layout.separator()
-    #
-    #     split = layout.split(factor=0.3)
-    #     col_L = split.column()
-    #     col_R = split.column(align=True)
-    #
-    #
-    #     col_L.label(text='Spectrogram:', icon='TEXTURE')
-    #
-    #
-    #     row = col_R.row(align=True)
-    #     row.scale_y=1.5
-    #     row.prop_enum(scn, 'resolutionPreset', '1024x512')
-    #     row.prop_enum(scn, 'resolutionPreset', '2048x1024')
-    #     row.prop_enum(scn, 'resolutionPreset', '4096x2048')
-    #     row.prop_enum(scn, 'resolutionPreset', '8192x4096')
-    #     row.prop_enum(scn, 'resolutionPreset', '16384x8192')
-    #     row = col_R.row(align=True)
-    #     row.scale_y=1.5
-    #     row.prop_enum(scn, 'resolutionPreset', 'custom', text='Custom Resolution')
-    #
-    #     if scn.resolutionPreset == 'custom':
-    #         #col = box.column(align=True)
-    #         ccol = col_R.column(align=True)
-    #         ccol.prop(scn, 'userWidth', text='Width')
-    #         ccol.prop(scn, 'userHeight', text='Height')
-    #
-    #     col_R.separator()
-    #
-    #     box = col_R.box()
-    #     row = box.row()
-    #     # row.label(text='Main Settings', icon='OPTIONS')
-    #     row.prop(scn, 'bool_advanced_spectrogram_settings', text='Advanced Settings', icon='TRIA_DOWN' if scn.bool_advanced_spectrogram_settings else 'TRIA_RIGHT', emboss=False)
-    #     row.operator('stm.reset_spectrogram_settings', text='', icon='FILE_REFRESH')
-    #     if scn.bool_advanced_spectrogram_settings:
-    #         split = box.split(factor=0.5)
-    #         col1 = split.column()
-    #         col2 = split.column()
-    #         col1.label(text='Intensity Scale :')
-    #         col2.prop(scn, 'spectro_scale', text='')
-    #         col1.label(text='Frequency Scale :')
-    #         col2.prop(scn, 'spectro_fscale', text='')
-    #         col1.label(text='Color Mode :')
-    #         col2.prop(scn, 'spectro_colorMode', text='')
-    #         col1.label(text='Dynamic Range :')
-    #         col2.prop(scn, 'spectro_drange', text='')
-    #
-    #
-    #     layout.separator()
-
-    # def invoke(self, context, event):
-    #     return context.window_manager.invoke_props_dialog(self, width=350)
 
     interval : bpy.props.FloatProperty(default=0.1)
 
@@ -362,7 +284,7 @@ class STM_OT_generate_spectrogram_modal(Operator):
         if not self.done:
             # print(f"Updating: {self.step+1}/{self.max_step}")
 
-            progress_value = [10,20,35,75,100]
+            progress_value = [10,20,35,75,95, 100]
 
             # context.object.progress = ((self.step+1)/(self.max_step))*100           #update progess bar
             context.object.progress = progress_value[self.step]                     #update progess bar
@@ -528,6 +450,38 @@ class STM_OT_select_stm_in_viewport(Operator):
 
         return {'FINISHED'}
 
+# class STM_OT_add_spectrogram(Operator):
+#     """Add a new spectrogram object"""
+#     bl_idname = "stm.add_spectrogram"
+#     bl_label = ''
+#     bl_options = {'UNDO'}
+#
+#     def execute(self, context):
+#
+#         print('-INF- add spectrogram object')
+#
+#         assetFile = bpy.context.scene.assetFilePath
+#
+#         append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
+#
+#         mesh = bpy.data.meshes.new('STM_spectrogram')
+#         obj = bpy.data.objects.new("STM_spectrogram", mesh)
+#         bpy.context.collection.objects.link(obj)
+#
+#         mod = obj.modifiers.new("STM_spectrogram", 'NODES')
+#         mod.node_group = bpy.data.node_groups['STM_spectrogram']
+#
+#         # mod["Input_12"] = bpy.data.materials['STM_rawTexture']
+#
+#         bpy.ops.object.select_all(action='DESELECT')
+#
+#         obj.select_set(True)
+#         bpy.context.view_layer.objects.active = obj
+#
+#         print('-INF- added spectrogram object <%s>'%obj.name)
+#
+#         return {'FINISHED'}
+
 class STM_OT_add_spectrogram(Operator):
     """Add a new spectrogram object"""
     bl_idname = "stm.add_spectrogram"
@@ -540,16 +494,8 @@ class STM_OT_add_spectrogram(Operator):
 
         assetFile = bpy.context.scene.assetFilePath
 
-        append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
+        obj = append_from_blend_file(assetFile, 'Object', 'STM_spectrogram')
 
-        mesh = bpy.data.meshes.new('STM_spectrogram')
-        obj = bpy.data.objects.new("STM_spectrogram", mesh)
-        bpy.context.collection.objects.link(obj)
-
-        mod = obj.modifiers.new("STM_spectrogram", 'NODES')
-        mod.node_group = bpy.data.node_groups['STM_spectrogram']
-
-        # mod["Input_12"] = bpy.data.materials['STM_rawTexture']
 
         bpy.ops.object.select_all(action='DESELECT')
 
