@@ -364,6 +364,8 @@ class STM_PT_geometry_nodes(Panel):
                     split.label(text='Preset :')
                     split.template_icon_view(context.scene, "presets_eq_curve", show_labels=True, scale=3.0, scale_popup=5.0)
 
+                    prop_geonode(box, obj.modifiers['STM_spectrogram'], 'EQ Curve Factor', label_name='Factor', label=True)
+
                     bbox = box.box()
                     curve = bpy.data.node_groups['STM_spectrogram'].nodes['MACURVE']
                     bbox.template_curve_mapping(
@@ -373,6 +375,8 @@ class STM_PT_geometry_nodes(Panel):
                         brush=False,
                         show_tone=False,
                     )
+
+
 
 
 
@@ -516,9 +520,16 @@ class STM_PT_material(Panel):
                 obj_type = 'waveform'
 
         if obj_type == 'spectrogram':
-            row = layout.row()
-            row.prop(context.object, 'material_type', expand=True)
+
+            raw_texture = obj.modifiers['STM_spectrogram']['Input_2']
+
+            layout.enabled = raw_texture != None
+
+            row = layout.row(align=True)
             row.scale_y = 1.5
+
+            row.prop(context.object, 'material_type', expand=True)
+
 
             split_fac = 0.3
 
@@ -533,7 +544,7 @@ class STM_PT_material(Panel):
                 prop_geonode(split, obj.modifiers['STM_spectrogram'], 'Material', label=False)
 
             if obj.material_type == 'raw':
-                raw_texture = obj.modifiers['STM_spectrogram']['Input_2']
+
 
                 box = layout.box()
                 # box.enabled = False

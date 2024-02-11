@@ -663,6 +663,11 @@ class STM_OT_reset_eq_curve(Operator):
     def execute(self, context):
 
         context.scene.presets_eq_curve = 'flat_5.png'
+        stm_modifier = context.object.modifiers["STM_spectrogram"]
+
+        for i in stm_modifier.node_group.interface.items_tree:
+            if i.name == 'EQ Curve Factor':
+                set_geonode_value(stm_modifier, i, i.default_value)
 
         funcs.apply_eq_curve_preset(self, context)
 
