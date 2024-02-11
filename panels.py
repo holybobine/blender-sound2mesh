@@ -53,7 +53,7 @@ class STM_PT_spectrogram(Panel):
     def draw(self, context):
         layout = self.layout
         scn = context.scene
-
+        obj = context.object
 
 
 
@@ -160,8 +160,16 @@ class STM_PT_spectrogram(Panel):
 
         row = layout.row()
         row.scale_y = 2
-        row.operator('stm.generate_spectrogram', text=info_operator, icon='SHADERFX')
-        row.enabled = audio_ok and stm_ok
+        # row.operator('stm.generate_spectrogram', text=info_operator, icon='SHADERFX')
+
+
+        if obj.progress != 0:
+            label = bpy.context.object.progress_label
+            row.prop(bpy.context.object,"progress", text=label)
+            # row.enabled = False
+        else:
+            row.operator('stm.prompt_spectrogram_popup', text=info_operator, icon='SHADERFX', depress=False)
+            row.enabled = audio_ok and stm_ok
 
 
 
@@ -221,7 +229,7 @@ class STM_PT_geometry_nodes(Panel):
 
                 split = layout.split(factor=0.3)
                 split.label(text='Preset :')
-                split.template_icon_view(context.scene, "presets_spectrogram", show_labels=False, scale=5.0, scale_popup=6.0)
+                split.template_icon_view(context.scene, "presets_spectrogram", show_labels=True, scale=5.0, scale_popup=6.0)
 
                 box = layout.box()
                 box.scale_y = 1.5
@@ -408,7 +416,7 @@ class STM_PT_geometry_nodes(Panel):
 
                 #row.prop(context.scene, 'preset_thumbnails')
                 col1.operator('stm.previous_waveform_style', text='', icon='TRIA_LEFT')
-                col2.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=4.0, scale_popup=8.0)
+                col2.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=4.0, scale_popup=6.0)
                 col3.operator('stm.next_waveform_style', text='', icon='TRIA_RIGHT')
 
 
@@ -567,7 +575,7 @@ class STM_PT_material(Panel):
                 split.label(text='Preset :')
 
                 # col1.prop(context.scene, 'gradient_preset', text='')
-                split.template_icon_view(context.object, "presets_gradient", show_labels=False, scale=5.0, scale_popup=6.0)
+                split.template_icon_view(context.object, "presets_gradient", show_labels=True, scale=5.0, scale_popup=6.0)
 
 
                 box = layout.box()

@@ -154,11 +154,11 @@ class STM_OT_open_image(Operator):
         return {'FINISHED'}
 
 
-class STM_OT_generate_spectrogram(Operator):
+class STM_OT_prompt_spectrogram_popup(Operator):
     """Generate spectrogram"""
-    bl_idname = "stm.generate_spectrogram"
+    bl_idname = "stm.prompt_spectrogram_popup"
     bl_label = "Generate spectrogram"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'UNDO'}
 
 
     def draw(self, context):
@@ -238,89 +238,187 @@ class STM_OT_generate_spectrogram(Operator):
         layout.separator()
 
     def invoke(self, context, event):
-
         return context.window_manager.invoke_props_dialog(self, width=350)
 
     def execute(self, context):
 
-        scn = bpy.context.scene
-
-        audioPath = scn.audio_file_path
-        # outputPath = "C:/tmp/23_spectrogram/___output/"
-        outputPath = scn.outputPath
-
-        ffmpegPath = scn.ffmpegPath
-
-        data_raw = funcs.ffmetadata(ffmpegPath, audioPath)
-        volume_data_raw = funcs.ffvolumedetect(ffmpegPath, audioPath)
-        astats = funcs.ffastats(ffmpegPath, audioPath)
-
-
-        artist, album, title = '', '', ''
-
-        if data_raw != None:
-            artist = funcs.get_first_match_from_metadata(data_raw['metadata'], match='artist')
-            album = funcs.get_first_match_from_metadata(data_raw['metadata'], match='album', exclude='artist')
-            title = funcs.get_first_match_from_metadata(data_raw['metadata'], match='title')
-
-        max_volume_dB = float(volume_data_raw['max_volume'])
-        mean_volume_dB = float(volume_data_raw['mean_volume'])
-        peak_level_dB = round(float(astats['Peak level dB']), 2)
-
-        print('artist :', artist)
-        print('album :', album)
-        print('title :', title)
-        print('max_volume_dB :', peak_level_dB)
-
-
-        w = 0
-        h = 0
-
-        if scn.resolutionPreset == 'custom':
-            w = scn.userWidth
-            h = scn.userHeight
-        else:
-            w = int(scn.resolutionPreset.split('x')[0])
-            h = int(scn.resolutionPreset.split('x')[1])
-
-        spectrogram_filepath = funcs.ffshowspectrumpic(
-            ffmpegPath,
-            audioPath,
-            outputPath,
-            width=w,
-            height=h,
-            scale=scn.spectro_scale,
-            fscale=scn.spectro_fscale,
-            colorMode=scn.spectro_colorMode,
-            drange=scn.spectro_drange,
-            limit=max_volume_dB
-        )
-
-        if spectrogram_filepath is not None:
-
-            peak_brightness = int(funcs.ffsignalstats(ffmpegPath, spectrogram_filepath, 'YMAX'))
-
-            fps = bpy.context.scene.render.fps
-
-            # generate soundstrip
-            soundstrip = add_new_sound(context, audioPath, 0)
-            duration_frames = soundstrip.frame_final_duration
-            duration_seconds = duration_frames/fps
-
-            # generate stm_obj
-            funcs.generate_spectrogram(context.object, audioPath, spectrogram_filepath, duration_seconds, peak_level_dB, peak_brightness)
-
-
-            context.scene.frame_end = duration_frames + fps
-            set_playback_to_audioSync(context)
-            frame_clip_in_sequencer()
-            frame_all_timeline()
-
-
-
-
+        bpy.ops.stm.generate_spectrogram_modal('INVOKE_DEFAULT')
 
         return {'FINISHED'}
+
+
+
+Operations = {
+    "Retrieve metadata 1/2":stm_00_ffmetadata,
+    "Retrieve metadata 2/2":stm_01_volume_data,
+    "Generating spectrogram image":stm_02_generate_spectrogram_img,
+    "Building spectrogram":stm_03_build_spectrogram,
+    "Cleanup":stm_04_cleanup,
+    "Cleanup":stm_05_sleep,
+}
+
+class STM_OT_generate_spectrogram_modal(Operator):
+    """Generate spectrogram"""
+    bl_idname = "stm.generate_spectrogram_modal"
+    bl_label = "Generate spectrogram (modal)"
+    # bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'UNDO'}
+
+
+    # def draw(self, context):
+    #
+    #     layout = self.layout
+    #     scn = context.scene
+    #
+    #     layout.separator()
+    #
+    #     split = layout.split(factor=0.3)
+    #     col_L = split.column()
+    #     col_R = split.column()
+    #
+    #
+    #     col_L.label(text='Audio file :', icon='FILE_SOUND')
+    #
+    #     box = col_R.box()
+    #     split = box.split(factor=0.2)
+    #     col1 = split.column(align=True)
+    #     col2 = split.column(align=True)
+    #     col1.label(text='Title :')
+    #     col2.label(text=scn.title)
+    #     col1.label(text='Artist :')
+    #     col2.label(text=scn.artist)
+    #     col1.label(text='Album :')
+    #     col2.label(text=scn.album)
+    #     col1.enabled = False
+    #
+    #     layout.separator()
+    #
+    #     split = layout.split(factor=0.3)
+    #     col_L = split.column()
+    #     col_R = split.column(align=True)
+    #
+    #
+    #     col_L.label(text='Spectrogram:', icon='TEXTURE')
+    #
+    #
+    #     row = col_R.row(align=True)
+    #     row.scale_y=1.5
+    #     row.prop_enum(scn, 'resolutionPreset', '1024x512')
+    #     row.prop_enum(scn, 'resolutionPreset', '2048x1024')
+    #     row.prop_enum(scn, 'resolutionPreset', '4096x2048')
+    #     row.prop_enum(scn, 'resolutionPreset', '8192x4096')
+    #     row.prop_enum(scn, 'resolutionPreset', '16384x8192')
+    #     row = col_R.row(align=True)
+    #     row.scale_y=1.5
+    #     row.prop_enum(scn, 'resolutionPreset', 'custom', text='Custom Resolution')
+    #
+    #     if scn.resolutionPreset == 'custom':
+    #         #col = box.column(align=True)
+    #         ccol = col_R.column(align=True)
+    #         ccol.prop(scn, 'userWidth', text='Width')
+    #         ccol.prop(scn, 'userHeight', text='Height')
+    #
+    #     col_R.separator()
+    #
+    #     box = col_R.box()
+    #     row = box.row()
+    #     # row.label(text='Main Settings', icon='OPTIONS')
+    #     row.prop(scn, 'bool_advanced_spectrogram_settings', text='Advanced Settings', icon='TRIA_DOWN' if scn.bool_advanced_spectrogram_settings else 'TRIA_RIGHT', emboss=False)
+    #     row.operator('stm.reset_spectrogram_settings', text='', icon='FILE_REFRESH')
+    #     if scn.bool_advanced_spectrogram_settings:
+    #         split = box.split(factor=0.5)
+    #         col1 = split.column()
+    #         col2 = split.column()
+    #         col1.label(text='Intensity Scale :')
+    #         col2.prop(scn, 'spectro_scale', text='')
+    #         col1.label(text='Frequency Scale :')
+    #         col2.prop(scn, 'spectro_fscale', text='')
+    #         col1.label(text='Color Mode :')
+    #         col2.prop(scn, 'spectro_colorMode', text='')
+    #         col1.label(text='Dynamic Range :')
+    #         col2.prop(scn, 'spectro_drange', text='')
+    #
+    #
+    #     layout.separator()
+
+    # def invoke(self, context, event):
+    #     return context.window_manager.invoke_props_dialog(self, width=350)
+
+    interval : bpy.props.FloatProperty(default=0.1)
+
+    def __init__(self):
+        self.step = 0
+        self.timer = None
+        self.done = False
+        self.max_step = None
+
+        self.timer_count = 0 #timer count, need to let a little bit of space between updates otherwise gui will not have time to update
+
+    def modal(self, context, event):
+
+        global Operations
+
+        #update progress bar
+        if not self.done:
+            # print(f"Updating: {self.step+1}/{self.max_step}")
+
+            progress_value = [10,20,35,75,100]
+
+            # context.object.progress = ((self.step+1)/(self.max_step))*100           #update progess bar
+            context.object.progress = progress_value[self.step]                     #update progess bar
+            context.object.progress_label = list(Operations.keys())[self.step]      #update label
+            context.area.tag_redraw()                                               #send update signal
+
+
+        #by running a timer at the same time of our modal operator
+        #we are guaranteed that update is done correctly in the interface
+
+        if event.type == 'TIMER':
+
+            #but wee need a little time off between timers to ensure that blender have time to breath, so we have updated inteface
+            self.timer_count +=1
+            if self.timer_count==10:
+                self.timer_count=0
+
+                if self.done:
+
+                    print("\n------------------         DONE !         ----------------------")
+                    self.step = 0
+                    context.object.progress = 0
+                    context.window_manager.event_timer_remove(self.timer)
+                    context.area.tag_redraw()
+
+                    return {'FINISHED'}
+
+                if self.step < self.max_step:
+
+                    #run step function
+                    list(Operations.values())[self.step]()
+
+                    self.step += 1
+                    if self.step==self.max_step:
+                        self.done=True
+
+                    return {'RUNNING_MODAL'}
+
+        return {'RUNNING_MODAL'}
+
+    def invoke(self, context, event):
+        print("\n------------------ GENERATING SPECTROGRAM ----------------------\n")
+
+        #terermine max step
+        global Operations
+        if self.max_step == None:
+            self.max_step = len(Operations.keys())
+
+        context.window_manager.modal_handler_add(self)
+
+        #run timer
+        self.timer = context.window_manager.event_timer_add(0.05, window=context.window)
+
+
+
+        return {'RUNNING_MODAL'}
 
 class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
     """Select audio file to be used"""
@@ -412,8 +510,6 @@ class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
     def invoke(self, context, event):
 
         return context.window_manager.invoke_props_dialog(self)
-
-
 
 class STM_OT_select_stm_in_viewport(Operator):
     """"""
@@ -527,7 +623,6 @@ class STM_OT_remove_waveform(Operator):
 
         return {'FINISHED'}
 
-
 class STM_OT_apply_gradient_preset(Operator):
     """Apply gradient preset"""
     bl_idname = 'stm.apply_gradient_preset'
@@ -540,7 +635,6 @@ class STM_OT_apply_gradient_preset(Operator):
         apply_gradient_preset(self, context)
 
         return {'FINISHED'}
-
 
 class STM_OT_reset_spectrogram_full(Operator):
     """Reset"""
@@ -628,7 +722,6 @@ class STM_OT_reset_eq_curve(Operator):
 
         return {'FINISHED'}
 
-
 class STM_OT_reset_gradient(Operator):
     """Reset gradient"""
     bl_idname = 'stm.reset_gradient'
@@ -656,8 +749,6 @@ class STM_OT_reset_gradient(Operator):
         cr.elements[1].color = (1,1,1,1)
 
         return {'FINISHED'}
-
-
 
 class THUMB_OT_next_waveform_style(Operator):
     """Tooltip"""
