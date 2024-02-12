@@ -416,9 +416,7 @@ class STM_PT_geometry_nodes(Panel):
                 split = layout.split(factor=split_fac)
                 split.label(text='Style :')
 
-                col = layout.column()
-                col.scale_y = 1.5
-                prop_geonode(col, modifier, 'Object')
+
 
                 gallery_scale = 5.0
 
@@ -437,6 +435,11 @@ class STM_PT_geometry_nodes(Panel):
                 col1.operator('stm.previous_waveform_style', text='', icon='TRIA_LEFT')
                 col2.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=gallery_scale, scale_popup=6.0)
                 col3.operator('stm.next_waveform_style', text='', icon='TRIA_RIGHT')
+
+                split = layout.split(factor=split_fac)
+                split.scale_y = 1.5
+                split.label(text='Object')
+                prop_geonode(split, modifier, 'Object', label=False)
 
 
 

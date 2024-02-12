@@ -862,6 +862,9 @@ def stm_04_cleanup():
     if scn.force_eevee_AO:
         scn.eevee.use_gtao = True
 
+    if scn.disable_eevee_viewport_denoising:
+        scn.eevee.use_taa_reprojection = False
+
 
     set_playback_to_audioSync(bpy.context)
     frame_clip_in_sequencer()

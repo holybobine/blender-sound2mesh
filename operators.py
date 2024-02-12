@@ -302,6 +302,7 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         box = col_R.box()
         box.prop(scn, 'force_standard_view_transform')
         box.prop(scn, 'force_eevee_AO')
+        box.prop(scn, 'disable_eevee_viewport_denoising')
 
         col1.enabled = False
 
