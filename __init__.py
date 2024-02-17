@@ -339,6 +339,15 @@ def register():
             default="on",
             update=set_doExtrude
         )
+    
+    bpy.types.Object.doFlip = bpy.props.EnumProperty(
+            items= (
+                        ("on", "ON", ""),
+                        ("off", "OFF", "")
+                    ),
+            default="off",
+            update=set_doFlip
+        )
 
     bpy.types.Object.showGrid = bpy.props.EnumProperty(
             items= (

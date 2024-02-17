@@ -721,6 +721,10 @@ def set_doExtrude(self, context):
     obj = context.object
     obj.modifiers['STM_spectrogram']['Input_52'] = True if obj.doExtrude == 'on' else False
 
+def set_doFlip(self, context):
+    obj = context.object
+    obj.modifiers['STM_spectrogram']['Socket_1'] = True if obj.doFlip == 'on' else False
+
 def set_showGrid(self, context):
     obj = context.object
     obj.modifiers['STM_spectrogram']['Input_58'] = True if obj.showGrid == 'on' else False

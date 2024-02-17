@@ -69,6 +69,7 @@ class STM_OT_reset_audio_file(Operator):
     """Reset audio file"""
     bl_idname = "stm.reset_audio_file"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Reset audio file"
+    bl_options = {'UNDO'}
 
 
 

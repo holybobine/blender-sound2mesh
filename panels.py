@@ -251,12 +251,14 @@ class STM_PT_geometry_nodes(Panel):
         obj = context.object
         obj_allowed_types = ["MESH","CURVE","EMPTY"]
 
-        layout = layout.box()
+        
         layout.enabled = obj.progress == 0
 
 
         if obj and obj.type in obj_allowed_types:
             if any([m.name.startswith('STM_spectrogram') for m in obj.modifiers]):
+
+                layout = layout.box()
 
                 gn_node_tree = bpy.data.node_groups['STM_spectrogram']
                 exclude_inputs = ['Geometry']
@@ -322,46 +324,52 @@ class STM_PT_geometry_nodes(Panel):
                     row.prop_enum(obj, 'geometry_type', 'plane', icon='MESH_GRID')
                     row.prop_enum(obj, 'geometry_type', 'cylinder', icon='MESH_CYLINDER')
 
+                    if obj.geometry_type == 'plane':
+                        col = box.column(align=True)
+
+                        # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'showGrid')
+
+                        split = col.split(factor=0.495)
+                        row1 = split.row(align=True)
+                        row2 = split.row(align=True)
+                        row1.label(text='Grid')
+                        row2.prop_enum(obj, 'showGrid', 'off')
+                        row2.prop_enum(obj, 'showGrid', 'on')
+
+                        col.separator()
+
+                        # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'doExtrude')
+                        split = col.split(factor=0.495)
+                        col1 = split.column(align=True)
+                        col2 = split.column(align=True)
+                        col1.label(text='Extrude')
+                        row = col2.row(align=True)
+                        row.prop_enum(obj, 'doExtrude', 'off')
+                        row.prop_enum(obj, 'doExtrude', 'on')
+
+                        row1 = col1.row(align=True)
+                        row1.label(text='Base Height')
+                        row2 = col2.row(align=True)
+                        prop_geonode(row2, obj.modifiers['STM_spectrogram'], 'Base Height', label_name='', label=False)
+                        row1.enabled = True if obj.doExtrude == 'on' else False
+                        row2.enabled = True if obj.doExtrude == 'on' else False
+
+                        # col.enabled = True if obj.geometry_type == 'plane' else False
+
+
 
                     col = box.column(align=True)
-
-                    # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'showGrid')
 
                     split = col.split(factor=0.495)
                     row1 = split.row(align=True)
                     row2 = split.row(align=True)
-                    row1.label(text='Grid')
-                    row2.prop_enum(obj, 'showGrid', 'off')
-                    row2.prop_enum(obj, 'showGrid', 'on')
+                    row1.label(text='Flip Spectrogram')
+                    row2.prop_enum(obj, 'doFlip', 'off')
+                    row2.prop_enum(obj, 'doFlip', 'on')
 
                     col.separator()
 
-                    # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'doExtrude')
-                    split = col.split(factor=0.495)
-                    col1 = split.column(align=True)
-                    col2 = split.column(align=True)
-                    col1.label(text='Extrude')
-                    row = col2.row(align=True)
-                    row.prop_enum(obj, 'doExtrude', 'off')
-                    row.prop_enum(obj, 'doExtrude', 'on')
-
-                    row1 = col1.row(align=True)
-                    row1.label(text='Base Height')
-                    row2 = col2.row(align=True)
-                    prop_geonode(row2, obj.modifiers['STM_spectrogram'], 'Base Height', label_name='', label=False)
-                    row1.enabled = True if obj.doExtrude == 'on' else False
-                    row2.enabled = True if obj.doExtrude == 'on' else False
-
-
-
-
-
-
-
-
-                    col.enabled = True if obj.geometry_type == 'plane' else False
-
-                    col = box.column(align=True)
+                    
                     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Resolution X')
                     prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Resolution Y')
 
@@ -416,14 +424,25 @@ class STM_PT_geometry_nodes(Panel):
 
                 modifier = obj.modifiers['STM_waveform']
 
+                layout = self.layout
 
-                split_fac = 0.3
+                split_fac = 0.5
 
+                box = layout.box()
+                box.label(text='Spectrogram Object : ')
+                row = box.row(align=True)
+                row.scale_y = 1.5
+                prop_geonode(row, modifier, 'Object', label=False)
+                row.prop(modifier['Input_16'], 'hide_viewport', text='', invert_checkbox=False)
+                row.prop(modifier['Input_16'], 'hide_render', text='', invert_checkbox=False)
+
+
+                layout = layout.box()
 
                 split = layout.split(factor=split_fac)
-                split.label(text='Style :')
+                split.label(text='Waveform Style :')
 
-
+                
 
                 gallery_scale = 5.0
 
@@ -443,10 +462,8 @@ class STM_PT_geometry_nodes(Panel):
                 col2.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=gallery_scale, scale_popup=6.0)
                 col3.operator('stm.next_waveform_style', text='', icon='TRIA_RIGHT')
 
-                split = layout.split(factor=split_fac)
-                split.scale_y = 1.5
-                split.label(text='Object')
-                prop_geonode(split, modifier, 'Object', label=False)
+                # col = layout.column(align=True)
+                # prop_geonode(col, modifier, 'Follow Spectrogram')
 
 
 
@@ -486,11 +503,9 @@ class STM_PT_geometry_nodes(Panel):
                 prop_geonode(col, modifier, 'Smooth')
                 prop_geonode(col, modifier, 'Smooth Level')
 
-
-
-                col = layout.column()
-                prop_geonode(col, modifier, 'Merge Ends')
-                prop_geonode(col, modifier, 'Threshold')
+                # col = layout.column()
+                # prop_geonode(col, modifier, 'Merge Ends')
+                # prop_geonode(col, modifier, 'Threshold')
 
 
 

@@ -2,7 +2,7 @@ __pycache__
 _misc
 _old
 _exports
-_output
+output
 ffmpeg
 ffmpeg_reverse_engineering
 *.blend1
