@@ -2,14 +2,7 @@ import bpy
 
 from bpy.types import Operator
 from bpy_extras.io_utils import ImportHelper
-from bpy.props import (
-    IntProperty,
-    BoolProperty,
-    StringProperty,
-    CollectionProperty,
-    PointerProperty,
-    EnumProperty,
-)
+from bpy.props import *
 
 import datetime
 import json
@@ -42,7 +35,7 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
         default="*" + ";*".join(bpy.path.extensions_audio),
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
-    )
+    ) # type: ignore
 
     def execute(self, context):
 
@@ -90,6 +83,14 @@ class STM_OT_reset_audio_file(Operator):
         scn.duration_seconds = 0
         scn.duration_format = ''
 
+        scene = context.scene
+        seq = scene.sequence_editor
+
+        if not seq:
+            scene.sequence_editor_create()
+        for strip in seq.sequences:
+            seq.sequences.remove(strip)
+
         funcs.redraw_all_viewports()
 
         return {'FINISHED'}
@@ -123,12 +124,12 @@ class STM_OT_add_audio_to_scene(Operator):
 
         print('-INF- add audio to scene')
 
-        set_sound_in_scene(
+        funcs.set_sound_in_scene(
             filepath=context.scene.audio_file_path,
             offset=0
         )
 
-        frame_clip_in_sequencer()
+        funcs.frame_clip_in_sequencer()
 
         return {'FINISHED'}
 
@@ -272,11 +273,18 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         col_L.label(text='Scene settings :', icon='SCENE_DATA')
 
         box = col_R.box()
-        box.prop(scn, 'force_standard_view_transform')
-        box.prop(scn, 'force_eevee_AO')
-        box.prop(scn, 'disable_eevee_viewport_denoising')
+        row = box.row()
+        row.prop(scn, 'bool_spectrogram_scene_settings', text='Scene Settings', icon='TRIA_DOWN' if scn.bool_spectrogram_scene_settings else 'TRIA_RIGHT', emboss=False)
+        # row.operator('stm.reset_spectrogram_settings', text='', icon='FILE_REFRESH')
+        if scn.bool_spectrogram_scene_settings:
+            box.prop(scn, 'force_standard_view_transform')
+            box.prop(scn, 'force_eevee_AO')
+            box.prop(scn, 'force_eevee_BLOOM')
+            box.prop(scn, 'disable_eevee_viewport_denoising')
 
         col1.enabled = False
+
+        layout.separator()
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=400)
@@ -303,8 +311,6 @@ class STM_OT_generate_spectrogram_modal(Operator):
     bl_label = "Generate spectrogram (modal)"
     # bl_options = {'REGISTER', 'UNDO'}
     bl_options = {'UNDO'}
-
-    interval : bpy.props.FloatProperty(default=0.1)
 
     def __init__(self):
         self.step = 0
@@ -382,48 +388,6 @@ class STM_OT_generate_spectrogram_modal(Operator):
 
         return {'RUNNING_MODAL'}
 
-# class STM_OT_generate_spectrogram_modal(bpy.types.Operator):
-#     """Operator which runs itself from a timer"""
-#     bl_idname = "stm.generate_spectrogram_modal"
-#     bl_label = "Generate spectrogram (modal)"
-#
-#     _timer = None
-#
-#     def modal(self, context, event):
-#         if event.type in {'RIGHTMOUSE', 'ESC'}:
-#             self.cancel(context)
-#             return {'CANCELLED'}
-#
-#         if event.type == 'TIMER':
-#             if context.scene.progress < 100:
-#                 context.scene.progress += 1
-#                 context.scene.progress_time = tac()
-#                 refresh_all_areas()
-#             else:
-#                 print('DONE !')
-#                 self.cancel(context)
-#                 context.scene.progress = 0
-#                 refresh_all_areas()
-#                 context.scene.progress_time = ''
-#
-#                 return {'FINISHED'}
-#
-#
-#         return {'PASS_THROUGH'}
-#
-#     def execute(self, context):
-#
-#         context.scene.progress = 0
-#         tic()
-#
-#         wm = context.window_manager
-#         self._timer = wm.event_timer_add(0.1, window=context.window)
-#         wm.modal_handler_add(self)
-#         return {'RUNNING_MODAL'}
-#
-#     def cancel(self, context):
-#         wm = context.window_manager
-#         wm.event_timer_remove(self._timer)
 
 
 class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
@@ -439,8 +403,8 @@ class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
         context.scene.userAction='createNew'
 
         #if object already selected, and contains 'STM_spectrogram' or 'STM_waveform' modifier, rebuild
-        if check_if_only_active_obj_selected():
-            if check_for_modifier('STM_spectrogram') or check_for_modifier('STM_waveform'):
+        if funcs.check_if_only_active_obj_selected():
+            if funcs.check_for_modifier('STM_spectrogram') or funcs.check_for_modifier('STM_waveform'):
                 context.scene.userAction='rebuild'
 
 
@@ -499,8 +463,8 @@ class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
 
         outputPath = context.scene.outputPath
 
-        dirSize = get_dir_size(outputPath)
-        dirSize = bytesto(dirSize, 'm')
+        dirSize = funcs.get_dir_size(outputPath)
+        dirSize = funcs.bytesto(dirSize, 'm')
 
         col = col_2.column()
 
@@ -582,7 +546,7 @@ class STM_OT_add_waveform(Operator):
 
 
         funcs.append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
-        funcs.append_from_blend_file(assetFile, 'Material', '_waveform')
+        
 
         mesh = bpy.data.meshes.new('STM_waveform')
         obj = bpy.data.objects.new("STM_waveform", mesh)
@@ -592,7 +556,21 @@ class STM_OT_add_waveform(Operator):
         mod.node_group = bpy.data.node_groups['STM_waveform']
 
 
-        mod["Input_15"] = bpy.data.materials['_waveform']
+        mat = funcs.append_from_blend_file(assetFile, 'Material', 'STM_waveform', forceImport=False)
+        if mat == None:
+            mat = bpy.data.materials['STM_waveform']
+        # mat.name = obj.name
+        # mat['STM_object'] = obj
+        # audioPath = context.scene.audio_file_path
+        # audioName = funcs.sanitize_input(os.path.basename(audioPath))
+        # mat.name = f'STM_waveform_{audioName}'
+
+        mod["Input_15"] = mat
+
+        if obj.data.materials:
+            obj.data.materials[0] = mat
+        else:
+            obj.data.materials.append(mat)
 
         if stm_object != None:
             mod["Input_16"] = stm_object
@@ -638,7 +616,7 @@ class STM_OT_apply_gradient_preset(Operator):
 
     def execute(self, context):
 
-        apply_gradient_preset(self, context)
+        funcs.apply_gradient_preset(self, context)
 
         return {'FINISHED'}
 
@@ -727,7 +705,7 @@ class STM_OT_reset_eq_curve(Operator):
 
         for i in stm_modifier.node_group.interface.items_tree:
             if i.name == 'EQ Curve Factor':
-                set_geonode_value(stm_modifier, i, i.default_value)
+                funcs.set_geonode_value(stm_modifier, i, i.default_value)
 
         funcs.apply_eq_curve_preset(self, context)
 

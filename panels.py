@@ -68,9 +68,16 @@ class STM_PT_spectrogram(Panel):
         row.label(text='Spectrogram', icon='SEQ_HISTOGRAM')
         row.operator('stm.add_spectrogram', text='New', icon='ADD')
 
+        spectro_is_selected = False
+
+        if context.object in context.selected_objects:
+            if any([m.name.startswith('STM_spectrogram') for m in context.object.modifiers]):
+                spectro_is_selected = True
+
         row = col.row()
         row.label(text='Waveform', icon='RNDCURVE')
         row.operator('stm.add_waveform', text='New', icon='ADD')
+        row.enabled = spectro_is_selected
 
         # layout.separator()
 
@@ -443,12 +450,13 @@ class STM_PT_geometry_nodes(Panel):
 
 
 
-
-
+                col = layout.column(align=True)
+                col.scale_y = 1.5
+                prop_geonode(col, modifier, 'Offset')
 
                 col = layout.column(align=True)
                 prop_geonode(col, modifier, 'Thickness')
-                prop_geonode(col, modifier, 'Offset')
+                
 
                 col = layout.column()
                 # prop_geonode(col, modifier, 'Resolution Choice')
@@ -649,8 +657,11 @@ class STM_PT_material(Panel):
                 # row.label(text='Main Settings', icon='OPTIONS')
                 row.prop(scn, 'bool_custom_gradient', text='Customize Gradient', icon='TRIA_DOWN' if scn.bool_custom_gradient else 'TRIA_RIGHT', emboss=False)
                 row.operator('stm.reset_gradient', text='', icon='FILE_REFRESH')
+
+                mat = context.object.data.materials[0]
+
                 if scn.bool_custom_gradient:
-                    cr_node = bpy.data.materials['STM_gradient'].node_tree.nodes['STM_gradient']
+                    cr_node = mat.node_tree.nodes['STM_gradient']
                     box.template_color_ramp(cr_node, "color_ramp", expand=False)
 
 
@@ -659,9 +670,24 @@ class STM_PT_material(Panel):
 
             modifier = obj.modifiers['STM_waveform']
 
-            box = layout.box()
-            box.label(text='Waveform mat', icon='RNDCURVE')
+            
 
             col = layout.column()
             col.scale_y = 1.5
             prop_geonode(col, modifier, 'Material')
+
+            # box = layout.box()
+            # box.label(text='Waveform mat', icon='RNDCURVE')
+
+            col = layout.column(align=True)
+
+            mat = context.object.modifiers["STM_waveform"]["Input_15"]
+
+            row = col.row(align=True)
+            row.label(text='Color')
+            prop_geonode(row, modifier, 'waveform_color', label=False)
+
+            row = col.row(align=True)
+            row.label(text='Emission')
+            prop_geonode(row, modifier, 'emission_strength', label=False)
+            

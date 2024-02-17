@@ -17,7 +17,25 @@ def end_time():
     endtime = seconds_to_timestring(time.time() - _start_time)
     return endtime
 
-
+def sanitize_input(input_str):
+    
+    if '.' in input_str:                        # remove extension
+        ext = input_str.split('.')[-1]
+        input_str = input_str[:-len(ext)]
+    
+    allowed = "_- "                             # build filter
+    getVals = list([
+                val for val in input_str if
+                val.isalpha() or 
+                val.isnumeric() or 
+                val in allowed
+            ])
+            
+    result = "".join(getVals)                   # apply filter
+    
+    result = result.replace(" ", "_")           # replace whitespace with "_"
+    
+    return result
 
 def timestring_to_seconds(timestring):
     from datetime import datetime
@@ -516,13 +534,18 @@ def generate_spectrogram(stm_obj, audioPath, imagePath, duration_seconds, max_vo
 
     print('-INF- updating spectrogram')
 
+    audioName = sanitize_input(os.path.basename(audioPath))
+    stm_obj.name = f'STM_{audioName}'
+
 
     assetFile = bpy.context.scene.assetFilePath
 
     append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
 
-    print(f'{stm_obj =}')
-    print(f'{imagePath =}')
+    # print(f'{stm_obj =}')
+    # print(f'{imagePath =}')
+
+    
 
     spectro_image = bpy.data.images.load(imagePath, check_existing=True)
     spectro_image.colorspace_settings.name = "sRGB"
@@ -545,6 +568,13 @@ def generate_spectrogram(stm_obj, audioPath, imagePath, duration_seconds, max_vo
     mat_gradient = get_stm_material(stm_obj, 'STM_gradient')
 
     mat = mat_raw if stm_obj.material_type == 'raw' else mat_gradient if stm_obj.material_type == 'gradient' else stm_obj.material_custom
+    
+    if stm_obj.material_type == 'waveform':
+        pass
+    elif stm_obj.material_type == 'raw':
+        mat.name = f'STM_rawTex_{audioName}'
+    elif stm_obj.material_type == 'gradient':
+        mat.name = f'STM_gradient_{audioName}'
 
     stm_GN["Input_12"] = mat
 
@@ -556,6 +586,8 @@ def generate_spectrogram(stm_obj, audioPath, imagePath, duration_seconds, max_vo
 
     stm_GN.show_viewport = False
     stm_GN.show_viewport = True
+
+    
 
     return True
 
@@ -618,8 +650,7 @@ def apply_eq_curve_preset(self, context):
 
     preset_name = context.scene.presets_eq_curve.replace('.png', '')
     preset = presets[preset_name]
-
-
+    
 
     curve_node = bpy.data.node_groups['STM_spectrogram'].nodes['MACURVE']
     points = curve_node.mapping.curves[0].points
@@ -658,14 +689,19 @@ def is_stm_object_selected():
 def update_stm_material(self, context):
 
     obj = context.object
+    audioPath = context.scene.audio_file_path
+    audioName = sanitize_input(os.path.basename(audioPath))
     assetFile = bpy.context.scene.assetFilePath
     mat = None
 
     if obj.material_type == 'gradient':
         mat = get_stm_material(obj, 'STM_gradient')
+        mat.name = f'STM_gradient_{audioName}'
 
     elif obj.material_type == 'raw':
         mat = get_stm_material(obj, 'STM_rawTexture')
+        mat.name = f'STM_rawTex_{audioName}'
+        
 
     elif obj.material_type == 'custom':
         mat = obj.material_custom
@@ -870,6 +906,9 @@ def stm_04_cleanup():
 
     if scn.force_eevee_AO:
         scn.eevee.use_gtao = True
+        
+    if scn.force_eevee_BLOOM:
+        scn.eevee.use_bloom = True
 
     if scn.disable_eevee_viewport_denoising:
         scn.eevee.use_taa_reprojection = False

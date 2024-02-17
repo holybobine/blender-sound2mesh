@@ -61,7 +61,6 @@ classes = [
     STM_OT_add_audio_to_scene,
     STM_OT_open_image_folder,
     STM_OT_open_image,
-#    STM_OT_prompt_audio_warning,
     STM_OT_prompt_spectrogram_popup,
     STM_OT_generate_spectrogram_modal,
     STM_OT_select_stm_in_viewport,
@@ -116,12 +115,14 @@ def register():
             print('-ERR- %s skipped'%c)
 
 
+    addon_path = os.path.dirname(__file__)
+
     dir_gradient_icons = r'.\icons\icons_gradient_presets'
     dir_stm_icons = r'.\icons\icons_stm_presets'
     dir_eq_icons = r'.\icons\icons_eq_presets'
     dir_waveform_icons = r'.\icons\icons_waveform_style'
 
-    addon_path = os.path.dirname(__file__)
+    
 
     preview_collections["presets_spectrogram"] = bpy.utils.previews.new()
     preview_collections["presets_spectrogram"].images_location = os.path.join(addon_path, dir_stm_icons)
@@ -147,9 +148,9 @@ def register():
             default=os.path.join(addon_path, 'asset_files', 'asset_files_v00.blend')
         )
 
-    bpy.types.Scene.presets_json_file = StringProperty(default=os.path.join(addon_path, 'presets.json'))
+    bpy.types.Scene.presets_json_file = StringProperty(default=os.path.join(addon_path, 'presets_spectrogram.json'))
     bpy.types.Scene.eq_curve_presets_json_file = StringProperty(default=os.path.join(addon_path, 'presets_eq_curve.json'))
-    bpy.types.Scene.gradient_presets_json_file = StringProperty(default=os.path.join(addon_path, 'gradient_presets.json'))
+    bpy.types.Scene.gradient_presets_json_file = StringProperty(default=os.path.join(addon_path, 'presets_gradients.json'))
 
 
     bpy.types.Scene.presets_spectrogram = bpy.props.EnumProperty(
@@ -199,14 +200,12 @@ def register():
 
     bpy.types.Scene.stm_obj_list_index = IntProperty(update=select_obj_from_list)
 
-
     bpy.types.Scene.audio_file_path = StringProperty(name = "", description="path to audio file")
     bpy.types.Scene.audio_filename = StringProperty(name = "", description="audio file")
-#    bpy.types.Object.image_file_path = StringProperty()
-
 
     bpy.types.Scene.force_standard_view_transform = BoolProperty(name='Set scene view tranform to "Standard"', default=True)
     bpy.types.Scene.force_eevee_AO = BoolProperty(name='Enable EEVEE Ambient Occlusion', default=True)
+    bpy.types.Scene.force_eevee_BLOOM = BoolProperty(name='Enable EEVEE Bloom', default=True)
     bpy.types.Scene.disable_eevee_viewport_denoising = BoolProperty(name='Disable EEVEE Viewport Denoising', default=True)
 
     bpy.types.Scene.title = StringProperty()
@@ -220,6 +219,7 @@ def register():
     bpy.types.Scene.stm_object = PointerProperty(name='Spectrogram Object', type=bpy.types.Object)
 
     bpy.types.Scene.bool_advanced_spectrogram_settings = bpy.props.BoolProperty(default=False)
+    bpy.types.Scene.bool_spectrogram_scene_settings = bpy.props.BoolProperty(default=False)
 
     bpy.types.Scene.spectro_scale = bpy.props.EnumProperty(
             items= (
@@ -287,7 +287,7 @@ def register():
     bpy.types.Scene.userWidth = bpy.props.IntProperty(default=4096)
     bpy.types.Scene.userHeight = bpy.props.IntProperty(default=2048)
 
-    bpy.types.Scene.bool_output_path = bpy.props.BoolProperty(default=False)
+    # bpy.types.Scene.bool_output_path = bpy.props.BoolProperty(default=False)
 
     bpy.types.Scene.bool_output_path = bpy.props.EnumProperty(
             items= (
