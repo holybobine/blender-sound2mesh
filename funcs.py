@@ -205,7 +205,7 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
     alreadyExist = dataSet.get(target)
 
     if alreadyExist and not forceImport:
-        print('-INF- import cancelled. '+section+' "'+target+'" already in scene')
+        print('-INF- '+section+' "'+target+'" already in scene, skipping import.')
     else:
         #append command, with added backslashes to fit python filepath formating
 
@@ -245,7 +245,15 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
 
 def ffshowspectrumpic(ffmpegPath, audioPath, outputPath, width=1024, height=512, scale='log', fscale='lin', colorMode='intensity', drange=120, limit=0):
 
-    imagePath = outputPath + os.path.basename(audioPath)+'_%ix%i_%s_%s.png'%(width, height, scale, colorMode)
+    # imagePath = outputPath + os.path.basename(audioPath)+'_%ix%i_%s_%s.png'%(width, height, scale, colorMode)
+    audioName = os.path.basename(audioPath)
+    imageName = f'{audioName}_{width}x{height}_{scale}_{colorMode}.png'
+    imagePath = os.path.join(outputPath, imageName)
+    imagePath = os.path.abspath(imagePath)
+    # imagePath = outputPath + '\\' + imageName
+
+    print(f"{imageName = }")
+    print(f"{imagePath = }")
 
     if os.path.exists(imagePath):
         print('-INF- spectrogram image already exists with these parameters, skipping generation')
@@ -497,12 +505,12 @@ def frame_clip_in_sequencer():
                         bpy.ops.view2d.pan(deltax=0, deltay=125)
                         bpy.ops.view2d.zoom(deltax=0.0, deltay=-0.5, use_cursor_init=False)
 
-def create_new_object(name, coll=bpy.context.scene.collection):
-    mesh = bpy.data.meshes.new(name)
-    obj = bpy.data.objects.new(name, mesh)
-    coll.objects.link( obj )
+# def create_new_object(name, coll=bpy.context.scene.collection):
+#     mesh = bpy.data.meshes.new(name)
+#     obj = bpy.data.objects.new(name, mesh)
+#     coll.objects.link( obj )
 
-    return obj
+#     return obj
 
 def generate_spectrogram(stm_obj, audioPath, imagePath, duration_seconds, max_volume_dB, peak_brightness=0):
 
@@ -514,6 +522,7 @@ def generate_spectrogram(stm_obj, audioPath, imagePath, duration_seconds, max_vo
     append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
 
     print(f'{stm_obj =}')
+    print(f'{imagePath =}')
 
     spectro_image = bpy.data.images.load(imagePath, check_existing=True)
     spectro_image.colorspace_settings.name = "sRGB"

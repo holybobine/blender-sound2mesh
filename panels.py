@@ -2,8 +2,8 @@ import bpy
 import os
 from bpy.types import Panel
 from bpy.types import UIList
-import funcs
-from funcs import *
+from . import funcs
+# from . funcs import *
 
 
 def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, label=True, icon='NONE'):
@@ -623,7 +623,7 @@ class STM_PT_material(Panel):
                 col2 = split.column()
 
                 col1.label(text='File Size :')
-                filesize = convert_size(os.path.getsize(raw_texture.filepath)) if raw_texture != None else ''
+                filesize = funcs.convert_size(os.path.getsize(raw_texture.filepath)) if raw_texture != None else ''
                 col2.label(text=f'{filesize}')
 
             if obj.material_type == 'custom':

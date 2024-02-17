@@ -13,8 +13,9 @@ from bpy.props import (
 
 import datetime
 import json
-import funcs
-from funcs import *
+import os
+from . import funcs
+# from . funcs import *
 
 class STM_OT_hello(bpy.types.Operator):
     """Hello"""
@@ -63,7 +64,7 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
         scn.artist = '[unkown]' if artist == '' else artist
         # scn.duration = str(datetime.timedelta(seconds=round(duration)))
         scn.duration_seconds = duration
-        scn.duration_format = seconds_to_timestring(duration)
+        scn.duration_format = funcs.seconds_to_timestring(duration)
 
         # print(f'{duration = }')
 
@@ -165,35 +166,6 @@ class STM_OT_open_image(Operator):
             print(f'-ERR- can\'t open file "{image_path}"')
 
         return {'FINISHED'}
-
-# class STM_OT_prompt_audio_warning(Operator):
-#     """Generate spectrogram"""
-#     bl_idname = "stm.prompt_audio_warning"
-#     bl_label = "AUDIO WARNING"
-#     bl_options = {'UNDO'}
-#
-#
-#
-#     def draw(self, context):
-#
-#         layout = self.layout
-#         scn = context.scene
-#
-#         col = layout.column(align=True)
-#
-#         col.label(text='The selected audio file is very long.')
-#         col.label(text='Proceed anyway ?')
-#         layout.separator()
-#
-#     def invoke(self, context, event):
-#         return context.window_manager.invoke_props_dialog(self, width=350)
-#
-#     def execute(self, context):
-#
-#         bpy.ops.stm.prompt_spectrogram_popup('INVOKE_DEFAULT')
-#
-#         return {'FINISHED'}
-
 
 class STM_OT_prompt_spectrogram_popup(Operator):
     """Generate spectrogram"""
@@ -317,12 +289,12 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
 
 Operations = {
-    "Retrieve metadata...":stm_00_ffmetadata,
-    "Analyze audio...":stm_01_volume_data,
-    "Generating spectrogram image...":stm_02_generate_spectrogram_img,
-    "Building spectrogram...":stm_03_build_spectrogram,
-    "Cleanup...":stm_04_cleanup,
-    "Done !":stm_05_sleep,
+    "Retrieve metadata...":funcs.stm_00_ffmetadata,
+    "Analyze audio...":funcs.stm_01_volume_data,
+    "Generating spectrogram image...":funcs.stm_02_generate_spectrogram_img,
+    "Building spectrogram...":funcs.stm_03_build_spectrogram,
+    "Cleanup...":funcs.stm_04_cleanup,
+    "Done !":funcs.stm_05_sleep,
 }
 
 class STM_OT_generate_spectrogram_modal(Operator):
@@ -409,6 +381,50 @@ class STM_OT_generate_spectrogram_modal(Operator):
 
 
         return {'RUNNING_MODAL'}
+
+# class STM_OT_generate_spectrogram_modal(bpy.types.Operator):
+#     """Operator which runs itself from a timer"""
+#     bl_idname = "stm.generate_spectrogram_modal"
+#     bl_label = "Generate spectrogram (modal)"
+#
+#     _timer = None
+#
+#     def modal(self, context, event):
+#         if event.type in {'RIGHTMOUSE', 'ESC'}:
+#             self.cancel(context)
+#             return {'CANCELLED'}
+#
+#         if event.type == 'TIMER':
+#             if context.scene.progress < 100:
+#                 context.scene.progress += 1
+#                 context.scene.progress_time = tac()
+#                 refresh_all_areas()
+#             else:
+#                 print('DONE !')
+#                 self.cancel(context)
+#                 context.scene.progress = 0
+#                 refresh_all_areas()
+#                 context.scene.progress_time = ''
+#
+#                 return {'FINISHED'}
+#
+#
+#         return {'PASS_THROUGH'}
+#
+#     def execute(self, context):
+#
+#         context.scene.progress = 0
+#         tic()
+#
+#         wm = context.window_manager
+#         self._timer = wm.event_timer_add(0.1, window=context.window)
+#         wm.modal_handler_add(self)
+#         return {'RUNNING_MODAL'}
+#
+#     def cancel(self, context):
+#         wm = context.window_manager
+#         wm.event_timer_remove(self._timer)
+
 
 class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
     """Select audio file to be used"""
@@ -518,38 +534,6 @@ class STM_OT_select_stm_in_viewport(Operator):
 
         return {'FINISHED'}
 
-# class STM_OT_add_spectrogram(Operator):
-#     """Add a new spectrogram object"""
-#     bl_idname = "stm.add_spectrogram"
-#     bl_label = ''
-#     bl_options = {'UNDO'}
-#
-#     def execute(self, context):
-#
-#         print('-INF- add spectrogram object')
-#
-#         assetFile = bpy.context.scene.assetFilePath
-#
-#         append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
-#
-#         mesh = bpy.data.meshes.new('STM_spectrogram')
-#         obj = bpy.data.objects.new("STM_spectrogram", mesh)
-#         bpy.context.collection.objects.link(obj)
-#
-#         mod = obj.modifiers.new("STM_spectrogram", 'NODES')
-#         mod.node_group = bpy.data.node_groups['STM_spectrogram']
-#
-#         # mod["Input_12"] = bpy.data.materials['STM_rawTexture']
-#
-#         bpy.ops.object.select_all(action='DESELECT')
-#
-#         obj.select_set(True)
-#         bpy.context.view_layer.objects.active = obj
-#
-#         print('-INF- added spectrogram object <%s>'%obj.name)
-#
-#         return {'FINISHED'}
-
 class STM_OT_add_spectrogram(Operator):
     """Add a new spectrogram object"""
     bl_idname = "stm.add_spectrogram"
@@ -562,7 +546,15 @@ class STM_OT_add_spectrogram(Operator):
 
         assetFile = bpy.context.scene.assetFilePath
 
-        obj = append_from_blend_file(assetFile, 'Object', 'STM_spectrogram')
+        # obj = append_from_blend_file(assetFile, 'Object', 'STM_spectrogram', forceImport=True)
+        funcs.append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
+
+        me = bpy.data.meshes.new('STM_spectrogram')
+        obj = bpy.data.objects.new('STM_spectrogram', me)
+        context.collection.objects.link(obj)
+
+        mod = obj.modifiers.new("STM_spectrogram", 'NODES')
+        mod.node_group = bpy.data.node_groups['STM_spectrogram']
 
 
         bpy.ops.object.select_all(action='DESELECT')
@@ -586,11 +578,11 @@ class STM_OT_add_waveform(Operator):
 
         assetFile = bpy.context.scene.assetFilePath
 
-        stm_object = context.object if is_stm_object_selected() else None
+        stm_object = context.object if funcs.is_stm_object_selected() else None
 
 
-        append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
-        append_from_blend_file(assetFile, 'Material', '_waveform')
+        funcs.append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
+        funcs.append_from_blend_file(assetFile, 'Material', '_waveform')
 
         mesh = bpy.data.meshes.new('STM_waveform')
         obj = bpy.data.objects.new("STM_waveform", mesh)
