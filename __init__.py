@@ -76,10 +76,10 @@ classes = [
     STM_OT_hello,
     STM_PT_spectrogram,
     STM_PT_geometry_nodes,
-    STM_PT_geometry_nodes_subs,
-    STM_PT_geometry_nodes_main_settings,
-    STM_PT_geometry_nodes_geometry_settings,
-    STM_PT_geometry_nodes_eq_curve_settings,
+    # STM_PT_geometry_nodes_subs,
+    # STM_PT_geometry_nodes_main_settings,
+    # STM_PT_geometry_nodes_geometry_settings,
+    # STM_PT_geometry_nodes_eq_curve_settings,
     STM_PT_material,
     STM_OT_dummy_op,
     STM_OT_reload_previews,
@@ -102,8 +102,10 @@ def generate_previews(pcoll_name):
     # Generate the thumbnails
     for i, image in enumerate(os.listdir(image_location)):
         if image.endswith(VALID_EXTENSIONS):
-
-            item_name = image.replace('.png', '').replace('_', ' ')
+            
+            item_name = image.replace('.png', '')
+            item_name = item_name.split('-')[1]
+            item_name = item_name.replace('_', ' ')
 
             filepath = os.path.join(image_location, image)
             thumb = pcoll.load(filepath, filepath, 'IMAGE')
@@ -331,9 +333,9 @@ def register():
 
     bpy.types.Object.geometry_type = bpy.props.EnumProperty(
             items= (
-                        ('plane', "Plane", "", 'MESH_GRID', 1),
-                        ('curve', "Curve", "", 'CURVE_DATA', 2),
-                        ('cylinder', "Cylinder", "", 'MESH_CYLINDER', 3),
+                        ('plane', "Plane", ""),
+                        ('curve', "Curve", "",),
+                        ('cylinder', "Cylinder", ""),
                         
                     ),
             description = "Choose geometry type for the spectrogram",

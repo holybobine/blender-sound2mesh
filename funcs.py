@@ -109,6 +109,7 @@ def apply_spectrogram_preset(self, context):
         presets=json.load(f)
 
         p = bpy.context.scene.presets_spectrogram.replace('.png', '')
+        p = p.split('-')[1]
 
 
     preset = presets[p]["preset"]
@@ -129,6 +130,7 @@ def apply_spectrogram_preset(self, context):
         'Material',
         'max_volume_dB',
         'max_intensity',
+        'geometryType',
     ]
 
     for i in stm_modifier.node_group.interface.items_tree:
@@ -168,6 +170,13 @@ def reset_spectrogram_values(resetAll=False, values=[]):
         'Material',
         'max_volume_dB',
         'max_intensity',
+        'geometryType',
+        'showGrid',
+        'doExtrude',
+        'Base Height',
+        'Curve',
+        'Alignment',
+        'Flip',
     ]
 
     stm_modifier = bpy.context.object.modifiers['STM_spectrogram']
@@ -602,6 +611,7 @@ def apply_gradient_preset(self, context):
 
         # p = scn.gradient_preset
         p = context.object.presets_gradient.replace('.png', '')
+        p = p.split('-')[1]
         preset = presets[p]
 
         mat_gradient = None
@@ -642,13 +652,14 @@ def apply_gradient_preset(self, context):
     # funcs.apply_spectrogram_preset(values)
 
 def apply_eq_curve_preset(self, context):
-    print('-INF- reset STM curve')
+    print('-INF- apply eq curve preset')
 
     with open(r'%s'%bpy.context.scene.eq_curve_presets_json_file,'r') as f:
         presets=json.load(f)
 
 
     preset_name = context.scene.presets_eq_curve.replace('.png', '')
+    preset_name = preset_name.split('-')[1]
     preset = presets[preset_name]
     
 
@@ -737,7 +748,7 @@ def set_waveform_style(self, context):
 
 def set_curveAlignment(self, context):
     obj = context.object
-    obj.modifiers['STM_spectrogram']['Socket_5'] = True if obj.curveAlignment == '' else False
+    obj.modifiers['STM_spectrogram']['Socket_5'] = True if obj.curveAlignment == 'edge' else False
 
 def set_waveform_resolution_choice(self, context):
     obj = context.object
