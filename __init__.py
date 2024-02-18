@@ -67,6 +67,7 @@ classes = [
     STM_OT_add_waveform,
     STM_OT_add_spectrogram,
     STM_OT_remove_waveform,
+    STM_OT_apply_spectrogram_preset,
     STM_OT_reset_spectrogram_full,
     STM_OT_reset_spectrogram_main_settings,
     STM_OT_reset_spectrogram_geometry_values,
@@ -75,11 +76,17 @@ classes = [
     STM_OT_hello,
     STM_PT_spectrogram,
     STM_PT_geometry_nodes,
+    STM_PT_geometry_nodes_subs,
+    STM_PT_geometry_nodes_main_settings,
+    STM_PT_geometry_nodes_geometry_settings,
+    STM_PT_geometry_nodes_eq_curve_settings,
     STM_PT_material,
     STM_OT_dummy_op,
     STM_OT_reload_previews,
     THUMB_OT_next_waveform_style,
     THUMB_OT_previous_waveform_style,
+    THUMB_OT_next_spectrogram_style,
+    THUMB_OT_previous_spectrogram_style,
 ]
 
 
@@ -158,7 +165,7 @@ def register():
     bpy.types.Scene.presets_spectrogram = bpy.props.EnumProperty(
             name='presets_spectrogram',
             items=generate_previews('presets_spectrogram'),
-            update=apply_spectrogram_preset
+            # update=apply_spectrogram_preset
         )
     bpy.types.Object.presets_gradient = bpy.props.EnumProperty(
             name='presets_gradient',
@@ -324,9 +331,10 @@ def register():
 
     bpy.types.Object.geometry_type = bpy.props.EnumProperty(
             items= (
-                        ('plane', "Plane", ""),
-                        ('cylinder', "Cylinder", ""),
-                        ('curve', "Curve", "")
+                        ('plane', "Plane", "", 'MESH_GRID', 1),
+                        ('curve', "Curve", "", 'CURVE_DATA', 2),
+                        ('cylinder', "Cylinder", "", 'MESH_CYLINDER', 3),
+                        
                     ),
             description = "Choose geometry type for the spectrogram",
             name = "Geometry type",

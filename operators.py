@@ -647,6 +647,23 @@ class STM_OT_apply_gradient_preset(Operator):
 
         return {'FINISHED'}
 
+class STM_OT_apply_spectrogram_preset(Operator):
+    """Reset"""
+    bl_idname = 'stm.apply_spectrogram_preset'
+    bl_label='Apply'
+
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        
+        preset = context.scene.presets_spectrogram
+        print(f'-INF- apply spectrogram preset "{preset}"')
+
+        funcs.apply_spectrogram_preset(self, context)
+
+
+        return {'FINISHED'}
+
 class STM_OT_reset_spectrogram_full(Operator):
     """Reset"""
     bl_idname = 'stm.reset_spectrogram_full'
@@ -658,8 +675,6 @@ class STM_OT_reset_spectrogram_full(Operator):
 
         funcs.reset_spectrogram_values(resetAll=True)
         context.scene.presets_eq_curve = 'flat_5.png'
-
-        funcs.apply_eq_curve_preset(self, context)
 
         context.object.showGrid = 'on'
         context.object.doExtrude = 'on'
@@ -800,6 +815,45 @@ class THUMB_OT_previous_waveform_style(Operator):
             idx = len(items)-1
 
         context.object.presets_waveform_style = items[idx]
+
+
+        return {'FINISHED'}
+    
+
+class THUMB_OT_next_spectrogram_style(Operator):
+    """Tooltip"""
+    bl_idname = "stm.next_spectrogram_style"
+    bl_label = "Move to next item in property list"
+
+    def execute(self, context):
+
+        items = [item.identifier for item in context.scene.bl_rna.properties['presets_spectrogram'].enum_items]
+        idx = items.index(context.scene.presets_spectrogram)
+
+        idx += 1
+        if idx == len(items):
+            idx = 0
+
+        context.scene.presets_spectrogram = items[idx]
+
+
+        return {'FINISHED'}
+
+class THUMB_OT_previous_spectrogram_style(Operator):
+    """Tooltip"""
+    bl_idname = "stm.previous_spectrogram_style"
+    bl_label = "Move to previous item in property list"
+
+    def execute(self, context):
+
+        items = [item.identifier for item in context.scene.bl_rna.properties['presets_spectrogram'].enum_items]
+        idx = items.index(context.scene.presets_spectrogram)
+
+        idx -= 1
+        if idx < 0:
+            idx = len(items)-1
+
+        context.scene.presets_spectrogram = items[idx]
 
 
         return {'FINISHED'}
