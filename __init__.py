@@ -76,6 +76,8 @@ classes = [
     STM_PT_spectrogram,
     STM_PT_geometry_nodes,
     STM_PT_material,
+    STM_OT_dummy_op,
+    STM_OT_reload_previews,
     THUMB_OT_next_waveform_style,
     THUMB_OT_previous_waveform_style,
 ]
@@ -145,7 +147,7 @@ def register():
             subtype="DIR_PATH"
         )
     bpy.types.Scene.assetFilePath = StringProperty(
-            default=os.path.join(addon_path, 'asset_files', 'asset_files_v00.blend')
+            default=os.path.join(addon_path, 'asset_files', 'asset_files_v07.blend')
         )
 
     bpy.types.Scene.presets_json_file = StringProperty(default=os.path.join(addon_path, 'presets_spectrogram.json'))
@@ -323,7 +325,8 @@ def register():
     bpy.types.Object.geometry_type = bpy.props.EnumProperty(
             items= (
                         ('plane', "Plane", ""),
-                        ('cylinder', "Cylinder", "")
+                        ('cylinder', "Cylinder", ""),
+                        ('curve', "Curve", "")
                     ),
             description = "Choose geometry type for the spectrogram",
             name = "Geometry type",
@@ -338,6 +341,15 @@ def register():
                     ),
             default="on",
             update=set_doExtrude
+        )
+    
+    bpy.types.Object.curveAlignment = bpy.props.EnumProperty(
+            items= (
+                        ("center", "CENTER", ""),
+                        ("edge", "EDGE", "")
+                    ),
+            default="center",
+            update=set_curveAlignment
         )
     
     bpy.types.Object.doFlip = bpy.props.EnumProperty(

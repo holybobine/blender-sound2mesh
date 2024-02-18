@@ -715,7 +715,7 @@ def update_stm_material(self, context):
 
 def set_geometry_type(self, context):
     obj = context.object
-    obj.modifiers['STM_spectrogram']['Input_48'] = True if obj.geometry_type == 'cylinder' else False
+    obj.modifiers['STM_spectrogram']['Socket_4'] = 1 if obj.geometry_type == 'cylinder' else 2 if obj.geometry_type == 'curve' else 0
 
 def set_doExtrude(self, context):
     obj = context.object
@@ -734,6 +734,10 @@ def set_waveform_style(self, context):
     style = obj.waveform_style
     style_arr = ['line', 'dots', 'plane', 'cubes', 'tubes', 'zigzag', 'zigzag_smooth']
     obj.modifiers['STM_waveform']['Input_8'] = style_arr.index(style)
+
+def set_curveAlignment(self, context):
+    obj = context.object
+    obj.modifiers['STM_spectrogram']['Socket_5'] = True if obj.curveAlignment == '' else False
 
 def set_waveform_resolution_choice(self, context):
     obj = context.object

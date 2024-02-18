@@ -23,6 +23,32 @@ class STM_OT_hello(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class STM_OT_dummy_op(bpy.types.Operator):
+    """"""
+    bl_idname = 'stm.dummy'
+    bl_label=''
+
+
+    def execute(self, context):
+        print('dummy')
+
+
+        return {'FINISHED'}
+    
+class STM_OT_reload_previews(bpy.types.Operator):
+    """"""
+    bl_idname = 'stm.reload_previews'
+    bl_label=''
+
+
+    def execute(self, context):
+        print('-INF- reload previews')
+
+        generate_previews()
+
+
+        return {'FINISHED'}
+
 class STM_OT_import_audio_file(Operator, ImportHelper):
     """Select an audio file to import"""
     bl_idname = "stm.import_audio_file"  # important since its how bpy.ops.import_test.some_data is constructed

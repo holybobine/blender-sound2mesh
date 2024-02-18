@@ -56,11 +56,15 @@ class STM_PT_spectrogram(Panel):
         obj = context.object
 
 
+        row = layout.row()
+        row.operator('stm.reload_previews', text='Reload Previews', icon='FILE_REFRESH')
 
 
         box = layout.box()
 
         # box.label(text='1. Add STM object :', icon='NONE')
+
+        
 
         col = box.column()
         col.scale_y = 1.2
@@ -323,6 +327,7 @@ class STM_PT_geometry_nodes(Panel):
                     row.scale_y = 2
                     row.prop_enum(obj, 'geometry_type', 'plane', icon='MESH_GRID')
                     row.prop_enum(obj, 'geometry_type', 'cylinder', icon='MESH_CYLINDER')
+                    row.prop_enum(obj, 'geometry_type', 'curve', icon='CURVE_DATA')
 
                     if obj.geometry_type == 'plane':
                         col = box.column(align=True)
@@ -357,15 +362,28 @@ class STM_PT_geometry_nodes(Panel):
                         # col.enabled = True if obj.geometry_type == 'plane' else False
 
 
+                    if obj.geometry_type == 'cylinder':
+                        col = box.column(align=True)
 
-                    col = box.column(align=True)
+                        split = col.split(factor=0.495)
+                        row1 = split.row(align=True)
+                        row2 = split.row(align=True)
+                        row1.label(text='Flip Spectrogram')
+                        row2.prop_enum(obj, 'doFlip', 'off')
+                        row2.prop_enum(obj, 'doFlip', 'on')
 
-                    split = col.split(factor=0.495)
-                    row1 = split.row(align=True)
-                    row2 = split.row(align=True)
-                    row1.label(text='Flip Spectrogram')
-                    row2.prop_enum(obj, 'doFlip', 'off')
-                    row2.prop_enum(obj, 'doFlip', 'on')
+                    if obj.geometry_type == 'curve':
+                        col = box.column(align=True)
+                        col.scale_y = 1.5
+                        prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Curve')
+
+                        col = box.column(align=True)
+                        split = col.split(factor=0.495)
+                        row1 = split.row(align=True)
+                        row2 = split.row(align=True)
+                        row1.label(text='Alignement')
+                        row2.prop_enum(obj, 'curveAlignment', 'center')
+                        row2.prop_enum(obj, 'curveAlignment', 'edge')
 
                     col.separator()
 
@@ -431,10 +449,28 @@ class STM_PT_geometry_nodes(Panel):
                 box = layout.box()
                 box.label(text='Spectrogram Object : ')
                 row = box.row(align=True)
+                row.scale_x = 1
                 row.scale_y = 1.5
                 prop_geonode(row, modifier, 'Object', label=False)
-                row.prop(modifier['Input_16'], 'hide_viewport', text='', invert_checkbox=False)
-                row.prop(modifier['Input_16'], 'hide_render', text='', invert_checkbox=False)
+
+                if modifier['Input_16'] != None:
+                    row.prop(modifier['Input_16'], 'hide_viewport', text='', invert_checkbox=False)
+                    row.prop(modifier['Input_16'], 'hide_render', text='', invert_checkbox=False)
+                else:
+                    rrow = row.row(align=True)
+                    rrow.operator('stm.dummy', text='', icon='RESTRICT_VIEW_OFF')
+                    rrow.operator('stm.dummy', text='', icon='RESTRICT_RENDER_OFF')
+                    rrow.enabled=False
+
+                row = box.row(align=True)
+                prop_geonode(row, modifier, 'Follow Spectrogram')
+
+                
+                # box.prop(modifier, '["Socket_5"]')
+                # box.prop_enum(modifier, '["Socket_5"]', 'True')
+
+                # bpy.data.objects["STM_waveform"].modifiers["STM_waveform"]["Socket_5"]
+                    
 
 
                 layout = layout.box()
@@ -473,6 +509,12 @@ class STM_PT_geometry_nodes(Panel):
 
                 col = layout.column(align=True)
                 prop_geonode(col, modifier, 'Thickness')
+
+                if modifier['Input_16'] != None:
+                    if modifier['Input_16'].modifiers['STM_spectrogram']['Socket_4'] == 1:
+                        if modifier['Input_8'] == 3 or modifier['Input_8'] == 4:
+                            
+                                prop_geonode(col, modifier, 'Bar Height')
                 
 
                 col = layout.column()
@@ -691,18 +733,14 @@ class STM_PT_material(Panel):
             col.scale_y = 1.5
             prop_geonode(col, modifier, 'Material')
 
-            # box = layout.box()
-            # box.label(text='Waveform mat', icon='RNDCURVE')
 
-            col = layout.column(align=True)
+            col = layout.column()
 
-            mat = context.object.modifiers["STM_waveform"]["Input_15"]
-
-            row = col.row(align=True)
+            row = col.row()
             row.label(text='Color')
             prop_geonode(row, modifier, 'waveform_color', label=False)
 
-            row = col.row(align=True)
+            row = col.row()
             row.label(text='Emission')
             prop_geonode(row, modifier, 'emission_strength', label=False)
             

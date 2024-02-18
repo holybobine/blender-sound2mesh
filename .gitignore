@@ -2,6 +2,7 @@ __pycache__
 _misc
 _old
 _exports
+asset_files/_old
 output
 ffmpeg
 ffmpeg_reverse_engineering
