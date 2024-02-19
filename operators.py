@@ -44,7 +44,7 @@ class STM_OT_reload_previews(bpy.types.Operator):
     def execute(self, context):
         print('-INF- reload previews')
 
-        generate_previews()
+        funcs.generate_previews()
 
 
         return {'FINISHED'}
@@ -142,7 +142,7 @@ class STM_OT_reset_spectrogram_settings(Operator):
         return {'FINISHED'}
 
 class STM_OT_add_audio_to_scene(Operator):
-    """Apply preset"""
+    """Set sound in scene"""
     bl_idname = "stm.set_sound_in_scene"
     bl_label = "Set sound in scene"
     bl_options = {'UNDO'}
@@ -161,9 +161,9 @@ class STM_OT_add_audio_to_scene(Operator):
         return {'FINISHED'}
 
 class STM_OT_open_image_folder(Operator):
-    """Apply preset"""
+    """Open image folder"""
     bl_idname = "stm.open_image_folder"
-    bl_label = "Open image folder"
+    bl_label = ""
     bl_options = {'UNDO'}
 
     def execute(self, context):
@@ -179,9 +179,9 @@ class STM_OT_open_image_folder(Operator):
         return {'FINISHED'}
 
 class STM_OT_open_image(Operator):
-    """Apply preset"""
+    """Open image"""
     bl_idname = "stm.open_image"
-    bl_label = "Open image"
+    bl_label = ""
     bl_options = {'UNDO'}
 
     def execute(self, context):
@@ -637,7 +637,7 @@ class STM_OT_remove_waveform(Operator):
 class STM_OT_apply_gradient_preset(Operator):
     """Apply gradient preset"""
     bl_idname = 'stm.apply_gradient_preset'
-    bl_label='Apply gradient preset'
+    bl_label=''
 
     bl_options = {'UNDO'}
 
@@ -648,9 +648,9 @@ class STM_OT_apply_gradient_preset(Operator):
         return {'FINISHED'}
 
 class STM_OT_apply_spectrogram_preset(Operator):
-    """Reset"""
+    """Apply spectrogram preset"""
     bl_idname = 'stm.apply_spectrogram_preset'
-    bl_label='Apply'
+    bl_label=''
 
     bl_options = {'UNDO'}
 
@@ -665,9 +665,9 @@ class STM_OT_apply_spectrogram_preset(Operator):
         return {'FINISHED'}
 
 class STM_OT_reset_spectrogram_full(Operator):
-    """Reset"""
+    """Reset All Settings"""
     bl_idname = 'stm.reset_spectrogram_full'
-    bl_label='Reset'
+    bl_label=''
 
     bl_options = {'UNDO'}
 
@@ -683,7 +683,7 @@ class STM_OT_reset_spectrogram_full(Operator):
         return {'FINISHED'}
 
 class STM_OT_reset_spectrogram_main_settings(Operator):
-    """Reset main settings"""
+    """Reset Main Settings"""
     bl_idname = 'stm.reset_spectrogram_main_settings'
     bl_label=''
 
@@ -704,7 +704,7 @@ class STM_OT_reset_spectrogram_main_settings(Operator):
         return {'FINISHED'}
 
 class STM_OT_reset_spectrogram_geometry_values(Operator):
-    """Reset geometry values"""
+    """Reset Geometry Settings"""
     bl_idname = 'stm.reset_spectrogram_geometry_values'
     bl_label=''
 
@@ -733,9 +733,9 @@ class STM_OT_reset_spectrogram_geometry_values(Operator):
         return {'FINISHED'}
 
 class STM_OT_reset_eq_curve(Operator):
-    """Apply EQ curve preset"""
+    """Reset EQ curve Settings"""
     bl_idname = 'stm.reset_stm_curve'
-    bl_label='Reset STM curve'
+    bl_label=''
 
     bl_options = {'UNDO'}
 
@@ -821,9 +821,9 @@ class THUMB_OT_previous_waveform_style(Operator):
     
 
 class THUMB_OT_next_spectrogram_style(Operator):
-    """Tooltip"""
+    """Next preset"""
     bl_idname = "stm.next_spectrogram_style"
-    bl_label = "Move to next item in property list"
+    bl_label = ""
 
     def execute(self, context):
 
@@ -840,9 +840,9 @@ class THUMB_OT_next_spectrogram_style(Operator):
         return {'FINISHED'}
 
 class THUMB_OT_previous_spectrogram_style(Operator):
-    """Tooltip"""
+    """Previous preset"""
     bl_idname = "stm.previous_spectrogram_style"
-    bl_label = "Move to previous item in property list"
+    bl_label = ""
 
     def execute(self, context):
 

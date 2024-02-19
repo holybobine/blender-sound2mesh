@@ -150,7 +150,7 @@ def apply_waveform_style(self, context):
     print('-INF- apply GN preset')
 
 
-    style = context.object.presets_waveform_style.split('_')[0]
+    style = context.object.presets_waveform_style.split('-')[0]
 
     stm_modifier = context.object.modifiers['STM_waveform']
     stm_modifier['Input_8'] = int(style)
@@ -614,12 +614,18 @@ def apply_gradient_preset(self, context):
         p = p.split('-')[1]
         preset = presets[p]
 
+
+        update_stm_material(self, context)
+
         mat_gradient = None
 
         for m in bpy.data.materials:
             if m.get('STM_material_type') and m.get('STM_object'):
                 if m['STM_material_type'] == 'STM_gradient' and m['STM_object'] == context.object:
                     mat_gradient = m
+        
+        # if mat_gradient == None:
+        #     mat_gradient = get_stm_material(context.object, 'STM_gradient')
 
         cr_node = mat_gradient.node_tree.nodes['STM_gradient']
         cr = cr_node.color_ramp
