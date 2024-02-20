@@ -2,6 +2,7 @@ import bpy
 import os
 from bpy.types import Panel
 from bpy.types import UIList
+import textwrap
 from . import funcs
 # from . funcs import *
 
@@ -32,6 +33,23 @@ def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, 
         # )
 
         row.enabled = enabled
+
+
+ 
+def _label_multiline(context, text, parent, icon='NONE'):
+    chars = int(context.region.width / 8)   # 7 pix on 1 character
+    wrapper = textwrap.TextWrapper(width=chars)
+    text_lines = wrapper.wrap(text=text)
+
+    if icon != 'NONE':
+        row = parent.row()
+        row.label(text='', icon=icon)
+        col = row.column(align=True)
+    else:
+        col = parent.column(align=True)
+
+    for text_line in text_lines:
+        col.label(text=text_line)
 
 class STM_PT_spectrogram(Panel):
     bl_label = "Sound To Mesh"
@@ -405,6 +423,23 @@ class STM_PT_geometry_nodes(Panel):
                     col1.label(text='')
                     prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Follow Curve', label_name='Follow Curve')
 
+                    split = box.split(factor=split_fac)
+                    col1 = split.column(align=True)
+                    col1.alignment = 'RIGHT'
+                    col2 = split.column(align=True)
+                    col1.label(text='Extrude')
+                    row = col2.row(align=True)
+                    row.prop_enum(obj, 'doExtrude', 'off')
+                    row.prop_enum(obj, 'doExtrude', 'on')
+
+                    row1 = col1.row(align=True)
+                    row1.alignment = 'RIGHT'
+                    row1.label(text='Height')
+                    row2 = col2.row(align=True)
+                    prop_geonode(row2, obj.modifiers['STM_spectrogram'], 'Base Height', label_name='', label=False)
+                    row1.enabled = True if obj.doExtrude == 'on' else False
+                    row2.enabled = True if obj.doExtrude == 'on' else False
+
                 if obj.geometry_type == 'cylinder':
 
                     split = box.split(factor=split_fac)
@@ -563,7 +598,7 @@ class STM_PT_geometry_nodes(Panel):
                 split_fac = 0.5
 
                 box = layout.box()
-                box.label(text='Spectrogram Object : ')
+                box.label(text='Spectrogram Object')
                 row = box.row(align=True)
                 row.scale_x = 1
                 row.scale_y = 1.5
@@ -578,8 +613,20 @@ class STM_PT_geometry_nodes(Panel):
                     rrow.operator('stm.dummy', text='', icon='RESTRICT_RENDER_OFF')
                     rrow.enabled=False
 
-                row = box.row(align=True)
-                prop_geonode(row, modifier, 'Follow Spectrogram')
+
+                stm_ok = False
+
+                if modifier['Input_16']:
+                    if modifier['Input_16'].modifiers:
+                        if modifier['Input_16'].modifiers.get('STM_spectrogram'):
+                            stm_ok = True
+
+                if not stm_ok:
+                    bbox = box.box()
+                    _label_multiline(context, 'Select spectrogram object', bbox, icon='ERROR')
+                # else:
+                #     bbox = box.box()
+                #     _label_multiline(context, 'Spectrogram ok !', bbox, icon='CHECKBOX_HLT')
 
                 
                 # box.prop(modifier, '["Socket_5"]')
@@ -590,6 +637,7 @@ class STM_PT_geometry_nodes(Panel):
 
 
                 layout = layout.box()
+                layout.enabled = stm_ok
 
                 split = layout.split(factor=split_fac)
                 split.label(text='Waveform Style :')
@@ -617,6 +665,9 @@ class STM_PT_geometry_nodes(Panel):
                 # col = layout.column(align=True)
                 # prop_geonode(col, modifier, 'Follow Spectrogram')
 
+                col = layout.column(align=True)
+                prop_geonode(col, modifier, 'Follow Spectrogram')
+
 
 
                 col = layout.column(align=True)
@@ -625,8 +676,9 @@ class STM_PT_geometry_nodes(Panel):
 
                 col = layout.column(align=True)
                 prop_geonode(col, modifier, 'Thickness')
+                
 
-                if modifier['Input_16'] != None:
+                if stm_ok:
                     if modifier['Input_16'].modifiers['STM_spectrogram']['Socket_4'] == 1:
                         if modifier['Input_8'] == 3 or modifier['Input_8'] == 4:
                             
@@ -656,6 +708,12 @@ class STM_PT_geometry_nodes(Panel):
                 row2 = col2.row(align=True)
                 prop_geonode(row2, modifier, 'Resolution', label_name='', label=False)
                 row2.enabled = True if obj.waveform_resolution_choice == 'custom' else False
+
+                if stm_ok:
+                    if modifier['Input_17']:
+                        if modifier['Input_16'].modifiers['STM_spectrogram']['Input_4'] < modifier['Input_2'] :
+                            box = col.box()
+                            _label_multiline(context, 'Resolution is greater than spectrogram resolution', box, icon='ERROR')
 
                 col = layout.column(align=True)
                 prop_geonode(col, modifier, 'Smooth')
