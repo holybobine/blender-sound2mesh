@@ -67,6 +67,7 @@ classes = [
     STM_OT_add_waveform,
     STM_OT_add_spectrogram,
     STM_OT_remove_waveform,
+    STM_OT_spectrogram_preset_popup,
     STM_OT_apply_spectrogram_preset,
     STM_OT_reset_spectrogram_full,
     STM_OT_reset_spectrogram_main_settings,
@@ -87,6 +88,7 @@ classes = [
     THUMB_OT_previous_waveform_style,
     THUMB_OT_next_spectrogram_style,
     THUMB_OT_previous_spectrogram_style,
+    # STM_UL_presets_spectrogram,
 ]
 
 
@@ -156,7 +158,7 @@ def register():
             subtype="DIR_PATH"
         )
     bpy.types.Scene.assetFilePath = StringProperty(
-            default=os.path.join(addon_path, 'asset_files', 'asset_files_v07.blend')
+            default=os.path.join(addon_path, 'asset_files', 'asset_files_v35.blend')
         )
 
     bpy.types.Scene.presets_json_file = StringProperty(default=os.path.join(addon_path, 'presets_spectrogram.json'))
@@ -165,7 +167,7 @@ def register():
 
 
     bpy.types.Scene.presets_spectrogram = bpy.props.EnumProperty(
-            name='presets_spectrogram',
+            name='Choose a preset',
             items=generate_previews('presets_spectrogram'),
             # update=apply_spectrogram_preset
         )
@@ -333,9 +335,10 @@ def register():
 
     bpy.types.Object.geometry_type = bpy.props.EnumProperty(
             items= (
-                        ('plane', "Plane", ""),
-                        ('curve', "Curve", "",),
-                        ('cylinder', "Cylinder", ""),
+                        ('plane', "Plane", "", "MESH_GRID", 1),
+                        ('cylinder', "Cylinder", "", "MESH_CYLINDER", 2),
+                        ('curve', "Curve", "", "CURVE_DATA", 3),
+                        
                         
                     ),
             description = "Choose geometry type for the spectrogram",
@@ -362,13 +365,13 @@ def register():
             update=set_curveAlignment
         )
     
-    bpy.types.Object.doFlip = bpy.props.EnumProperty(
+    bpy.types.Object.doFlipCylinderOut = bpy.props.EnumProperty(
             items= (
-                        ("on", "ON", ""),
-                        ("off", "OFF", "")
+                        ("in", "IN", ""),
+                        ("out", "OUT", "")
                     ),
-            default="off",
-            update=set_doFlip
+            default="out",
+            update=set_doFlipCylinderOut
         )
 
     bpy.types.Object.showGrid = bpy.props.EnumProperty(

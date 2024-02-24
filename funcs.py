@@ -65,6 +65,10 @@ def seconds_to_timestring(seconds):
             return '{:.2f}s'.format(s)
     return
 
+def enum_members_from_type(rna_type, prop_str):
+    prop = rna_type.bl_rna.properties[prop_str]
+    return [e.identifier for e in prop.enum_items]
+
 def select_obj_from_list(self, context):
     scn = context.scene
     idx = scn.stm_obj_list_index
@@ -131,6 +135,9 @@ def apply_spectrogram_preset(self, context):
         'max_volume_dB',
         'max_intensity',
         'geometryType',
+        'flipCylinderOutside',
+        'flipCylinderX',
+        'flipCylinderY',
     ]
 
     for i in stm_modifier.node_group.interface.items_tree:
@@ -176,7 +183,9 @@ def reset_spectrogram_values(resetAll=False, values=[]):
         'Base Height',
         'Curve',
         'Alignment',
-        'Flip',
+        'flipCylinderOutside',
+        'flipCylinderX',
+        'flipCylinderY',
     ]
 
     stm_modifier = bpy.context.object.modifiers['STM_spectrogram']
@@ -738,9 +747,9 @@ def set_doExtrude(self, context):
     obj = context.object
     obj.modifiers['STM_spectrogram']['Input_52'] = True if obj.doExtrude == 'on' else False
 
-def set_doFlip(self, context):
+def set_doFlipCylinderOut(self, context):
     obj = context.object
-    obj.modifiers['STM_spectrogram']['Socket_1'] = True if obj.doFlip == 'on' else False
+    obj.modifiers['STM_spectrogram']['Socket_1'] = True if obj.doFlipCylinderOut == 'in' else False
 
 def set_showGrid(self, context):
     obj = context.object
@@ -941,7 +950,7 @@ def stm_04_cleanup():
 
     set_playback_to_audioSync(bpy.context)
     frame_clip_in_sequencer()
-    frame_all_timeline()
+    # frame_all_timeline()
 
 def stm_05_sleep():
     time.sleep(0.5)

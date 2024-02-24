@@ -634,6 +634,77 @@ class STM_OT_remove_waveform(Operator):
 
         return {'FINISHED'}
 
+
+class STM_OT_spectrogram_preset_popup(Operator):
+    """Apply spectrogram preset"""
+    bl_idname = "stm.spectrogram_preset_popup"
+    bl_label = "Choose spectrogram preset"
+    bl_options = {'UNDO'}
+
+
+    def draw(self, context):
+
+        layout = self.layout
+        scn = context.scene
+
+
+
+        with open(r'%s'%scn.presets_json_file,'r') as f:
+            presets=json.load(f)
+
+            p = scn.presets_spectrogram.replace('.png', '')
+            p = p.split('-')[1]
+
+
+        preset_name = presets[p]['name']
+        preset_desc = presets[p]['desc']
+
+
+        row = layout.row()
+
+        colL = row.column(align=True)
+
+        colL.label(text=preset_name)
+
+        colR = row.column(align=True)
+
+        row = colR.row(align=True)
+        
+        gallery_scale = 8.0
+
+        col1 = row.column(align=True)
+        col2 = row.column(align=True)
+        col3 = row.column(align=True)
+
+        col1.scale_x = 1
+        col3.scale_x = 1
+
+        col1.scale_y=gallery_scale
+        col3.scale_y=gallery_scale
+
+        col1.operator('stm.previous_spectrogram_style', text='', icon='TRIA_LEFT')
+        col2.template_icon_view(scn, "presets_spectrogram", show_labels=True, scale=gallery_scale, scale_popup=6.0)
+        col3.operator('stm.next_spectrogram_style', text='', icon='TRIA_RIGHT')
+
+        box = colL.box()
+        box.label(text=preset_desc)
+
+        # layout.template_list("STM_UL_presets_spectrogram", "", scn, "presets_spectrogram", scn, "presets_spectrogram")
+
+        layout.separator()
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=400)
+
+    def execute(self, context):
+
+        preset = context.scene.presets_spectrogram
+        print(f'-INF- apply spectrogram preset "{preset}"')
+
+        funcs.apply_spectrogram_preset(self, context)
+
+        return {'FINISHED'}
+
 class STM_OT_apply_gradient_preset(Operator):
     """Apply gradient preset"""
     bl_idname = 'stm.apply_gradient_preset'
