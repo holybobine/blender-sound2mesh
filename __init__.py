@@ -57,6 +57,7 @@ from .funcs import *
 classes = [
     STM_OT_import_audio_file,
     STM_OT_reset_audio_file,
+    STM_OT_reset_image_file,
     STM_OT_reset_spectrogram_settings,
     STM_OT_add_audio_to_scene,
     STM_OT_open_image_folder,
@@ -76,12 +77,16 @@ classes = [
     STM_OT_reset_gradient,
     STM_OT_hello,
     STM_PT_spectrogram,
-    STM_PT_geometry_nodes,
+    STM_PT_spectrogram_settings,
+    STM_PT_waveform_settings,
+    STM_PT_geometry_nodes_spectrogram,
+    STM_PT_geometry_nodes_waveform,
     # STM_PT_geometry_nodes_subs,
     # STM_PT_geometry_nodes_main_settings,
     # STM_PT_geometry_nodes_geometry_settings,
     # STM_PT_geometry_nodes_eq_curve_settings,
-    STM_PT_material,
+    STM_PT_material_spectrogram,
+    STM_PT_material_waveform,
     STM_OT_dummy_op,
     STM_OT_reload_previews,
     THUMB_OT_next_waveform_style,
@@ -213,19 +218,19 @@ def register():
 
     bpy.types.Scene.stm_obj_list_index = IntProperty(update=select_obj_from_list)
 
-    bpy.types.Scene.audio_file_path = StringProperty(name = "", description="path to audio file")
-    bpy.types.Scene.audio_filename = StringProperty(name = "", description="audio file")
+    bpy.types.Object.audio_file_path = StringProperty(name = "", description="path to audio file")
+    bpy.types.Object.audio_filename = StringProperty(name = "", description="audio file")
 
     bpy.types.Scene.force_standard_view_transform = BoolProperty(name='Set scene view tranform to "Standard"', default=True)
     bpy.types.Scene.force_eevee_AO = BoolProperty(name='Enable EEVEE Ambient Occlusion', default=True)
     bpy.types.Scene.force_eevee_BLOOM = BoolProperty(name='Enable EEVEE Bloom', default=True)
     bpy.types.Scene.disable_eevee_viewport_denoising = BoolProperty(name='Disable EEVEE Viewport Denoising', default=True)
 
-    bpy.types.Scene.title = StringProperty()
-    bpy.types.Scene.album = StringProperty()
-    bpy.types.Scene.artist = StringProperty()
-    bpy.types.Scene.duration_seconds = FloatProperty()
-    bpy.types.Scene.duration_format = StringProperty()
+    bpy.types.Object.title = StringProperty()
+    bpy.types.Object.album = StringProperty()
+    bpy.types.Object.artist = StringProperty()
+    bpy.types.Object.duration_seconds = FloatProperty()
+    bpy.types.Object.duration_format = StringProperty()
 
 
 
@@ -311,6 +316,7 @@ def register():
         )
 
 
+    bpy.types.Scene.bool_mode_settings = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.bool_main_settings = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.bool_geometry_settings = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.bool_eq_curve_settings = bpy.props.BoolProperty(default=False)

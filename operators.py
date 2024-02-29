@@ -65,10 +65,11 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
 
     def execute(self, context):
 
-        scn = context.scene    # print(scn.audio_file_path)
+        scn = context.scene
+        obj = context.object
         filepath = self.filepath
 
-        scn.audio_file_path = self.filepath
+        obj.audio_file_path = self.filepath
 
         mdata = funcs.ffmetadata(scn.ffmpegPath, self.filepath)
 
@@ -78,12 +79,12 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
         duration = mdata['duration']
 
 
-        scn.title = os.path.basename(scn.audio_file_path) if title == '' else title
-        scn.album = '[unkown]' if album == '' else album
-        scn.artist = '[unkown]' if artist == '' else artist
+        obj.title = os.path.basename(obj.audio_file_path) if title == '' else title
+        obj.album = '[unkown]' if album == '' else album
+        obj.artist = '[unkown]' if artist == '' else artist
         # scn.duration = str(datetime.timedelta(seconds=round(duration)))
-        scn.duration_seconds = duration
-        scn.duration_format = funcs.seconds_to_timestring(duration)
+        obj.duration_seconds = duration
+        obj.duration_format = funcs.seconds_to_timestring(duration)
 
         # print(f'{duration = }')
 
@@ -102,13 +103,14 @@ class STM_OT_reset_audio_file(Operator):
     def execute(self, context):
 
         scn = context.scene
+        obj = context.object
 
-        scn.audio_file_path = ''
-        scn.title = ''
-        scn.album = ''
-        scn.artist = ''
-        scn.duration_seconds = 0
-        scn.duration_format = ''
+        obj.audio_file_path = ''
+        obj.title = ''
+        obj.album = ''
+        obj.artist = ''
+        obj.duration_seconds = 0
+        obj.duration_format = ''
 
         scene = context.scene
         seq = scene.sequence_editor
@@ -117,6 +119,30 @@ class STM_OT_reset_audio_file(Operator):
             scene.sequence_editor_create()
         for strip in seq.sequences:
             seq.sequences.remove(strip)
+
+        funcs.redraw_all_viewports()
+
+        return {'FINISHED'}
+    
+class STM_OT_reset_image_file(Operator):
+    """Clear Image File"""
+    bl_idname = "stm.reset_image_file"
+    bl_label = "Clear Image"
+    bl_options = {'UNDO'}
+
+
+
+    def execute(self, context):
+
+        obj = context.object
+        stm_modifier = obj.modifiers["STM_spectrogram"]
+
+
+        stm_modifier["Input_2"] = None
+        stm_modifier["Input_12"] = None
+
+        stm_modifier.show_viewport = False
+        stm_modifier.show_viewport = True
 
         funcs.redraw_all_viewports()
 
@@ -152,7 +178,7 @@ class STM_OT_add_audio_to_scene(Operator):
         print('-INF- add audio to scene')
 
         funcs.set_sound_in_scene(
-            filepath=context.scene.audio_file_path,
+            filepath=context.object.audio_file_path,
             offset=0
         )
 
@@ -206,6 +232,7 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
         layout = self.layout
         scn = context.scene
+        obj = context.object
 
         layout.separator()
 
@@ -223,16 +250,16 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         col1 = split.column(align=True)
         col2 = split.column(align=True)
         col1.label(text='Title :')
-        col2.label(text=scn.title)
+        col2.label(text=obj.title)
         col1.label(text='Artist :')
-        col2.label(text=scn.artist)
+        col2.label(text=obj.artist)
         col1.label(text='Album :')
-        col2.label(text=scn.album)
+        col2.label(text=obj.album)
         col1.label(text='Duration :')
-        col2.label(text=scn.duration_format)
+        col2.label(text=obj.duration_format)
         col1.enabled = False
 
-        if scn.duration_seconds > 1200:
+        if obj.duration_seconds > 1200:
             bbox = box.box()
             row = bbox.row()
             col1=row.column(align=True)
@@ -588,7 +615,7 @@ class STM_OT_add_waveform(Operator):
             mat = bpy.data.materials['STM_waveform']
         # mat.name = obj.name
         # mat['STM_object'] = obj
-        # audioPath = context.scene.audio_file_path
+        # audioPath = context.object.audio_file_path
         # audioName = funcs.sanitize_input(os.path.basename(audioPath))
         # mat.name = f'STM_waveform_{audioName}'
 

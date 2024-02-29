@@ -715,7 +715,7 @@ def is_stm_object_selected():
 def update_stm_material(self, context):
 
     obj = context.object
-    audioPath = context.scene.audio_file_path
+    audioPath = obj.audio_file_path
     audioName = sanitize_input(os.path.basename(audioPath))
     assetFile = bpy.context.scene.assetFilePath
     mat = None
@@ -820,7 +820,7 @@ def stm_00_ffmetadata():
     obj = bpy.context.object
     scn = bpy.context.scene
 
-    data_raw = ffmetadata(scn.ffmpegPath, scn.audio_file_path)
+    data_raw = ffmetadata(scn.ffmpegPath, obj.audio_file_path)
 
     if data_raw != None:
         artist = get_first_match_from_metadata(data_raw['metadata'], match='artist')
@@ -831,13 +831,13 @@ def stm_00_ffmetadata():
     print('album :', album)
     print('title :', title)
 
-    scn['title'] = title
-    scn['artist'] = artist
-    scn['album'] = album
+    obj['title'] = title
+    obj['artist'] = artist
+    obj['album'] = album
 
-    scn.title = title if title != '' else os.path.basename(scn.audio_file_path)
-    scn.album = album if scn.album != '' else '[unkown]'
-    scn.artist = artist if artist != '' else '[unkown]'
+    obj.title = title if title != '' else os.path.basename(obj.audio_file_path)
+    obj.album = album if album != '' else '[unkown]'
+    obj.artist = artist if artist != '' else '[unkown]'
 
 def stm_01_volume_data():
 
@@ -846,7 +846,7 @@ def stm_01_volume_data():
 
     # get peak volume using ffvolumedetect() (less accurate but quicker)
 
-    volume_data_raw = ffvolumedetect(scn.ffmpegPath, scn.audio_file_path)
+    volume_data_raw = ffvolumedetect(scn.ffmpegPath, obj.audio_file_path)
     max_volume_dB = float(volume_data_raw['max_volume'])
     obj['max_volume_dB'] = max_volume_dB
     print(f'{max_volume_dB = }')
@@ -855,7 +855,7 @@ def stm_01_volume_data():
 
     # get peak volume using ffastats() (more accurate but longer)
 
-    # astats = ffastats(scn.ffmpegPath, scn.audio_file_path)
+    # astats = ffastats(scn.ffmpegPath, obj.audio_file_path)
     # peak_level_dB = round(float(astats['Peak level dB']), 2)
     # obj['peak_level_dB'] = peak_level_dB
     # print(f'{peak_level_dB = }')
@@ -866,7 +866,7 @@ def stm_02_generate_spectrogram_img():
     obj = bpy.context.object
 
     ffmpegPath = scn.ffmpegPath
-    audioPath = scn.audio_file_path
+    audioPath = obj.audio_file_path
     outputPath = scn.outputPath
 
     w = 0
@@ -902,7 +902,7 @@ def stm_03_build_spectrogram():
     obj = bpy.context.object
 
     ffmpegPath = scn.ffmpegPath
-    audioPath = scn.audio_file_path
+    audioPath = obj.audio_file_path
     outputPath = scn.outputPath
 
     # I used to analyze the image brightness to normalize the displacement
