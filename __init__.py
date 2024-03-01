@@ -180,6 +180,7 @@ def register():
             name='presets_gradient',
             items=generate_previews('presets_gradient'),
             update=apply_gradient_preset,
+            default='1-FFmpeg_intensity.png'
         )
 
     bpy.types.Scene.presets_eq_curve = bpy.props.EnumProperty(

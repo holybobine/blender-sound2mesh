@@ -282,12 +282,12 @@ class STM_PT_spectrogram_settings(Panel):
         row.operator('stm.reset_image_file', text='', icon='PANEL_CLOSE')
 
 
-        row = layout.row()
-        row.operator('stm.open_image', text='Open Image', icon='IMAGE_DATA')
-        row.operator('stm.open_image_folder', text='Image Folder', icon='FILEBROWSER')
+        # row = layout.row()
+        # row.operator('stm.open_image', text='Open Image', icon='IMAGE_DATA')
+        # row.operator('stm.open_image_folder', text='Image Folder', icon='FILEBROWSER')
 
-        row = layout.row()
-        row.operator('stm.set_sound_in_scene', text='Use sound in scene', icon='FILE_SOUND')
+        # row = layout.row()
+        # row.operator('stm.set_sound_in_scene', text='Use sound in scene', icon='FILE_SOUND')
 
         # box = col2.box()
 
@@ -572,7 +572,8 @@ class STM_PT_material_spectrogram(Panel):
         try:
             if context.object in context.selected_objects:
                 if any([m.name.startswith('STM_spectrogram') for m in context.object.modifiers]):
-                    do_draw = True
+                    if context.object.modifiers["STM_spectrogram"]["Input_2"] != None:
+                        do_draw = True
         except:
             pass
 
@@ -829,13 +830,6 @@ class STM_PT_geometry_nodes_waveform(Panel):
             if modifier['Input_16'].modifiers:
                 if modifier['Input_16'].modifiers.get('STM_spectrogram'):
                     stm_ok = True
-
-        if not stm_ok:
-            bbox = box.box()
-            _label_multiline(context, 'Select spectrogram object', bbox, icon='ERROR')
-        # else:
-        #     bbox = box.box()
-        #     _label_multiline(context, 'Spectrogram ok !', bbox, icon='CHECKBOX_HLT')
 
         
         # box.prop(modifier, '["Socket_5"]')

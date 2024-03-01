@@ -1,7 +1,7 @@
 {
   "preset1":{
     "name":"Preset #1",
-    "desc":"this is the first preset, see ?",
+    "desc":"this is the first preset.",
     "preset":{
       "Clip Lows" : 0.08,
       "Clip Highs" : 0.65,
@@ -14,7 +14,7 @@
 
   "preset2":{
     "name":"Preset #2",
-    "desc":"now this is the second preset.",
+    "desc":"this is the second preset.",
     "preset":{
       "Freq Max (Hz)" : 12.0,
       "Lin To Log" : 0.914,
@@ -27,7 +27,7 @@
 
   "preset3":{
     "name":"Preset #3",
-    "desc":"and finally, the third and last one.",
+    "desc":"this is the third and last preset.",
     "preset":{
       "Resolution X" : 100,
       "Freq Max (Hz)" : 12.0,

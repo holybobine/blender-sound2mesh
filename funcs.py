@@ -266,7 +266,11 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
             print(f'-INF- successfully imported {new_datablock}')
             result = new_datablock
 
-        bpy.ops.object.select_all(action='DESELECT')
+        # bpy.ops.object.select_all(action='DESELECT')
+
+        for o in bpy.data.objects:
+            o.select_set(False)
+
         for o in obj_selection:
             o.select_set(True)
 
