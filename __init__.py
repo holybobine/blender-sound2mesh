@@ -59,6 +59,7 @@ classes = [
     STM_OT_reset_audio_file,
     STM_OT_reset_image_file,
     STM_OT_reset_spectrogram_settings,
+    STM_OT_set_resolution_preset,
     STM_OT_add_audio_to_scene,
     STM_OT_open_image_folder,
     STM_OT_open_image,
@@ -289,22 +290,8 @@ def register():
 
     bpy.types.Scene.spectro_drange = bpy.props.IntProperty(default=120, min=0, max=120)
 
-    bpy.types.Scene.resolutionPreset = bpy.props.EnumProperty(
-            items= (
-                        ('1024x512', "1K", "1024x512"),
-                        ('2048x1024', "2K", "2048x1024"),
-                        ('4096x2048', "4K", "4096x2048"),
-                        ('8192x4096', "8K", "8192x4096"),
-                        ('16384x8192', "16K", "16384x8192"),
-                        ('custom', "Custom", "")
-                    ),
-            name = "Resolution Preset",
-            default='4096x2048'
-        )
-
-
-    bpy.types.Scene.userWidth = bpy.props.IntProperty(default=4096)
-    bpy.types.Scene.userHeight = bpy.props.IntProperty(default=2048)
+    bpy.types.Scene.userWidth = bpy.props.IntProperty(default=4096, subtype="PIXEL")
+    bpy.types.Scene.userHeight = bpy.props.IntProperty(default=2048, subtype="PIXEL")
 
     # bpy.types.Scene.bool_output_path = bpy.props.BoolProperty(default=False)
 
@@ -315,7 +302,6 @@ def register():
                     ),
             default="default",
         )
-
 
     bpy.types.Scene.bool_mode_settings = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.bool_main_settings = bpy.props.BoolProperty(default=False)

@@ -5,9 +5,10 @@
     "preset":{
       "Clip Lows" : 0.08,
       "Clip Highs" : 0.65,
-      "Lin To Log" : 0.914,
+      "doLogScale" : true,
+      "Lin To Log" : 90,
       "doSmooth" : true,
-      "Smooth" : 1.0,
+      "Smooth" : 100,
       "Smooth Level" : 1
     }
   },
@@ -17,11 +18,14 @@
     "desc":"this is the second preset.",
     "preset":{
       "Freq Max (Hz)" : 12.0,
-      "Lin To Log" : 0.914,
+      "doLogScale" : true,
+      "Lin To Log" : 90,
       "Audio Sample (s)" : 2.0,
-      "Smooth" : 1.0,
+      "doSmooth" : true,
+      "Smooth" : 100,
       "Smooth Level" : 10,
-      "Contrast" : 0.5
+      "doContrast" : true,
+      "Contrast" : 50
     }
   },
 
@@ -31,13 +35,16 @@
     "preset":{
       "Resolution X" : 100,
       "Freq Max (Hz)" : 12.0,
-      "Lin To Log" : 0.914,
+      "doLogScale" : true,
+      "Lin To Log" : 90,
       "Audio Sample (s)" : 0.1,
       "Lows" : 0.25,
       "Lower Bass" : 0.25,
-      "Smooth" : 1.0,
+      "doSmooth" : true,
+      "Smooth" : 100,
       "Smooth Level" : 10,
-      "Contrast" : 0.5
+      "doContrast" : true,
+      "Contrast" : 50
     }
   }
 }

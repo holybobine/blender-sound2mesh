@@ -220,6 +220,25 @@ class STM_OT_open_image(Operator):
             print(f'-ERR- can\'t open file "{image_path}"')
 
         return {'FINISHED'}
+    
+
+class STM_OT_set_resolution_preset(Operator):
+    """1024x512"""
+    bl_idname = "stm.set_resolution_preset"
+    bl_label = ""
+
+    resolution: bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        width = int(self.resolution.split('x')[0])
+        height = int(self.resolution.split('x')[1])
+
+        # print(f'-INF- set resolution to ({width}x{height})')
+        context.scene.userWidth = width
+        context.scene.userHeight = height
+
+        return {'FINISHED'}
 
 class STM_OT_prompt_spectrogram_popup(Operator):
     """Generate spectrogram"""
@@ -280,22 +299,31 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         col_L.label(text='Spectrogram:', icon='TEXTURE')
 
 
-        row = col_R.row(align=True)
-        row.scale_y=1.5
-        row.prop_enum(scn, 'resolutionPreset', '1024x512')
-        row.prop_enum(scn, 'resolutionPreset', '2048x1024')
-        row.prop_enum(scn, 'resolutionPreset', '4096x2048')
-        row.prop_enum(scn, 'resolutionPreset', '8192x4096')
-        row.prop_enum(scn, 'resolutionPreset', '16384x8192')
-        row = col_R.row(align=True)
-        row.scale_y=1.5
-        row.prop_enum(scn, 'resolutionPreset', 'custom', text='Custom Resolution')
+        
 
-        if scn.resolutionPreset == 'custom':
-            #col = box.column(align=True)
-            ccol = col_R.column(align=True)
-            ccol.prop(scn, 'userWidth', text='Width')
-            ccol.prop(scn, 'userHeight', text='Height')
+        split = col_R.split(factor=0.3)
+        col1 = split.column(align=True)
+        col1.alignment = 'RIGHT'
+        col2 = split.column(align=True)
+
+        
+        row = col1.row()
+        row.scale_y = 1.5
+        row.label(text='')
+        col1.label(text='Resolution X')
+        col1.label(text='Y')
+
+        row = col2.row(align=True)
+        row.scale_y = 1.5
+        row.operator('stm.set_resolution_preset', text='1K').resolution = '1024x512'
+        row.operator('stm.set_resolution_preset', text='2K').resolution = '2048x1024'
+        row.operator('stm.set_resolution_preset', text='4K').resolution = '4096x2048'
+        row.operator('stm.set_resolution_preset', text='8K').resolution = '8192x4096'
+        row.operator('stm.set_resolution_preset', text='16K').resolution = '16384x8192'
+
+        ccol = col2.column(align=True)
+        ccol.prop(scn, 'userWidth', text='')
+        ccol.prop(scn, 'userHeight', text='')
 
         col_R.separator()
 
@@ -317,6 +345,8 @@ class STM_OT_prompt_spectrogram_popup(Operator):
             col1.label(text='Dynamic Range :')
             col2.prop(scn, 'spectro_drange', text='')
 
+            col1.enabled = False
+
 
         layout.separator()
 
@@ -336,7 +366,7 @@ class STM_OT_prompt_spectrogram_popup(Operator):
             box.prop(scn, 'force_eevee_BLOOM')
             box.prop(scn, 'disable_eevee_viewport_denoising')
 
-        col1.enabled = False
+        
 
         layout.separator()
 
