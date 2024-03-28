@@ -713,7 +713,7 @@ class STM_OT_spectrogram_preset_popup(Operator):
         with open(r'%s'%scn.presets_json_file,'r') as f:
             presets=json.load(f)
 
-            p = scn.presets_spectrogram.replace('.png', '')
+            p = scn.presets_geonodes.replace('.png', '')
             p = p.split('-')[1]
 
 
@@ -744,13 +744,13 @@ class STM_OT_spectrogram_preset_popup(Operator):
         col3.scale_y=gallery_scale
 
         col1.operator('stm.previous_spectrogram_style', text='', icon='TRIA_LEFT')
-        col2.template_icon_view(scn, "presets_spectrogram", show_labels=True, scale=gallery_scale, scale_popup=6.0)
+        col2.template_icon_view(scn, "presets_geonodes", show_labels=True, scale=gallery_scale, scale_popup=6.0)
         col3.operator('stm.next_spectrogram_style', text='', icon='TRIA_RIGHT')
 
         box = colL.box()
         box.label(text=preset_desc)
 
-        # layout.template_list("STM_UL_presets_spectrogram", "", scn, "presets_spectrogram", scn, "presets_spectrogram")
+        # layout.template_list("STM_UL_presets_geonodes", "", scn, "presets_geonodes", scn, "presets_geonodes")
 
         layout.separator()
 
@@ -759,7 +759,7 @@ class STM_OT_spectrogram_preset_popup(Operator):
 
     def execute(self, context):
 
-        preset = context.scene.presets_spectrogram
+        preset = context.scene.presets_geonodes
         print(f'-INF- apply spectrogram preset "{preset}"')
 
         funcs.apply_spectrogram_preset(self, context)
@@ -788,7 +788,7 @@ class STM_OT_apply_spectrogram_preset(Operator):
 
     def execute(self, context):
         
-        preset = context.scene.presets_spectrogram
+        preset = context.scene.presets_geonodes
         print(f'-INF- apply spectrogram preset "{preset}"')
 
         funcs.apply_spectrogram_preset(self, context)
@@ -959,14 +959,14 @@ class THUMB_OT_next_spectrogram_style(Operator):
 
     def execute(self, context):
 
-        items = [item.identifier for item in context.scene.bl_rna.properties['presets_spectrogram'].enum_items]
-        idx = items.index(context.scene.presets_spectrogram)
+        items = [item.identifier for item in context.scene.bl_rna.properties['presets_geonodes'].enum_items]
+        idx = items.index(context.scene.presets_geonodes)
 
         idx += 1
         if idx == len(items):
             idx = 0
 
-        context.scene.presets_spectrogram = items[idx]
+        context.scene.presets_geonodes = items[idx]
 
 
         return {'FINISHED'}
@@ -978,14 +978,53 @@ class THUMB_OT_previous_spectrogram_style(Operator):
 
     def execute(self, context):
 
-        items = [item.identifier for item in context.scene.bl_rna.properties['presets_spectrogram'].enum_items]
-        idx = items.index(context.scene.presets_spectrogram)
+        items = [item.identifier for item in context.scene.bl_rna.properties['presets_geonodes'].enum_items]
+        idx = items.index(context.scene.presets_geonodes)
 
         idx -= 1
         if idx < 0:
             idx = len(items)-1
 
-        context.scene.presets_spectrogram = items[idx]
+        context.scene.presets_geonodes = items[idx]
+
+
+        return {'FINISHED'}
+
+
+class THUMB_OT_next_spectrogram_setup(Operator):
+    """Next preset"""
+    bl_idname = "stm.next_spectrogram_setup"
+    bl_label = ""
+
+    def execute(self, context):
+
+        items = [item.identifier for item in context.scene.bl_rna.properties['presets_setup'].enum_items]
+        idx = items.index(context.scene.presets_setup)
+
+        idx += 1
+        if idx == len(items):
+            idx = 0
+
+        context.scene.presets_setup = items[idx]
+
+
+        return {'FINISHED'}
+
+class THUMB_OT_previous_spectrogram_setup(Operator):
+    """Previous preset"""
+    bl_idname = "stm.previous_spectrogram_setup"
+    bl_label = ""
+
+    def execute(self, context):
+
+        items = [item.identifier for item in context.scene.bl_rna.properties['presets_setup'].enum_items]
+        idx = items.index(context.scene.presets_setup)
+
+        idx -= 1
+        if idx < 0:
+            idx = len(items)-1
+
+        context.scene.presets_setup = items[idx]
 
 
         return {'FINISHED'}

@@ -94,6 +94,8 @@ classes = [
     THUMB_OT_previous_waveform_style,
     THUMB_OT_next_spectrogram_style,
     THUMB_OT_previous_spectrogram_style,
+    THUMB_OT_next_spectrogram_setup,
+    THUMB_OT_previous_spectrogram_setup,
     # STM_UL_presets_spectrogram,
 ]
 
@@ -183,16 +185,20 @@ def register():
 
     addon_path = os.path.dirname(__file__)
 
+    dir_setup_icons = r'.\icons\icons_setup_presets'
     dir_gradient_icons = r'.\icons\icons_gradient_presets'
-    dir_stm_icons = r'.\icons\icons_stm_presets'
+    dir_geonodes_icons = r'.\icons\icons_geonode_presets'
     dir_eq_icons = r'.\icons\icons_eq_presets'
     dir_waveform_icons = r'.\icons\icons_waveform_style'
     dir_output_icons = r'.\output'
 
     
 
-    preview_collections["presets_spectrogram"] = bpy.utils.previews.new()
-    preview_collections["presets_spectrogram"].images_location = os.path.join(addon_path, dir_stm_icons)
+    preview_collections["presets_setup"] = bpy.utils.previews.new()
+    preview_collections["presets_setup"].images_location = os.path.join(addon_path, dir_setup_icons)
+
+    preview_collections["presets_geonodes"] = bpy.utils.previews.new()
+    preview_collections["presets_geonodes"].images_location = os.path.join(addon_path, dir_geonodes_icons)
 
     preview_collections["presets_gradient"] = bpy.utils.previews.new()
     preview_collections["presets_gradient"].images_location = os.path.join(addon_path, dir_gradient_icons)
@@ -231,9 +237,15 @@ def register():
             items=[]
         )
     
-    bpy.types.Scene.presets_spectrogram = bpy.props.EnumProperty(
+    bpy.types.Scene.presets_setup = bpy.props.EnumProperty(
             name='Choose a preset',
-            items=generate_previews('presets_spectrogram'),
+            items=generate_previews('presets_setup'),
+            # update=apply_spectrogram_preset
+        )
+    
+    bpy.types.Scene.presets_geonodes = bpy.props.EnumProperty(
+            name='Choose a preset',
+            items=generate_previews('presets_geonodes'),
             # update=apply_spectrogram_preset
         )
     
