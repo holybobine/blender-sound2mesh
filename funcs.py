@@ -283,10 +283,10 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
 
         return result
 
-def ffshowspectrumpic(ffmpegPath, audioPath, outputPath, width=1024, height=512, scale='log', fscale='lin', colorMode='intensity', drange=120, limit=0):
+def ffshowspectrumpic(ffmpegPath, audio_file, outputPath, width=1024, height=512, scale='log', fscale='lin', colorMode='intensity', drange=120, limit=0):
 
     # imagePath = outputPath + os.path.basename(audioPath)+'_%ix%i_%s_%s.png'%(width, height, scale, colorMode)
-    audioName = os.path.basename(audioPath)
+    audioName = os.path.basename(audio_file.filepath)
     imageName = f'{audioName}_{width}x{height}_{scale}_{colorMode}.png'
     imagePath = os.path.join(outputPath, imageName)
     imagePath = os.path.abspath(imagePath)
@@ -306,7 +306,7 @@ def ffshowspectrumpic(ffmpegPath, audioPath, outputPath, width=1024, height=512,
             ffmCMD = ''.join((
                                 ffmpegPath,
                                 ' -y -i "',
-                                audioPath,
+                                audio_file.filepath,
                                 '" -lavfi showspectrumpic=s='+str(width)+'x'+str(height),
                                 ':mode=combined:legend=disabled:scale=%s:fscale=%s:color=%s:drange=%s:limit=%s'%(scale, fscale, colorMode, drange, limit)+' -qscale:v 1 "',
                                 imagePath,
@@ -329,19 +329,21 @@ def ffshowspectrumpic(ffmpegPath, audioPath, outputPath, width=1024, height=512,
             print('-ERR- failed to generate spectrogram image')
             return None
 
-def ffmetadata(ffmpegPath, audioPath):
+
+
+def ffmetadata(ffmpegPath, audio_file):
 
 
     print(ffmpegPath)
-    print(audioPath)
+    print(audio_file.filepath)
 
     try:
-        ffmCMD = '%s -i "%s" -f ffmetadata -hide_banner -'%(ffmpegPath, audioPath)
+        ffmCMD = '%s -i "%s" -f ffmetadata -hide_banner -'%(ffmpegPath, audio_file.filepath)
         ffmCMD_out = subprocess.run(ffmCMD, check=True, capture_output=True).stderr.decode('utf-8')
         #subprocess.call(ffmCMD)
 
 
-        sub1 = os.path.basename(audioPath) + "':"
+        sub1 = os.path.basename(audio_file.filepath) + "':"
         sub2 = "Output #0, ffmetadata, to 'pipe:':"
         json_output = {}
 
@@ -371,8 +373,8 @@ def ffmetadata(ffmpegPath, audioPath):
 
         json_output = {}
 
-        json_output['filepath'] = audioPath
-        json_output['filename'] = os.path.basename(audioPath)
+        json_output['filepath'] = audio_file.filepath
+        json_output['filename'] = os.path.basename(audio_file.filepath)
         json_output['metadata'] = metadata_list
         json_output['duration'] = duration
         json_output['bitrate'] = bitrate.strip()
@@ -385,8 +387,8 @@ def ffmetadata(ffmpegPath, audioPath):
 
         return None
 
-def ffvolumedetect(ffmpegPath, audioPath):
-    ffmCMD = '%s -i "%s" -af volumedetect -f null /dev/null -hide_banner'%(ffmpegPath, audioPath)
+def ffvolumedetect(ffmpegPath, audio_file):
+    ffmCMD = '%s -i "%s" -af volumedetect -f null /dev/null -hide_banner'%(ffmpegPath, audio_file.filepath)
     try:
         ffmCMD_out = subprocess.run(ffmCMD, check=True, capture_output=True).stderr.decode('utf-8').split('\n')
 
@@ -414,8 +416,8 @@ def ffvolumedetect(ffmpegPath, audioPath):
     except:
         return None
 
-def ffastats(ffmpegPath, audioPath):
-    ffmCMD = '%s -i "%s" -af astats=measure_perchannel=none -f null -'%(ffmpegPath, audioPath)
+def ffastats(ffmpegPath, audio_file):
+    ffmCMD = '%s -i "%s" -af astats=measure_perchannel=none -f null -'%(ffmpegPath, audio_file.filepath)
 
     try:
         ffmCMD_out = subprocess.run(ffmCMD, check=True, capture_output=True).stderr.decode('utf-8').split('\n')
@@ -480,11 +482,49 @@ def get_first_match_from_metadata(metadata, match, exclude=None):
 
     return result
 
-def set_sound_in_scene(filepath, offset=0):
+
+def update_metadata(self, context):
+
+    scn = context.scene
+    obj = context.object
+
+    if obj.audio_file != None:
+        mdata = ffmetadata(scn.ffmpegPath, obj.audio_file)
+        # soundstrip.frame_final_duration
+
+        if not mdata:
+            obj.title = '[unkown]'
+            obj.album = '[unkown]'
+            obj.artist = '[unkown]'
+            obj.duration_seconds = 0.0
+            obj.duration_format = ''
+            
+        else:
+            title = get_first_match_from_metadata(mdata['metadata'], match='title')
+            album = get_first_match_from_metadata(mdata['metadata'], match='album', exclude='artist')
+            artist = get_first_match_from_metadata(mdata['metadata'], match='artist')
+            duration = mdata['duration']
+
+
+            obj.title = os.path.basename(obj.audio_file_path) if title == '' else title
+            obj.album = '[unkown]' if album == '' else album
+            obj.artist = '[unkown]' if artist == '' else artist
+            # scn.duration = str(datetime.timedelta(seconds=round(duration)))
+            obj.duration_seconds = duration
+            obj.duration_format = seconds_to_timestring(duration)
+        
+
+            # print(f'{duration = }')
+
+        
+
+        redraw_all_viewports()
+
+def set_sound_in_scene(audio_file, offset=0):
 
     context = bpy.context
 
-    filename = os.path.basename(filepath)
+    filename = os.path.basename(audio_file.filepath)
 
     scene = context.scene
     seq = scene.sequence_editor
@@ -496,7 +536,7 @@ def set_sound_in_scene(filepath, offset=0):
 
     #Will create duplicate datablocks if the same sound is imported multiple times.
     #the "new_sound" command is the only one I could find.
-    soundstrip = scene.sequence_editor.sequences.new_sound(filename, filepath, 1, offset)
+    soundstrip = scene.sequence_editor.sequences.new_sound(filename, audio_file.filepath, 1, offset)
     soundstrip.show_waveform = True
 
     return soundstrip
@@ -552,11 +592,13 @@ def frame_clip_in_sequencer():
 
 #     return obj
 
-def generate_spectrogram(stm_obj, audioPath, imagePath, duration_seconds, max_volume_dB, peak_brightness=0):
+def generate_spectrogram(stm_obj, audio_file, image_file, duration_seconds, max_volume_dB, peak_brightness=0):
 
     print('-INF- updating spectrogram')
 
-    audioName = sanitize_input(os.path.basename(audioPath))
+    
+
+    audioName = sanitize_input(os.path.basename(audio_file.filepath))
     stm_obj.name = f'STM_{audioName}'
 
 
@@ -567,21 +609,41 @@ def generate_spectrogram(stm_obj, audioPath, imagePath, duration_seconds, max_vo
     # print(f'{stm_obj =}')
     # print(f'{imagePath =}')
 
-    
-
-    spectro_image = bpy.data.images.load(imagePath, check_existing=True)
-    spectro_image.colorspace_settings.name = "sRGB"
-
     stm_GN = stm_obj.modifiers['STM_spectrogram']
     stm_GN.node_group = bpy.data.node_groups['STM_spectrogram']
 
-
-
-    stm_GN["Input_2"] = spectro_image
+    stm_GN["Input_2"] = image_file
+    # stm_GN["Input_60"] = os.path.basename(audio_file.filepath)
     stm_GN["Input_45"] = duration_seconds
-    stm_GN["Input_60"] = os.path.basename(audioPath)
     stm_GN["Input_64"] = max_volume_dB
     stm_GN["Input_75"] = peak_brightness
+    
+
+    stm_GN.show_viewport = False
+    stm_GN.show_viewport = True
+
+    refresh_all_areas()
+    redraw_all_viewports()
+
+    image_file.colorspace_settings.name = "sRGB"
+    image_file.colorspace_settings.name = "sRGB"
+
+    spectro_texture = bpy.data.textures.new("NewTexture", type='IMAGE')
+    spectro_texture.name = image_file.name
+    spectro_texture.image = image_file
+    spectro_texture.extension = 'CLIP'
+
+    stm_obj.image_texture = spectro_texture
+    stm_obj.image_filename = image_file.name
+    
+    
+
+    
+
+
+
+    
+    
 
 
 
@@ -719,8 +781,7 @@ def is_stm_object_selected():
 def update_stm_material(self, context):
 
     obj = context.object
-    audioPath = obj.audio_file_path
-    audioName = sanitize_input(os.path.basename(audioPath))
+    audioName = sanitize_input(os.path.basename(obj.audio_file.filepath))
     assetFile = bpy.context.scene.assetFilePath
     mat = None
 
@@ -824,12 +885,17 @@ def stm_00_ffmetadata():
     obj = bpy.context.object
     scn = bpy.context.scene
 
-    data_raw = ffmetadata(scn.ffmpegPath, obj.audio_file_path)
+    data_raw = ffmetadata(scn.ffmpegPath, obj.audio_file)
+    
+    artist = ''
+    album = ''
+    title = obj.audio_file.name
 
     if data_raw != None:
         artist = get_first_match_from_metadata(data_raw['metadata'], match='artist')
         album = get_first_match_from_metadata(data_raw['metadata'], match='album', exclude='artist')
         title = get_first_match_from_metadata(data_raw['metadata'], match='title')
+    
 
     print('artist :', artist)
     print('album :', album)
@@ -839,9 +905,11 @@ def stm_00_ffmetadata():
     obj['artist'] = artist
     obj['album'] = album
 
-    obj.title = title if title != '' else os.path.basename(obj.audio_file_path)
+    obj.title = title if title != '' else os.path.basename(obj.audio_file.filepath)
     obj.album = album if album != '' else '[unkown]'
     obj.artist = artist if artist != '' else '[unkown]'
+    
+    obj.modifiers['STM_spectrogram']['Input_60'] = obj.audio_filename
 
 def stm_01_volume_data():
 
@@ -850,7 +918,7 @@ def stm_01_volume_data():
 
     # get peak volume using ffvolumedetect() (less accurate but quicker)
 
-    volume_data_raw = ffvolumedetect(scn.ffmpegPath, obj.audio_file_path)
+    volume_data_raw = ffvolumedetect(scn.ffmpegPath, obj.audio_file)
     max_volume_dB = float(volume_data_raw['max_volume'])
     obj['max_volume_dB'] = max_volume_dB
     print(f'{max_volume_dB = }')
@@ -859,7 +927,7 @@ def stm_01_volume_data():
 
     # get peak volume using ffastats() (more accurate but longer)
 
-    # astats = ffastats(scn.ffmpegPath, obj.audio_file_path)
+    # astats = ffastats(scn.ffmpegPath, obj.audio_file.filepath)
     # peak_level_dB = round(float(astats['Peak level dB']), 2)
     # obj['peak_level_dB'] = peak_level_dB
     # print(f'{peak_level_dB = }')
@@ -870,23 +938,15 @@ def stm_02_generate_spectrogram_img():
     obj = bpy.context.object
 
     ffmpegPath = scn.ffmpegPath
-    audioPath = obj.audio_file_path
+    audio_file = obj.audio_file
     outputPath = scn.outputPath
 
-    w = 0
-    h = 0
-
-    if scn.resolutionPreset == 'custom':
-        w = scn.userWidth
-        h = scn.userHeight
-    else:
-        w = int(scn.resolutionPreset.split('x')[0])
-        h = int(scn.resolutionPreset.split('x')[1])
-
+    w = scn.userWidth
+    h = scn.userHeight
 
     spectrogram_image_path = ffshowspectrumpic(
         ffmpegPath,
-        audioPath,
+        audio_file,
         outputPath,
         width=w,
         height=h,
@@ -898,7 +958,8 @@ def stm_02_generate_spectrogram_img():
     )
 
 
-    obj['spectrogram_file_path'] = spectrogram_image_path
+    # obj['spectrogram_file_path'] = spectrogram_image_path
+    obj.image_file = bpy.data.images.load(spectrogram_image_path, check_existing=True)
 
 def stm_03_build_spectrogram():
 
@@ -906,7 +967,6 @@ def stm_03_build_spectrogram():
     obj = bpy.context.object
 
     ffmpegPath = scn.ffmpegPath
-    audioPath = obj.audio_file_path
     outputPath = scn.outputPath
 
     # I used to analyze the image brightness to normalize the displacement
@@ -919,17 +979,19 @@ def stm_03_build_spectrogram():
     fps = bpy.context.scene.render.fps
 
     # generate soundstrip
-    soundstrip = set_sound_in_scene(audioPath, 0)
+    soundstrip = set_sound_in_scene(obj.audio_file, 0)
     duration_frames = soundstrip.frame_final_duration
     duration_seconds = duration_frames/fps
 
     scn.frame_end = duration_frames + fps
 
+    
+
     # generate stm_obj
     generate_spectrogram(
             stm_obj=obj,
-            audioPath=audioPath,
-            imagePath=obj['spectrogram_file_path'],
+            audio_file=obj.audio_file,
+            image_file=obj['image_file'],
             duration_seconds=duration_seconds,
             max_volume_dB=obj['max_volume_dB'],
             # peak_brightness=obj['peak_brightness']

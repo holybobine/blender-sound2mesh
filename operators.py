@@ -69,26 +69,34 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
         obj = context.object
         filepath = self.filepath
 
-        obj.audio_file_path = self.filepath
+        # obj.audio_file_path = self.filepath
+        
 
-        mdata = funcs.ffmetadata(scn.ffmpegPath, self.filepath)
+        sound = bpy.data.sounds.load(self.filepath, check_existing=True)
 
-        title = funcs.get_first_match_from_metadata(mdata['metadata'], match='title')
-        album = funcs.get_first_match_from_metadata(mdata['metadata'], match='album', exclude='artist')
-        artist = funcs.get_first_match_from_metadata(mdata['metadata'], match='artist')
-        duration = mdata['duration']
+        obj.audio_file = sound
+        obj.audio_filename = os.path.basename(self.filepath)
+
+        funcs.update_metadata(self, context)
+
+        # mdata = funcs.ffmetadata(scn.ffmpegPath, sound)
+
+        # title = funcs.get_first_match_from_metadata(mdata['metadata'], match='title')
+        # album = funcs.get_first_match_from_metadata(mdata['metadata'], match='album', exclude='artist')
+        # artist = funcs.get_first_match_from_metadata(mdata['metadata'], match='artist')
+        # duration = mdata['duration']
 
 
-        obj.title = os.path.basename(obj.audio_file_path) if title == '' else title
-        obj.album = '[unkown]' if album == '' else album
-        obj.artist = '[unkown]' if artist == '' else artist
-        # scn.duration = str(datetime.timedelta(seconds=round(duration)))
-        obj.duration_seconds = duration
-        obj.duration_format = funcs.seconds_to_timestring(duration)
+        # obj.title = os.path.basename(obj.audio_file_path) if title == '' else title
+        # obj.album = '[unkown]' if album == '' else album
+        # obj.artist = '[unkown]' if artist == '' else artist
+        # # scn.duration = str(datetime.timedelta(seconds=round(duration)))
+        # obj.duration_seconds = duration
+        # obj.duration_format = funcs.seconds_to_timestring(duration)
 
-        # print(f'{duration = }')
+        # # print(f'{duration = }')
 
-        funcs.redraw_all_viewports()
+        # funcs.redraw_all_viewports()
 
         return {'FINISHED'}
 
@@ -105,20 +113,15 @@ class STM_OT_reset_audio_file(Operator):
         scn = context.scene
         obj = context.object
 
-        obj.audio_file_path = ''
-        obj.title = ''
-        obj.album = ''
-        obj.artist = ''
-        obj.duration_seconds = 0
-        obj.duration_format = ''
+        obj.audio_file = None
 
-        scene = context.scene
-        seq = scene.sequence_editor
 
-        if not seq:
-            scene.sequence_editor_create()
-        for strip in seq.sequences:
-            seq.sequences.remove(strip)
+        # seq = scn.sequence_editor
+
+        # if not seq:
+        #     scn.sequence_editor_create()
+        # for strip in seq.sequences:
+        #     seq.sequences.remove(strip)
 
         funcs.redraw_all_viewports()
 
@@ -135,6 +138,7 @@ class STM_OT_reset_image_file(Operator):
     def execute(self, context):
 
         obj = context.object
+        obj.image_file = None
         stm_modifier = obj.modifiers["STM_spectrogram"]
 
 

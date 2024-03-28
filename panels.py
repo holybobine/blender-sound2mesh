@@ -131,12 +131,14 @@ class STM_PT_spectrogram(Panel):
 
 
 class STM_PT_spectrogram_settings(Panel):
-    bl_label = ""
+    bl_label = "Sound To Mesh"
     bl_idname = "STM_PT_spectrogram_settings"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "STM"
     # bl_parent_id = 'STM_PT_spectrogram'
+
+    updater = True
 
     @classmethod
     def poll(self, context):
@@ -152,60 +154,239 @@ class STM_PT_spectrogram_settings(Panel):
 
         return do_draw
 
-    def draw_header(self, context):
-        layout = self.layout
-        layout.label(text='Spectrogram Settings', icon='SEQ_HISTOGRAM')
+    # def draw_header(self, context):
+    #     layout = self.layout
+    #     layout.label(text='Spectrogram Settings', icon='SEQ_HISTOGRAM')
 
     def draw(self, context):
         layout = self.layout
         scn = context.scene
         obj = context.object
 
-        layout.enabled = obj.progress == 0
+        # layout.enabled = obj.progress == 0
 
 
-
-        layout = layout.box()
-
-        audio_ok = False
-
-        if obj.audio_file_path == '':
-            info_audio = '[no audio selected]'
-        elif not os.path.isfile(obj.audio_file_path):
-            info_audio = '[invalid file path]'
-        else:
-            info_audio = obj.audio_file_path
-            audio_ok = True
 
         # layout = layout.box()
 
-        split_fac = 0.2
+        audio_ok = False if obj.audio_file == None else True
+
+        # if obj.audio_file_path == '':
+        #     info_audio = '[no audio selected]'
+        # elif not os.path.isfile(obj.audio_file_path):
+        #     info_audio = '[invalid file path]'
+        # else:
+        #     info_audio = obj.audio_file_path
+        #     audio_ok = True
+
+        # layout = layout.box()
+            
 
 
-        split = layout.split(factor=split_fac)
-        col1 = split.column(align=True)
-        col2 = split.column(align=True)
-
-        col1.alignment = 'RIGHT'
-        col1.label(text='Audio')
-        col1.scale_y = 1.5
-
-        row = col2.row(align=True)
+        # split = col2.split(factor=50/(context.region.width * 1-split_fac))
+        col = layout.column(align=True)
+        col.enabled = obj.progress == 0
         
-        ccol1 = row.column(align=True)
-        ccol2 = row.column(align=True)
-        ccol2.scale_y = 1.5
+        row = col.row(align=True)
+        row.scale_y = 1.5
+
+        if obj.audio_file == None:
+            row.operator('stm.import_audio_file', text='Select Audio', icon='FILE_SOUND')
+            # row.operator('stm.reset_audio_file', text='', icon='PANEL_CLOSE')
+            # col2.template_ID(obj, 'audio_file', open="sound.open" , text='')
+            # col2.template_ID(obj, 'audio_file', open="stm.import_audio_file" , text='')
+            # col2.template_any_ID(obj, '["audio_file"]', type_property='SOUND')
+
+        else:
+            ccol1 = row.column(align=True)
+            ccol1.enabled = False
+            ccol2 = row.column(align=True)
+
+            ccol1.prop(obj, 'audio_filename', text='', icon='FILE_SOUND')
+
+            row = ccol2.row(align=True)
+            row.operator('stm.import_audio_file', text='', icon='FILEBROWSER')
+            row.operator('stm.reset_audio_file', text='', icon='PANEL_CLOSE')
+
+            # box = col.box() 
+            # # col = box.column(align=True)        
+
+            # split = box.split(factor=0.4)
+            # ccol1 = split.column(align=True)
+            # ccol1.alignment = 'RIGHT'
+            # ccol1.enabled = False
+            # ccol2 = split.column(align=True)
+
+            # # ccol1.label(text='Filename :')
+            # # ccol1.label(text='Artist :')
+            # # ccol1.label(text='Album :')
+            # ccol1.label(text='Duration :')
+            # ccol1.label(text='File Size :')
+
+            # # ccol2.label(text=obj.audio_file.name)
+            # # ccol2.label(text=obj.artist)
+            # # ccol2.label(text=obj.album)
+            # ccol2.label(text=obj.duration_format)
+            # ccol2.label(text=funcs.convert_size(os.path.getsize(obj.audio_file.filepath)))
+        
+
+        col = layout.column(align=True)
+        
 
         
 
-        box = ccol1.box()
-        row = box.row()
-        row.label(text=info_audio, icon='FILE_SOUND')
-        row.enabled = False
+        
 
-        row = ccol2.row(align=True)
-        row.operator('stm.import_audio_file', text='', icon='FILEBROWSER')
-        row.operator('stm.reset_audio_file', text='', icon='PANEL_CLOSE')
+
+
+        row = col.row(align=True)
+        row.scale_y = 1.5
+        rrow1 = row.row(align=True)
+        rrow1.enabled = audio_ok
+        rrow2 = row.row(align=True)
+        
+        if obj.progress != 0:
+            label = bpy.context.object.progress_label
+            rrow1.prop(bpy.context.object,"progress", text=label)
+        elif obj['image_file'] == None:
+            # row.template_ID(obj, 'image_file', text='')
+            rrow1.operator('stm.prompt_spectrogram_popup', text='Bake Spectrogram Image', icon='IMAGE_DATA', depress=False)
+            
+            
+
+
+        
+
+        # row = col.row(align=True)
+        # row.enabled = audio_ok
+        # row.prop_enum(scn, 'resolutionPreset', '1024x512')
+        # row.prop_enum(scn, 'resolutionPreset', '2048x1024')
+        # row.prop_enum(scn, 'resolutionPreset', '4096x2048')
+        # row.prop_enum(scn, 'resolutionPreset', '8192x4096')
+        # row.prop_enum(scn, 'resolutionPreset', '16384x8192')
+        
+
+        else:
+            rrow1.prop(obj, 'image_filename', icon='IMAGE_DATA')
+            rrow1.enabled = False
+            # rrow2.operator('stm.prompt_spectrogram_popup', text='', icon='FILE_REFRESH', depress=False)
+            rrow2.operator('stm.reset_image_file', text='', icon='PANEL_CLOSE')
+
+        if obj.image_file != None:
+
+            box = col.box()
+            box.enabled = obj.progress == 0
+            # box.template_icon_view(obj, "preview_image_enum", show_labels=False, scale=6.0, scale_popup=17.0)    
+
+            split = box.split(factor=0.4)
+            ccol1 = split.column(align=True)
+            ccol1.alignment = 'RIGHT'
+            ccol1.enabled = False
+            ccol2 = split.column(align=True)
+
+            ccol1.label(text='Resolution :')
+            ccol1.label(text='File Size :')
+
+            if obj.progress == 0:
+                ccol2.label(text=f"{obj.image_file.size[0]}x{obj.image_file.size[1]}")
+                ccol2.label(text=funcs.convert_size(os.path.getsize(obj.image_file.filepath)))
+
+            
+
+            row = box.row()
+            row.operator('stm.open_image', text='Open Image', icon='IMAGE_DATA')
+            row.operator('stm.open_image_folder', text='Image Folder', icon='FILEBROWSER')
+
+            row = box.row()
+            row.operator('stm.prompt_spectrogram_popup', text='Regenerate Image', icon='FILE_REFRESH', depress=False)
+
+            if obj.audio_filename != obj.modifiers['STM_spectrogram']['Input_60']:
+                warning_image = 'image seem different from audio, may need to regenerate image.'
+                image_icon = 'INFO'
+
+                bbox = box.box()
+                col = bbox.column(align=True)
+                _label_multiline(context, warning_image, col, image_icon)
+
+                # bbox.label(text=obj.audio_filename)
+                # bbox.label(text=obj.modifiers['STM_spectrogram']['Input_60'])
+
+        
+
+        
+
+        # if obj.audio_file == None:
+        #     warning_audio = 'missing audio file'
+        #     audio_icon = 'ERROR'
+        # else:
+        #     warning_audio = 'Audio OK !'
+        #     audio_icon = 'CHECKBOX_HLT'
+
+        # if obj.image_file == None:
+        #     warning_image = 'missing image file'
+        #     image_icon = 'ERROR'
+        # elif obj.audio_file.name != obj.modifiers['STM_spectrogram']['Input_60']:
+        #     warning_image = 'image seem different from audio, may need to regenerate image'
+        #     image_icon = 'INFO'
+        # else:
+        #     warning_image = 'Image OK !'
+        #     image_icon = 'CHECKBOX_HLT'
+
+
+        # box = layout.box()
+        # col = box.column(align=True)
+        # _label_multiline(context, warning_audio, col, audio_icon)
+        # _label_multiline(context, warning_image, col, image_icon)
+
+
+            
+            
+
+            # row = col2.row()
+            # row.template_icon_view(scn, "preview_output", show_labels=False, scale=4.0, scale_popup=20.0)
+
+            # col2.template_icon(icon_value=obj.image_file.preview.icon_id)
+
+        # row = layout.row()
+        # row.scale_y = 1
+        # row.template_ID_preview(obj, 'image_file', hide_buttons=True)
+        
+        # row.template_preview(obj.image_texture)
+        # row.enabled = False
+
+        # box = layout.box()
+        # box.template_icon(icon_value=obj.image_file.preview.icon_id)
+
+
+
+
+
+            # prop_group = context.scene.my_prop_group
+
+            # # row.template_preview(obj['image_texture'])
+            # tex = obj['image_texture']
+            # try:
+            #     tex.image.reload()
+            #     tex.image.update()
+            # except:
+            #     print("no data")
+
+            # # Use the texture for preview
+            # if tex:
+            #     row.template_preview(tex)
+            #     if self.updater:
+            #         row.scale_y = 1.0
+            #         self.updater = not self.updater
+            #     else:
+            #         row.scale_y = 1.01
+            #         self.updater = not self.updater
+
+
+
+
+
+        # if obj['audio_filee'] == None:
+        #     row.operator('stm.import_audio_file', text='Open', icon='FILEBROWSER')
 
         # box = col2.box()
         
@@ -234,52 +415,52 @@ class STM_PT_spectrogram_settings(Panel):
         #     col2.label(text='Long audio file.')
         #     # col2.label(text='Generation may take a while...')
 
+        
+        
+
+        # split = layout.split(factor=split_fac)
+        # split.scale_y = 1
+        
+        # col1 = split.column()
+        # col2 = split.column(align=True)
+        # # col2.scale_y = 1.5
+        # # row = col2.row(align=True)
+
+        # col1.alignment = 'RIGHT'
+        # col1.scale_y = 1.5
+        # col1.label(text='Image')
+
+
+        # row = col2.row(align=True)
+        # row.scale_y = 1.5
+        
+        # if obj.progress != 0:
+        #     label = bpy.context.object.progress_label
+        #     row.prop(bpy.context.object,"progress", text=label)
+        # else:
+        #     row.operator('stm.prompt_spectrogram_popup', text='Bake From Audio', icon='IMPORT', depress=False)
+        #     row.enabled = audio_ok
 
         
 
-        split = layout.split(factor=split_fac)
-        split.scale_y = 1
-        
-        col1 = split.column()
-        col2 = split.column(align=True)
-        # col2.scale_y = 1.5
         # row = col2.row(align=True)
 
-        col1.alignment = 'RIGHT'
-        col1.scale_y = 1.5
-        col1.label(text='Image')
+        # ccol1 = row.column(align=True)
+        # ccol2 = row.column(align=True)
+        # ccol2.scale_y = 1.5
 
+        # box = ccol1.box()
+        # row = box.row()
+        # row.enabled = False
 
-        row = col2.row(align=True)
-        row.scale_y = 1.5
+        # raw_texture = obj.modifiers['STM_spectrogram']['Input_2']
+
+        # row.label(text='[no image]' if raw_texture == None else raw_texture.name, 
+        #             icon='IMAGE_DATA'
+        #             )
         
-        if obj.progress != 0:
-            label = bpy.context.object.progress_label
-            row.prop(bpy.context.object,"progress", text=label)
-        else:
-            row.operator('stm.prompt_spectrogram_popup', text='Bake From Audio', icon='IMPORT', depress=False)
-            row.enabled = audio_ok
-
-        
-
-        row = col2.row(align=True)
-
-        ccol1 = row.column(align=True)
-        ccol2 = row.column(align=True)
-        ccol2.scale_y = 1.5
-
-        box = ccol1.box()
-        row = box.row()
-        row.enabled = False
-
-        raw_texture = obj.modifiers['STM_spectrogram']['Input_2']
-
-        row.label(text='[no image]' if raw_texture == None else raw_texture.name, 
-                    icon='IMAGE_DATA'
-                    )
-        
-        row = ccol2.row(align=True)
-        row.operator('stm.reset_image_file', text='', icon='PANEL_CLOSE')
+        # row = ccol2.row(align=True)
+        # row.operator('stm.reset_image_file', text='', icon='PANEL_CLOSE')
 
 
         # row = layout.row()
@@ -322,8 +503,8 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
         try:
             if context.object in context.selected_objects:
                 if any([m.name.startswith('STM_spectrogram') for m in context.object.modifiers]):
-                    if context.object.modifiers["STM_spectrogram"]["Input_2"] != None:
-                        do_draw = True
+                    # if context.object.modifiers["STM_spectrogram"]["Input_2"] != None:
+                    do_draw = True
         except:
             pass
 
@@ -341,8 +522,8 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
         obj = context.object
         obj_allowed_types = ["MESH","CURVE","EMPTY"]
 
+        layout.enabled = context.object.modifiers["STM_spectrogram"]["Input_2"] != None and obj.progress == 0
         
-        layout.enabled = obj.progress == 0
 
 
 
@@ -370,7 +551,7 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
 
         col1.operator('stm.previous_spectrogram_style', text='', icon='TRIA_LEFT')
         box = col2.box()
-        box.template_icon_view(scn, "presets_spectrogram", show_labels=True, scale=gallery_scale-0.5, scale_popup=6.0)
+        box.template_icon_view(scn, "presets_spectrogram", show_labels=True, scale=gallery_scale-0.5, scale_popup=8.0)
         col3.operator('stm.next_spectrogram_style', text='', icon='TRIA_RIGHT')
 
 

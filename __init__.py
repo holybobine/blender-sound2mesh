@@ -110,6 +110,8 @@ def generate_previews(pcoll_name):
     # Generate the thumbnails
     for i, image in enumerate(os.listdir(image_location)):
         if image.endswith(VALID_EXTENSIONS):
+
+            
             
             item_name = image.replace('.png', '')
             item_name = item_name.split('-')[1]
@@ -118,6 +120,51 @@ def generate_previews(pcoll_name):
             filepath = os.path.join(image_location, image)
             thumb = pcoll.load(filepath, filepath, 'IMAGE')
             enum_items.append((image, item_name, "", thumb.icon_id, i))
+
+            # print(thumb.icon_id)
+
+    return enum_items
+
+def generate_previews_simple(pcoll_name):
+    pcoll = preview_collections[pcoll_name]
+    image_location = pcoll.images_location
+    VALID_EXTENSIONS = ('.png', '.jpg', '.jpeg')
+
+    print(image_location)
+
+    enum_items = []
+
+    # Generate the thumbnails
+    for i, image in enumerate(os.listdir(image_location)):
+        if image.endswith(VALID_EXTENSIONS):
+            item_name = image
+
+            filepath = os.path.join(image_location, image)
+            thumb = pcoll.load(filepath, filepath, 'IMAGE')
+            enum_items.append((image, item_name, "", thumb.icon_id, i))
+
+            # print(thumb.icon_id)
+
+    return enum_items
+
+def get_spectrogram_preview(self, context):
+    pcoll = preview_collections["preview_image_enum"]
+
+    enum_items = []
+
+    image = context.object.image_file
+    
+    if image != None:
+
+        item_name = image.name
+        filepath = image.filepath
+
+        if filepath in pcoll:
+            thumb = pcoll[filepath]
+        else:
+            thumb = pcoll.load(filepath, filepath, 'IMAGE')
+
+        enum_items.append((item_name, item_name, "", thumb.icon_id, 0))
 
     return enum_items
 
@@ -140,6 +187,7 @@ def register():
     dir_stm_icons = r'.\icons\icons_stm_presets'
     dir_eq_icons = r'.\icons\icons_eq_presets'
     dir_waveform_icons = r'.\icons\icons_waveform_style'
+    dir_output_icons = r'.\output'
 
     
 
@@ -154,6 +202,12 @@ def register():
 
     preview_collections["presets_waveform_style"] = bpy.utils.previews.new()
     preview_collections["presets_waveform_style"].images_location = os.path.join(addon_path, dir_waveform_icons)
+
+    preview_collections["preview_output"] = bpy.utils.previews.new()
+    preview_collections["preview_output"].images_location = os.path.join(addon_path, dir_output_icons)
+
+    preview_collections["blendfile_pcoll"] = bpy.utils.previews.new()
+    preview_collections["preview_image_enum"] = bpy.utils.previews.new()
 
 
     bpy.types.Scene.ffmpegPath = StringProperty(
@@ -172,17 +226,31 @@ def register():
     bpy.types.Scene.gradient_presets_json_file = StringProperty(default=os.path.join(addon_path, 'presets_gradients.json'))
 
 
+    bpy.types.Scene.blendfile_pcoll = bpy.props.EnumProperty(
+            name='previews',
+            items=[]
+        )
+    
     bpy.types.Scene.presets_spectrogram = bpy.props.EnumProperty(
             name='Choose a preset',
             items=generate_previews('presets_spectrogram'),
             # update=apply_spectrogram_preset
         )
+    
+    bpy.types.Scene.preview_output = bpy.props.EnumProperty(
+            name='preview_output',
+            items=generate_previews_simple('preview_output'),
+        )
+    
+
     bpy.types.Object.presets_gradient = bpy.props.EnumProperty(
             name='presets_gradient',
             items=generate_previews('presets_gradient'),
             update=apply_gradient_preset,
             default='1-FFmpeg_intensity.png'
         )
+    
+    
 
     bpy.types.Scene.presets_eq_curve = bpy.props.EnumProperty(
             name='presets_eq_curve',
@@ -215,13 +283,23 @@ def register():
             default=0,
         )
 
-
+    
 
 
     bpy.types.Scene.stm_obj_list_index = IntProperty(update=select_obj_from_list)
 
     bpy.types.Object.audio_file_path = StringProperty(name = "", description="path to audio file")
     bpy.types.Object.audio_filename = StringProperty(name = "", description="audio file")
+    bpy.types.Object.audio_file = PointerProperty(name="Audio File", type=bpy.types.Sound, update=update_metadata)
+    bpy.types.Object.image_file = PointerProperty(name="Image File", type=bpy.types.Image)
+    bpy.types.Object.image_filename = StringProperty(name="", description='Image File')
+    bpy.types.Object.image_texture = PointerProperty(name="Image Texture", type=bpy.types.Texture)
+    bpy.types.Object.preview_image_enum = EnumProperty(
+        name='preview_image_enum',
+        items=get_spectrogram_preview
+    )
+
+
 
     bpy.types.Scene.force_standard_view_transform = BoolProperty(name='Set scene view tranform to "Standard"', default=True)
     bpy.types.Scene.force_eevee_AO = BoolProperty(name='Enable EEVEE Ambient Occlusion', default=True)
@@ -289,6 +367,19 @@ def register():
         )
 
     bpy.types.Scene.spectro_drange = bpy.props.IntProperty(default=120, min=0, max=120)
+
+    bpy.types.Scene.resolutionPreset = bpy.props.EnumProperty(
+            items= (
+                        ('1024x512', "1K", "1024x512"),
+                        ('2048x1024', "2K", "2048x1024"),
+                        ('4096x2048', "4K", "4096x2048"),
+                        ('8192x4096', "8K", "8192x4096"),
+                        ('16384x8192', "16K", "16384x8192"),
+                        ('custom', "Custom", "")
+                    ),
+            name = "Resolution Preset",
+            default='4096x2048'
+        )
 
     bpy.types.Scene.userWidth = bpy.props.IntProperty(default=4096, subtype="PIXEL")
     bpy.types.Scene.userHeight = bpy.props.IntProperty(default=2048, subtype="PIXEL")
