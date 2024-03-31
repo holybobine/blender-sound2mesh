@@ -112,8 +112,12 @@ def apply_spectrogram_preset(self, context):
     with open(r'%s'%bpy.context.scene.presets_json_file,'r') as f:
         presets=json.load(f)
 
-        p = bpy.context.scene.presets_geonodes.replace('.png', '')
-        p = p.split('-')[1]
+        if context.object.modifiers["STM_spectrogram"]["Socket_15"] == True:
+            p = bpy.context.scene.presets_geonodes_cylinder.replace('.png', '')
+            p = p.split('-')[1]
+        else:
+            p = bpy.context.scene.presets_geonodes.replace('.png', '')
+            p = p.split('-')[1]
 
 
     preset = presets[p]["preset"]
