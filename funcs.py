@@ -112,7 +112,7 @@ def apply_spectrogram_preset(self, context):
     with open(r'%s'%bpy.context.scene.presets_json_file,'r') as f:
         presets=json.load(f)
 
-        p = bpy.context.scene.presets_spectrogram.replace('.png', '')
+        p = bpy.context.scene.presets_geonodes.replace('.png', '')
         p = p.split('-')[1]
 
 
@@ -181,11 +181,9 @@ def reset_spectrogram_values(resetAll=False, values=[]):
         'showGrid',
         'doExtrude',
         'Base Height',
-        'Curve',
+        'doCylinder',
         'Alignment',
-        'flipCylinderOutside',
-        'flipCylinderX',
-        'flipCylinderY',
+        'Curve Object'
     ]
 
     stm_modifier = bpy.context.object.modifiers['STM_spectrogram']
@@ -520,6 +518,14 @@ def update_metadata(self, context):
 
         redraw_all_viewports()
 
+def update_curve_object(self, context):
+    obj = context.object
+    curve = obj.curve_object
+
+    obj.modifiers['STM_spectrogram']['Socket_3'] = curve
+
+    print()
+
 def set_sound_in_scene(audio_file, offset=0):
 
     context = bpy.context
@@ -735,36 +741,47 @@ def apply_gradient_preset(self, context):
 def apply_eq_curve_preset(self, context):
     print('-INF- apply eq curve preset')
 
-    with open(r'%s'%bpy.context.scene.eq_curve_presets_json_file,'r') as f:
-        presets=json.load(f)
+    obj = context.object
+    preset = int(context.scene.presets_eq_curve.split('-')[0])
 
+    obj.modifiers['STM_spectrogram']["Socket_20"] = preset
 
-    preset_name = context.scene.presets_eq_curve.replace('.png', '')
-    preset_name = preset_name.split('-')[1]
-    preset = presets[preset_name]
+    obj.modifiers['STM_spectrogram'].show_viewport = False
+    obj.modifiers['STM_spectrogram'].show_viewport = True
+
+    redraw_all_viewports()
     
 
-    curve_node = bpy.data.node_groups['STM_spectrogram'].nodes['MACURVE']
-    points = curve_node.mapping.curves[0].points
-
-    preset_points = [preset[value] for value in preset]
-
-    # Keep only 2
-    while len(points) > 2:
-        points.remove(points[1]) #Can't remove at 0 (don't know why)
-
-    # create as many points as needed
-    while len(points) < len(preset_points):
-        points.new(0,0)
-
-    # set location for each point
-    for i, p in enumerate(preset_points):
-        points[i].location = (p[0], p[1])
-        points[i].handle_type = 'AUTO_CLAMPED'
+    # with open(r'%s'%bpy.context.scene.eq_curve_presets_json_file,'r') as f:
+    #     presets=json.load(f)
 
 
-    curve_node.mapping.update()
-    curve_node.update()
+    # preset_name = context.scene.presets_eq_curve.replace('.png', '')
+    # preset_name = preset_name.split('-')[1]
+    # preset = presets[preset_name]
+    
+
+    # curve_node = bpy.data.node_groups['STM_spectrogram'].nodes['MACURVE']
+    # points = curve_node.mapping.curves[0].points
+
+    # preset_points = [preset[value] for value in preset]
+
+    # # Keep only 2
+    # while len(points) > 2:
+    #     points.remove(points[1]) #Can't remove at 0 (don't know why)
+
+    # # create as many points as needed
+    # while len(points) < len(preset_points):
+    #     points.new(0,0)
+
+    # # set location for each point
+    # for i, p in enumerate(preset_points):
+    #     points[i].location = (p[0], p[1])
+    #     points[i].handle_type = 'AUTO_CLAMPED'
+
+
+    # curve_node.mapping.update()
+    # curve_node.update()
 
 def is_stm_object_selected():
 

@@ -806,7 +806,7 @@ class STM_OT_reset_spectrogram_full(Operator):
     def execute(self, context):
 
         funcs.reset_spectrogram_values(resetAll=True)
-        context.scene.presets_eq_curve = '0-reset.png'
+        # context.scene.presets_eq_curve = '0-reset.png'
 
         context.object.showGrid = 'on'
         context.object.doExtrude = 'on'

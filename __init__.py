@@ -170,6 +170,9 @@ def get_spectrogram_preview(self, context):
 
     return enum_items
 
+def scene_spectrogram_curveobject_poll(self, object):
+    return object.type == 'CURVE'
+
 preview_collections = {}
 
 def register():
@@ -306,6 +309,7 @@ def register():
     bpy.types.Object.image_file = PointerProperty(name="Image File", type=bpy.types.Image)
     bpy.types.Object.image_filename = StringProperty(name="", description='Image File')
     bpy.types.Object.image_texture = PointerProperty(name="Image Texture", type=bpy.types.Texture)
+    bpy.types.Object.curve_object = PointerProperty(name="Curve Object", type=bpy.types.Object, poll=scene_spectrogram_curveobject_poll, update=update_curve_object)
     bpy.types.Object.preview_image_enum = EnumProperty(
         name='preview_image_enum',
         items=get_spectrogram_preview
