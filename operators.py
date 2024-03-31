@@ -989,6 +989,45 @@ class THUMB_OT_previous_spectrogram_style(Operator):
 
 
         return {'FINISHED'}
+    
+
+class THUMB_OT_next_spectrogram_style_cylinder(Operator):
+    """Next preset"""
+    bl_idname = "stm.next_spectrogram_style_cylinder"
+    bl_label = ""
+
+    def execute(self, context):
+
+        items = [item.identifier for item in context.scene.bl_rna.properties['presets_geonodes_cylinder'].enum_items]
+        idx = items.index(context.scene.presets_geonodes_cylinder)
+
+        idx += 1
+        if idx == len(items):
+            idx = 0
+
+        context.scene.presets_geonodes_cylinder = items[idx]
+
+
+        return {'FINISHED'}
+
+class THUMB_OT_previous_spectrogram_style_cylinder(Operator):
+    """Previous preset"""
+    bl_idname = "stm.previous_spectrogram_style_cylinder"
+    bl_label = ""
+
+    def execute(self, context):
+
+        items = [item.identifier for item in context.scene.bl_rna.properties['presets_geonodes_cylinder'].enum_items]
+        idx = items.index(context.scene.presets_geonodes_cylinder)
+
+        idx -= 1
+        if idx < 0:
+            idx = len(items)-1
+
+        context.scene.presets_geonodes_cylinder = items[idx]
+
+
+        return {'FINISHED'}
 
 
 class THUMB_OT_next_spectrogram_setup(Operator):

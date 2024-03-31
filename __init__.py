@@ -94,6 +94,8 @@ classes = [
     THUMB_OT_previous_waveform_style,
     THUMB_OT_next_spectrogram_style,
     THUMB_OT_previous_spectrogram_style,
+    THUMB_OT_next_spectrogram_style_cylinder,
+    THUMB_OT_previous_spectrogram_style_cylinder,
     THUMB_OT_next_spectrogram_setup,
     THUMB_OT_previous_spectrogram_setup,
     # STM_UL_presets_spectrogram,
@@ -191,6 +193,7 @@ def register():
     dir_setup_icons = r'.\icons\icons_setup_presets'
     dir_gradient_icons = r'.\icons\icons_gradient_presets'
     dir_geonodes_icons = r'.\icons\icons_geonode_presets'
+    dir_geonodes_cylinder_icons = r'.\icons\icons_geonode_presets\cylinder'
     dir_eq_icons = r'.\icons\icons_eq_presets'
     dir_waveform_icons = r'.\icons\icons_waveform_style'
     dir_output_icons = r'.\output'
@@ -202,6 +205,9 @@ def register():
 
     preview_collections["presets_geonodes"] = bpy.utils.previews.new()
     preview_collections["presets_geonodes"].images_location = os.path.join(addon_path, dir_geonodes_icons)
+
+    preview_collections["presets_geonodes_cylinder"] = bpy.utils.previews.new()
+    preview_collections["presets_geonodes_cylinder"].images_location = os.path.join(addon_path, dir_geonodes_cylinder_icons)
 
     preview_collections["presets_gradient"] = bpy.utils.previews.new()
     preview_collections["presets_gradient"].images_location = os.path.join(addon_path, dir_gradient_icons)
@@ -227,7 +233,7 @@ def register():
             subtype="DIR_PATH"
         )
     bpy.types.Scene.assetFilePath = StringProperty(
-            default=os.path.join(addon_path, 'asset_files', 'asset_files_v35.blend')
+            default=os.path.join(addon_path, 'asset_files', 'asset_files_v36.blend')
         )
 
     bpy.types.Scene.presets_json_file = StringProperty(default=os.path.join(addon_path, 'presets_spectrogram.json'))
@@ -249,6 +255,12 @@ def register():
     bpy.types.Scene.presets_geonodes = bpy.props.EnumProperty(
             name='Choose a preset',
             items=generate_previews('presets_geonodes'),
+            # update=apply_spectrogram_preset
+        )
+    
+    bpy.types.Scene.presets_geonodes_cylinder = bpy.props.EnumProperty(
+            name='Choose a preset',
+            items=generate_previews('presets_geonodes_cylinder'),
             # update=apply_spectrogram_preset
         )
     

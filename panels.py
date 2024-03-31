@@ -587,10 +587,18 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
         col1.scale_y=gallery_scale
         col3.scale_y=gallery_scale
 
-        col1.operator('stm.previous_spectrogram_style', text='', icon='TRIA_LEFT')
+        
+        
         box = col2.box()
-        box.template_icon_view(scn, "presets_geonodes", show_labels=True, scale=gallery_scale-0.5, scale_popup=8.0)
-        col3.operator('stm.next_spectrogram_style', text='', icon='TRIA_RIGHT')
+        if context.object.modifiers["STM_spectrogram"]["Socket_15"] == True:
+            col1.operator('stm.previous_spectrogram_style_cylinder', text='', icon='TRIA_LEFT')
+            box.template_icon_view(scn, "presets_geonodes_cylinder", show_labels=True, scale=gallery_scale-0.5, scale_popup=8.0)
+            col3.operator('stm.next_spectrogram_style_cylinder', text='', icon='TRIA_RIGHT')
+        else:
+            col1.operator('stm.previous_spectrogram_style', text='', icon='TRIA_LEFT')
+            box.template_icon_view(scn, "presets_geonodes", show_labels=True, scale=gallery_scale-0.5, scale_popup=8.0)
+            col3.operator('stm.next_spectrogram_style', text='', icon='TRIA_RIGHT')
+        
 
 
         row = col.row(align=True)
