@@ -112,50 +112,56 @@ def apply_spectrogram_preset(self, context):
     with open(r'%s'%bpy.context.scene.presets_json_file,'r') as f:
         presets=json.load(f)
 
-        if context.object.modifiers["STM_spectrogram"]["Socket_15"] == True:
-            p = bpy.context.scene.presets_geonodes_cylinder.replace('.png', '')
-            p = p.split('-')[1]
-        else:
-            p = bpy.context.scene.presets_geonodes.replace('.png', '')
-            p = p.split('-')[1]
+    #     if context.object.modifiers["STM_spectrogram"]["Socket_15"] == True:
+    #         p = bpy.context.scene.presets_geonodes_cylinder.replace('.png', '')
+    #         p = p.split('-')[1]
+    #     else:
+    #         p = bpy.context.scene.presets_geonodes.replace('.png', '')
+    #         p = p.split('-')[1]
+
+    p = bpy.context.scene.presets_geonodes
+
+    if p == 'reset_full':
+        reset_spectrogram_values(resetAll=True)
+
+    else:
+
+        preset = presets[p]["preset"]
 
 
-    preset = presets[p]["preset"]
+        stm_obj = bpy.context.active_object
+        stm_name = bpy.context.active_object.name
+
+        stm_modifier = stm_obj.modifiers['STM_spectrogram']
+
+        exclude_inputs = [
+            'Geometry',
+            'Audio Duration',
+            'Log to Lin',
+            'Audio Filename',
+            'Baked Volume',
+            'Image',
+            'Material',
+            'max_volume_dB',
+            'max_intensity',
+            'geometryType',
+            'flipCylinderOutside',
+            'flipCylinderX',
+            'flipCylinderY',
+        ]
+
+        for i in stm_modifier.node_group.interface.items_tree:
+            if i.name in preset:
+                value = preset[i.name]
+
+                if value == 'reset':
+                    set_geonode_value(stm_modifier, i, i.default_value)
+                else:
+                    set_geonode_value(stm_modifier, i, value)
 
 
-    stm_obj = bpy.context.active_object
-    stm_name = bpy.context.active_object.name
-
-    stm_modifier = stm_obj.modifiers['STM_spectrogram']
-
-    exclude_inputs = [
-        'Geometry',
-        'Audio Duration',
-        'Log to Lin',
-        'Audio Filename',
-        'Baked Volume',
-        'Image',
-        'Material',
-        'max_volume_dB',
-        'max_intensity',
-        'geometryType',
-        'flipCylinderOutside',
-        'flipCylinderX',
-        'flipCylinderY',
-    ]
-
-    for i in stm_modifier.node_group.interface.items_tree:
-        if i.name in preset:
-            value = preset[i.name]
-
-            if value == 'reset':
-                set_geonode_value(stm_modifier, i, i.default_value)
-            else:
-                set_geonode_value(stm_modifier, i, value)
-
-
-    stm_modifier.show_viewport = False
-    stm_modifier.show_viewport = True
+        stm_modifier.show_viewport = False
+        stm_modifier.show_viewport = True
 
 def apply_waveform_style(self, context):
     print('-INF- apply GN preset')
@@ -524,11 +530,13 @@ def update_metadata(self, context):
 
 def update_curve_object(self, context):
     obj = context.object
-    curve = obj.curve_object
 
-    obj.modifiers['STM_spectrogram']['Socket_3'] = curve
+    obj.modifiers['STM_spectrogram']['Socket_3'] = obj.curve_object
 
-    print()
+def update_curve_deform_axis(self, context):
+    obj = context.object
+
+    obj.modifiers['STM_spectrogram']['Socket_22'] = int(obj.curve_deform_axis)
 
 def set_sound_in_scene(audio_file, offset=0):
 

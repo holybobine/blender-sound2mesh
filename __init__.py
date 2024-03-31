@@ -172,6 +172,34 @@ def get_spectrogram_preview(self, context):
 
     return enum_items
 
+
+
+def generate_items_from_presets(self, context):
+
+    with open(r'%s'%bpy.context.scene.presets_json_file,'r') as f:
+        presets=json.load(f)
+
+    enum_items = []
+
+    for p in presets:
+        enum_items.append((p, presets[p]["name"], ""))
+
+    # image = context.object.image_file
+    
+    # if image != None:
+
+    #     item_name = image.name
+    #     filepath = image.filepath
+
+    #     if filepath in pcoll:
+    #         thumb = pcoll[filepath]
+    #     else:
+    #         thumb = pcoll.load(filepath, filepath, 'IMAGE')
+
+    #     enum_items.append((item_name, item_name, "", thumb.icon_id, 0))
+
+    return enum_items
+
 def scene_spectrogram_curveobject_poll(self, object):
     return object.type == 'CURVE'
 
@@ -254,8 +282,8 @@ def register():
     
     bpy.types.Scene.presets_geonodes = bpy.props.EnumProperty(
             name='Choose a preset',
-            items=generate_previews('presets_geonodes'),
-            # update=apply_spectrogram_preset
+            items=generate_items_from_presets,
+            update=apply_spectrogram_preset
         )
     
     bpy.types.Scene.presets_geonodes_cylinder = bpy.props.EnumProperty(
@@ -322,6 +350,15 @@ def register():
     bpy.types.Object.image_filename = StringProperty(name="", description='Image File')
     bpy.types.Object.image_texture = PointerProperty(name="Image Texture", type=bpy.types.Texture)
     bpy.types.Object.curve_object = PointerProperty(name="Curve Object", type=bpy.types.Object, poll=scene_spectrogram_curveobject_poll, update=update_curve_object)
+    bpy.types.Object.curve_deform_axis = EnumProperty(
+        items= (
+                    ('1', "X", ""),
+                    ('2', "Y", "")
+                ),
+        name = "Deform Axis",
+        default='2',
+        update=update_curve_deform_axis
+    )
     bpy.types.Object.preview_image_enum = EnumProperty(
         name='preview_image_enum',
         items=get_spectrogram_preview

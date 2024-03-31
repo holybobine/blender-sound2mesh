@@ -166,7 +166,7 @@ class STM_PT_spectrogram(Panel):
 
 
 class STM_PT_spectrogram_settings(Panel):
-    bl_label = "Settings"
+    bl_label = ""
     bl_idname = "STM_PT_spectrogram_settings"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -189,9 +189,9 @@ class STM_PT_spectrogram_settings(Panel):
 
         return do_draw
 
-    # def draw_header(self, context):
-    #     layout = self.layout
-    #     layout.label(text='Spectrogram Settings', icon='SEQ_HISTOGRAM')
+    def draw_header(self, context):
+        layout = self.layout
+        layout.label(text='Spectrogram Image', icon='IMAGE_DATA')
 
     def draw(self, context):
         layout = self.layout
@@ -532,7 +532,7 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "STM"
-    bl_parent_id = 'STM_PT_spectrogram_settings'
+    bl_parent_id = 'STM_PT_spectrogram'
 
     @classmethod
     def poll(self, context):
@@ -571,41 +571,92 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
         # row.operator('stm.open_image_folder', text='', icon='FILEBROWSER')
         # row.enabled = obj.modifiers['STM_spectrogram']['Input_2'] != None
 
-        col = layout.column(align=True)
+        split_fac = 0.4
 
-        row = col.row(align=True)
+        row = layout.row(align=True)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_GRID', label_name='Plane', toggle=1, invert_checkbox=True)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_CYLINDER', label_name='Cylinder', toggle=1)
+
+        split = layout.split(factor=split_fac)
+        col1 = split.column(align=True)
+        col1.alignment = 'RIGHT'
+        col2 = split.column(align=True)
+
+        col1.label(text='Preset')
+
+        row = col2.row(align=True)
+        row.prop(scn, "presets_geonodes", text='')
+
+        col1.separator()
+        col2.separator()
+
+
+        col1.label(text='Show Title')
+
+        row = col2.row(align=True)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showTitle', label=False)
+
+        ccol = row.column(align=True)
+        ccol.enabled = context.object.modifiers["STM_spectrogram"]["Socket_16"]
+        prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Audio Filename', label=False)
+
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Show Grid')
+
+        row = col2.row(align=True)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridFull', label=False)
         
-        gallery_scale = 8.0
-
-        col1 = row.column(align=True)
-        col2 = row.column(align=True)
-        col3 = row.column(align=True)
-
-        col1.scale_x = 1.1
-        col3.scale_x = 1.1
-
-        col1.scale_y=gallery_scale
-        col3.scale_y=gallery_scale
+        row = row.row(align=True)
+        row.enabled = context.object.modifiers["STM_spectrogram"]["Socket_18"]
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridX', label_name='X', toggle=1)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridY', label_name='Y', toggle=1)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridZ', label_name='Z', toggle=1)
 
         
+
+
         
-        box = col2.box()
-        if context.object.modifiers["STM_spectrogram"]["Socket_15"] == True:
-            col1.operator('stm.previous_spectrogram_style_cylinder', text='', icon='TRIA_LEFT')
-            box.template_icon_view(scn, "presets_geonodes_cylinder", show_labels=True, scale=gallery_scale-0.5, scale_popup=8.0)
-            col3.operator('stm.next_spectrogram_style_cylinder', text='', icon='TRIA_RIGHT')
-        else:
-            col1.operator('stm.previous_spectrogram_style', text='', icon='TRIA_LEFT')
-            box.template_icon_view(scn, "presets_geonodes", show_labels=True, scale=gallery_scale-0.5, scale_popup=8.0)
-            col3.operator('stm.next_spectrogram_style', text='', icon='TRIA_RIGHT')
+
         
 
 
-        row = col.row(align=True)
-        row.scale_y = 1.5
+        # layout.operator('stm.reset_spectrogram_full', text='Reset All', icon='LOOP_BACK')
+
+        
+        
+        # gallery_scale = 8.0
+
+        # col1 = row.column(align=True)
+        # col2 = row.column(align=True)
+        # col3 = row.column(align=True)
+
+        # col1.scale_x = 1.1
+        # col3.scale_x = 1.1
+
+        # col1.scale_y=gallery_scale
+        # col3.scale_y=gallery_scale
+
+        
+        
+        # box = col2.box()
+        # if context.object.modifiers["STM_spectrogram"]["Socket_15"] == True:
+        #     col1.operator('stm.previous_spectrogram_style_cylinder', text='', icon='TRIA_LEFT')
+        #     box.template_icon_view(scn, "presets_geonodes_cylinder", show_labels=True, scale=gallery_scale-0.5, scale_popup=8.0)
+        #     col3.operator('stm.next_spectrogram_style_cylinder', text='', icon='TRIA_RIGHT')
+        # else:
+        #     col1.operator('stm.previous_spectrogram_style', text='', icon='TRIA_LEFT')
+        #     box.template_icon_view(scn, "presets_geonodes", show_labels=True, scale=gallery_scale-0.5, scale_popup=8.0)
+        #     col3.operator('stm.next_spectrogram_style', text='', icon='TRIA_RIGHT')
+        
+
+
+        # row = col.row(align=True)
+        # row.scale_y = 1.5
         # row.operator('stm.spectrogram_preset_popup', text='Apply Preset', icon='IMPORT')
-        row.operator('stm.apply_spectrogram_preset', text='Apply Preset', icon='IMPORT')
-        row.operator('stm.reset_spectrogram_full', text='Reset All', icon='LOOP_BACK')
+        # row.operator('stm.apply_spectrogram_preset', text='Apply Preset', icon='IMPORT')
+        # row.operator('stm.reset_spectrogram_full', text='Reset All', icon='LOOP_BACK')
 
 
 
@@ -616,89 +667,32 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
         # row.prop_enum(obj, 'geometry_type', 'cylinder', icon='MESH_CYLINDER')
 
 
-        split_fac = 0.4
+        
 
-        box = layout.box()
-        row = box.row()
-        row.prop(scn, 'bool_mode_settings', text='Main Settings', icon='TRIA_DOWN' if scn.bool_mode_settings else 'TRIA_RIGHT', emboss=False)
-        row.operator('stm.reset_spectrogram_main_settings', text='', icon='LOOP_BACK')
-
-
-        if scn.bool_mode_settings:
+        # box = layout.box()
+        # row = box.row()
+        # row.prop(scn, 'bool_mode_settings', text='Main Settings', icon='TRIA_DOWN' if scn.bool_mode_settings else 'TRIA_RIGHT', emboss=False)
+        # row.operator('stm.reset_spectrogram_main_settings', text='', icon='LOOP_BACK')
 
 
-            # prop_geonode(box, obj.modifiers['STM_spectrogram'], 'geometryType')
-
-            row = box.row(align=True)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_GRID', label_name='Plane', toggle=1, invert_checkbox=True)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_CYLINDER', label_name='Cylinder', toggle=1)
-
-            split = box.split(factor=split_fac)
-            col1 = split.column(align=True)
-            col1.alignment = 'RIGHT'
-            col2 = split.column(align=True)
+        # if scn.bool_mode_settings:
 
 
-            col1.label(text='Flip')
-            row = col2.row(align=True)
-            
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flipCylinderX', label_name='X', toggle=1)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flipCylinderY', label_name='Y', toggle=1)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flipCylinderOutside', label_name='Z', toggle=1)
+        # prop_geonode(box, obj.modifiers['STM_spectrogram'], 'geometryType')
 
-            col1.separator()
-            col2.separator()
-            
-            col1.label(text='Curve')            
-            col1.label(text='')
+        
+        
 
-            row = col2.row(align=True)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCurve', label=False)
-            # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Follow Curve')
+        # col1.label(text='Mode')
 
-            ccol = row.column(align=True)
-            ccol.enabled = context.object.modifiers["STM_spectrogram"]["Socket_17"]
-            # prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Curve', label=False)
-            ccol.prop(obj, 'curve_object', text='')
-            row = ccol.row(align=True)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'curveDirection', label_name='X', toggle=1, invert_checkbox=True)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'curveDirection', label_name='Y', toggle=1)
+        # row = col2.row(align=True)
+        # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_GRID', label_name='Plane', toggle=1, invert_checkbox=True)
+        # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_CYLINDER', label_name='Cylinder', toggle=1)
 
-            col1.separator()
-            col2.separator()
+        # col1.separator()
+        # col2.separator()
 
-            # col1.label(text='Mode')
-
-            # row = col2.row(align=True)
-            # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_GRID', label_name='Plane', toggle=1, invert_checkbox=True)
-            # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_CYLINDER', label_name='Cylinder', toggle=1)
-
-            # col1.separator()
-            # col2.separator()
-
-            
-
-            
-
-            if obj.modifiers['STM_spectrogram']['Socket_15'] == True:
-
-                
-
-                col1.label(text='Radius')
-                prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Cylinder Radius', label=False)
-
-                
-
-            else:
-                
-                col1.label(text='Extrude')
-
-                row = col2.row(align=True)
-                prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doExtrude', label=False)
-
-                ccol = row.column(align=True)
-                ccol.enabled = context.object.modifiers["STM_spectrogram"]["Input_52"]
-                prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Base Height', label=False)
+        
 
 
             
@@ -726,71 +720,71 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
             
 
 
-            """split_fac = 0.3                
+        """split_fac = 0.3                
 
-            # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'showGrid')
+        # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'showGrid')
 
-            split = box.split(factor=split_fac)
-            row1 = split.row(align=True)
-            row1.alignment = 'RIGHT'
-            row2 = split.row(align=True)
-            row1.label(text='Grid')
-            row2.prop_enum(obj, 'showGrid', 'off')
-            row2.prop_enum(obj, 'showGrid', 'on')
+        split = box.split(factor=split_fac)
+        row1 = split.row(align=True)
+        row1.alignment = 'RIGHT'
+        row2 = split.row(align=True)
+        row1.label(text='Grid')
+        row2.prop_enum(obj, 'showGrid', 'off')
+        row2.prop_enum(obj, 'showGrid', 'on')
 
-            split = box.split(factor=split_fac)
-            col1 = split.column(align=True)
-            col1.alignment = 'RIGHT'
-            col2 = split.column(align=True)
-            col1.label(text='Extrude')
-            row = col2.row(align=True)
-            row.prop_enum(obj, 'doExtrude', 'off')
-            row.prop_enum(obj, 'doExtrude', 'on')
+        split = box.split(factor=split_fac)
+        col1 = split.column(align=True)
+        col1.alignment = 'RIGHT'
+        col2 = split.column(align=True)
+        col1.label(text='Extrude')
+        row = col2.row(align=True)
+        row.prop_enum(obj, 'doExtrude', 'off')
+        row.prop_enum(obj, 'doExtrude', 'on')
 
-            row1 = col1.row(align=True)
-            row1.alignment = 'RIGHT'
-            row1.label(text='Height')
-            row2 = col2.row(align=True)
-            prop_geonode(row2, obj.modifiers['STM_spectrogram'], 'Base Height', label_name='', label=False)
-            row1.enabled = True if obj.doExtrude == 'on' else False
-            row2.enabled = True if obj.doExtrude == 'on' else False
+        row1 = col1.row(align=True)
+        row1.alignment = 'RIGHT'
+        row1.label(text='Height')
+        row2 = col2.row(align=True)
+        prop_geonode(row2, obj.modifiers['STM_spectrogram'], 'Base Height', label_name='', label=False)
+        row1.enabled = True if obj.doExtrude == 'on' else False
+        row2.enabled = True if obj.doExtrude == 'on' else False
 
 
-            col1.label(text='Curve')
-            prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Curve', label=False)
+        col1.label(text='Curve')
+        prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Curve', label=False)
 
-            col1.separator()
-            col2.separator()
-            
-            # col1.label(text='Align')
-            # row = col2.row(align=True)
-            # row.prop_enum(obj, 'curveAlignment', 'center')
-            # row.prop_enum(obj, 'curveAlignment', 'edge')
+        col1.separator()
+        col2.separator()
+        
+        # col1.label(text='Align')
+        # row = col2.row(align=True)
+        # row.prop_enum(obj, 'curveAlignment', 'center')
+        # row.prop_enum(obj, 'curveAlignment', 'edge')
 
-            col1.label(text='')
-            prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Follow Curve', label_name='Follow Curve')
+        col1.label(text='')
+        prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Follow Curve', label_name='Follow Curve')
 
-            split = box.split(factor=split_fac)
-            row1 = split.row(align=True)
-            row1.alignment = 'RIGHT'
-            row2 = split.row(align=True)
-            row1.label(text='Displace')
-            row2.prop_enum(obj, 'doFlipCylinderOut', 'in')
-            row2.prop_enum(obj, 'doFlipCylinderOut', 'out')
+        split = box.split(factor=split_fac)
+        row1 = split.row(align=True)
+        row1.alignment = 'RIGHT'
+        row2 = split.row(align=True)
+        row1.label(text='Displace')
+        row2.prop_enum(obj, 'doFlipCylinderOut', 'in')
+        row2.prop_enum(obj, 'doFlipCylinderOut', 'out')
 
-            split = box.split(factor=split_fac)
-            row1 = split.row(align=True)
-            row1.alignment = 'RIGHT'
-            row2 = split.row(align=True)
-            row1.label(text='Flip X')
-            prop_geonode(row2, obj.modifiers['STM_spectrogram'], 'flipCylinderX', label=False)
+        split = box.split(factor=split_fac)
+        row1 = split.row(align=True)
+        row1.alignment = 'RIGHT'
+        row2 = split.row(align=True)
+        row1.label(text='Flip X')
+        prop_geonode(row2, obj.modifiers['STM_spectrogram'], 'flipCylinderX', label=False)
 
-            split = box.split(factor=split_fac)
-            row1 = split.row(align=True)
-            row1.alignment = 'RIGHT'
-            row2 = split.row(align=True)
-            row1.label(text='Flip Y')
-            prop_geonode(row2, obj.modifiers['STM_spectrogram'], 'flipCylinderY', label=False)"""
+        split = box.split(factor=split_fac)
+        row1 = split.row(align=True)
+        row1.alignment = 'RIGHT'
+        row2 = split.row(align=True)
+        row1.label(text='Flip Y')
+        prop_geonode(row2, obj.modifiers['STM_spectrogram'], 'flipCylinderY', label=False)"""
 
 
 
@@ -813,38 +807,13 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
             col1.alignment = 'RIGHT'
             col2 = split.column(align=True)
 
-            col1.label(text='Show Title')
-
-            row = col2.row(align=True)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showTitle', label=False)
-
-            ccol = row.column(align=True)
-            ccol.enabled = context.object.modifiers["STM_spectrogram"]["Socket_16"]
-            prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Audio Filename', label=False)
-
-            col1.separator()
-            col2.separator()
-
-            col1.label(text='Show Grid')
-
-            row = col2.row(align=True)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridFull', label=False)
             
-            row = row.row(align=True)
-            row.enabled = context.object.modifiers["STM_spectrogram"]["Socket_18"]
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridX', label_name='X', toggle=1)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridY', label_name='Y', toggle=1)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridZ', label_name='Z', toggle=1)
-
-            
-            col1.separator()
-            col2.separator()
             
             
             col1.label(text='(Frequency) X')
             row = col2.row(align=True)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'Freq Min (Hz)', label_name='Min')
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'Freq Max (Hz)', label_name='Max')
+            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'Freq Min (Hz)', label=False)
+            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'Freq Max (Hz)', label=False)
             col1.label(text='(Time) Y')
             prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Audio Sample (s)', label=False)
             col1.label(text='(Gain) Z')
@@ -904,20 +873,54 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
             col1.alignment = 'RIGHT'
             col2 = split.column(align=True)
 
+
+            
+
+
+            
+
             col1.label(text='Resolution X')
             col1.label(text='Y')                   
             prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Resolution X', label=False)
             prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Resolution Y', label=False)
 
+            
+
             col1.separator()
             col2.separator()
 
+            col1.label(text='Flip')
+            row = col2.row(align=True)
             
+            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flipCylinderX', label_name='X', toggle=1)
+            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flipCylinderY', label_name='Y', toggle=1)
+            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flipCylinderOutside', label_name='Z', toggle=1)
+
+            col1.separator()
+            col2.separator()
+
+            if obj.modifiers['STM_spectrogram']['Socket_15'] == True:
+                col1.label(text='Radius')
+                prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'Cylinder Radius', label=False)
+
+            else:
+                col1.label(text='Extrude')
+
+                row = col2.row(align=True)
+                prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doExtrude', label=False)
+
+                ccol = row.column(align=True)
+                ccol.enabled = context.object.modifiers["STM_spectrogram"]["Input_52"]
+                prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Base Height', label=False)
+
+
+            col1.separator()
+            col2.separator()
 
             col1.label(text='Contrast')
 
             row = col2.row(align=True)
-            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doContrast', label=True)
+            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doContrast', label=False)
 
             ccol = row.column(align=True)
             ccol.enabled = context.object.modifiers["STM_spectrogram"]["Socket_12"]
@@ -955,6 +958,44 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
             # if context.object.modifiers["STM_spectrogram"]["Socket_11"]:
             col1.label(text='')
             prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Noise Scale', label_name='Scale')
+
+            col1.separator()
+            col2.separator()
+
+            col1.label(text='Curve Deform')
+
+            row = col2.row(align=True)
+            prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCurve', label=False)
+            # prop_geonode(col, obj.modifiers['STM_spectrogram'], 'Follow Curve')
+
+            ccol = row.column(align=True)
+            ccol.enabled = context.object.modifiers["STM_spectrogram"]["Socket_17"]
+            # prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Curve', label=False)
+            ccol.prop(obj, 'curve_object', text='')
+            # row = ccol.row(align=True)
+            # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'curveDirection', label_name='X', toggle=1, invert_checkbox=True)
+            # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'curveDirection', label_name='Y', toggle=1)
+
+
+            col1.separator()
+            col2.separator()
+
+            row = col1.row(align=True)
+            row.alignment = 'RIGHT'
+            row.enabled = not obj.modifiers['STM_spectrogram']['Socket_15']
+            row.label(text='Deform Axis')
+
+            row = col2.row(align=True)
+            
+            ccol = row.column(align=True)
+            ccol.enabled = context.object.modifiers["STM_spectrogram"]["Socket_17"] and not obj.modifiers['STM_spectrogram']['Socket_15']
+            ccol.prop(obj, 'curve_deform_axis', text='')
+
+            
+
+            
+
+            
 
             
 
@@ -995,13 +1036,17 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
 
 
 
+        
+
+
+
 class STM_PT_material_spectrogram(Panel):
     bl_label = ""
     bl_idname = "STM_PT_material_spectrogram"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "STM"
-    bl_parent_id = 'STM_PT_spectrogram_settings'
+    bl_parent_id = 'STM_PT_spectrogram'
 
     @classmethod
     def poll(self, context):

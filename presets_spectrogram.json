@@ -1,4 +1,18 @@
 {
+  
+  "reset_full":{
+    "name":"Reset All",
+    "desc":"this is the first preset.",
+    "preset":{
+      "Clip Lows" : 0.08,
+      "Clip Highs" : 0.65,
+      "doLogScale" : true,
+      "Lin To Log" : 90,
+      "doSmooth" : true,
+      "Smooth" : 100,
+      "Smooth Level" : 1
+    }
+  },
   "preset1":{
     "name":"Preset #1",
     "desc":"this is the first preset.",
