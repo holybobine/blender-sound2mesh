@@ -66,6 +66,7 @@ classes = [
     STM_OT_prompt_spectrogram_popup,
     STM_OT_generate_spectrogram_modal,
     STM_OT_select_stm_in_viewport,
+    STM_OT_import_spectrogram_setup,
     STM_OT_add_waveform,
     STM_OT_add_spectrogram,
     STM_OT_remove_waveform,
@@ -462,6 +463,7 @@ def register():
     bpy.types.Scene.bool_mode_settings = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.bool_main_settings = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.bool_geometry_settings = bpy.props.BoolProperty(default=False)
+    bpy.types.Scene.bool_curve_deform = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.bool_eq_curve_settings = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.bool_custom_gradient = bpy.props.BoolProperty(default=False)
 

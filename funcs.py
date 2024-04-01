@@ -1049,3 +1049,89 @@ def stm_04_cleanup():
 
 def stm_05_sleep():
     time.sleep(0.5)
+
+
+def add_spectrogram_object():
+    print('-INF- add spectrogram object')
+
+    context = bpy.context
+
+    assetFile = bpy.context.scene.assetFilePath
+
+    # obj = append_from_blend_file(assetFile, 'Object', 'STM_spectrogram', forceImport=True)
+    append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
+
+    me = bpy.data.meshes.new('STM_spectrogram')
+    obj = bpy.data.objects.new('STM_spectrogram', me)
+    context.collection.objects.link(obj)
+
+    mod = obj.modifiers.new("STM_spectrogram", 'NODES')
+    mod.node_group = bpy.data.node_groups['STM_spectrogram']
+
+    mat_gradient = get_stm_material(obj, 'STM_gradient')
+
+    mod["Input_12"] = mat_gradient
+    obj.material_type = 'gradient'
+
+    if obj.data.materials:
+        obj.data.materials[0] = mat_gradient
+    else:
+        obj.data.materials.append(mat_gradient)
+
+    print('-INF- added spectrogram object <%s>'%obj.name)
+
+    return obj
+
+def add_waveform_object(stm_obj, style=1, offset=0.0):
+    print('-INF- add waveform')
+
+    context = bpy.context
+
+    assetFile = bpy.context.scene.assetFilePath
+
+
+    append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
+    
+
+    mesh = bpy.data.meshes.new('STM_waveform')
+    obj = bpy.data.objects.new("STM_waveform", mesh)
+    bpy.context.collection.objects.link(obj)
+
+    mod = obj.modifiers.new("STM_waveform", 'NODES')
+    mod.node_group = bpy.data.node_groups['STM_waveform']
+
+
+    mat = append_from_blend_file(assetFile, 'Material', 'STM_waveform', forceImport=False)
+    if mat == None:
+        mat = bpy.data.materials['STM_waveform']
+    # mat.name = obj.name
+    # mat['STM_object'] = obj
+    # audioPath = context.object.audio_file_path
+    # audioName = funcs.sanitize_input(os.path.basename(audioPath))
+    # mat.name = f'STM_waveform_{audioName}'
+
+    mod["Input_15"] = mat
+    mod["Input_8"] = style
+    mod["Input_14"] = offset
+
+    if obj.data.materials:
+        obj.data.materials[0] = mat
+    else:
+        obj.data.materials.append(mat)
+
+    mod["Input_16"] = stm_obj
+
+    bpy.ops.object.select_all(action='DESELECT')
+
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+
+    print('-INF- added waveform object <%s>'%obj.name)
+
+    return obj
+
+def select_object_solo(obj):
+    bpy.ops.object.select_all(action='DESELECT')
+
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj

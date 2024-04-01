@@ -586,6 +586,36 @@ class STM_OT_select_stm_in_viewport(Operator):
 
         return {'FINISHED'}
 
+class STM_OT_import_spectrogram_setup(Operator):
+    """Import selected setup"""
+    bl_idname = "stm.import_spectrogram_setup"
+    bl_label = ''
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+
+        scn = context.scene
+        preset = scn.presets_setup
+
+        print(preset)
+
+        if preset == "1-waveform_simple.png":
+            stm_obj = funcs.add_spectrogram_object()
+            funcs.add_waveform_object(stm_obj)
+
+            funcs.select_object_solo(stm_obj)
+
+        elif preset == "2-waveform_complex.png":
+            stm_obj = funcs.add_spectrogram_object()
+            funcs.add_waveform_object(stm_obj, style=4, offset=-0.05)
+            funcs.add_waveform_object(stm_obj, style=1, offset=0.0)
+            funcs.add_waveform_object(stm_obj, style=2, offset=0.05)
+
+            funcs.select_object_solo(stm_obj)
+
+
+        return {'FINISHED'}
+
 class STM_OT_add_spectrogram(Operator):
     """Add a new spectrogram object"""
     bl_idname = "stm.add_spectrogram"

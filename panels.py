@@ -138,7 +138,7 @@ class STM_PT_spectrogram(Panel):
         row = col.row(align=True)
         row.scale_y = 1.5
         # row.operator('stm.spectrogram_preset_popup', text='Apply Preset', icon='IMPORT')
-        row.operator('stm.apply_spectrogram_preset', text='Apply on selection' if is_stm_selected else 'Add', icon='IMPORT' if is_stm_selected else 'ADD')
+        row.operator('stm.import_spectrogram_setup', text='Apply on selection' if is_stm_selected else 'Add', icon='IMPORT' if is_stm_selected else 'ADD')
         # row.operator('stm.reset_spectrogram_full', text='Reset All', icon='LOOP_BACK')
 
 
@@ -191,7 +191,7 @@ class STM_PT_spectrogram_settings(Panel):
 
     def draw_header(self, context):
         layout = self.layout
-        layout.label(text='Spectrogram Image', icon='IMAGE_DATA')
+        layout.label(text='Spectrogram Settings', icon='SEQ_HISTOGRAM')
 
     def draw(self, context):
         layout = self.layout
@@ -283,7 +283,7 @@ class STM_PT_spectrogram_settings(Panel):
         if obj.progress != 0:
             label = bpy.context.object.progress_label
             rrow1.prop(bpy.context.object,"progress", text=label)
-        elif obj['image_file'] == None:
+        elif obj.image_file == None:
             # row.template_ID(obj, 'image_file', text='')
             rrow1.operator('stm.prompt_spectrogram_popup', text='Bake Spectrogram Image', icon='IMAGE_DATA', depress=False)
             
@@ -959,10 +959,24 @@ class STM_PT_geometry_nodes_spectrogram(Panel):
             col1.label(text='')
             prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Noise Scale', label_name='Scale')
 
-            col1.separator()
-            col2.separator()
+        box = layout.box()
+        row = box.row(align=True)
+        # row.alignment = 'LEFT'
+        row.prop(scn, 'bool_curve_deform', text='Curve Deform', icon='TRIA_DOWN' if scn.bool_curve_deform else 'TRIA_RIGHT', emboss=False)
+        # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCurve', label=False)
+        # row.prop(scn, 'bool_curve_deform', text='Curve Deform', icon='NONE', emboss=False)
+        row.operator('stm.reset_spectrogram_geometry_values', text='', icon='LOOP_BACK')
 
-            col1.label(text='Curve Deform')
+
+        if scn.bool_curve_deform:
+        # if obj.modifiers['STM_spectrogram']["Socket_17"]:
+
+            split = box.split(factor=split_fac)
+            col1 = split.column(align=True)
+            col1.alignment = 'RIGHT'
+            col2 = split.column(align=True)
+
+            col1.label(text='Curve Object')
 
             row = col2.row(align=True)
             prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCurve', label=False)
@@ -1209,7 +1223,7 @@ class STM_PT_waveform_settings(Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "STM"
-    # bl_parent_id = 'STM_PT_spectrogram'
+    bl_parent_id = 'STM_PT_spectrogram'
 
     @classmethod
     def poll(self, context):
@@ -1275,7 +1289,7 @@ class STM_PT_geometry_nodes_waveform(Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "STM"
-    bl_parent_id = 'STM_PT_waveform_settings'
+    bl_parent_id = 'STM_PT_spectrogram'
 
     @classmethod
     def poll(self, context):
@@ -1322,41 +1336,32 @@ class STM_PT_geometry_nodes_waveform(Panel):
             
 
 
-        layout = layout.box()
+        # layout = layout.box()
         layout.enabled = stm_ok
 
-        split = layout.split(factor=split_fac)
-        split.label(text='Waveform Style :')
+        # split = layout.split(factor=split_fac)
+        # split.label(text='Waveform Style :')
 
         
 
-        gallery_scale = 5.0
+        # gallery_scale = 5.0
 
-        row = split.row(align=True)
+        # row = split.row(align=True)
 
-        col1 = row.column(align=True)
-        col2 = row.column(align=True)
-        col3 = row.column(align=True)
+        # col1 = row.column(align=True)
+        # col2 = row.column(align=True)
+        # col3 = row.column(align=True)
 
-        col1.scale_y=gallery_scale
-        col3.scale_y=gallery_scale
+        # col1.scale_y=gallery_scale
+        # col3.scale_y=gallery_scale
 
-        col1.operator('stm.previous_waveform_style', text='', icon='TRIA_LEFT')
-        col2.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=gallery_scale, scale_popup=6.0)
-        col3.operator('stm.next_waveform_style', text='', icon='TRIA_RIGHT')
+        # col1.operator('stm.previous_waveform_style', text='', icon='TRIA_LEFT')
+        # col2.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=gallery_scale, scale_popup=6.0)
+        # col3.operator('stm.next_waveform_style', text='', icon='TRIA_RIGHT')
 
 
         col = layout.column(align=True)
         prop_geonode(col, modifier, 'Follow Spectrogram')
-
-
-
-        col = layout.column(align=True)
-        col.scale_y = 1.5
-        prop_geonode(col, modifier, 'Offset')
-
-        col = layout.column(align=True)
-        prop_geonode(col, modifier, 'Thickness')
         
 
         if stm_ok:
@@ -1374,30 +1379,61 @@ class STM_PT_geometry_nodes_waveform(Panel):
         # prop_geonode(row, modifier, 'Resolution')
         # row.enabled = True if obj.waveform_resolution_choice == 'custom' else False
 
-        split = col.split(factor=0.49)
+        row = layout.row(align=True)
+        row.prop_enum(context.object, "presets_waveform_style", '1-line.png')
+        row.prop_enum(context.object, "presets_waveform_style", '2-dots.png')
+        row.prop_enum(context.object, "presets_waveform_style", '3-bars.png')
+
+        split_fac = 0.4
+
+        split = layout.split(factor=split_fac)
         col1 = split.column(align=True)
+        col1.alignment = 'RIGHT'
         col2 = split.column(align=True)
 
-        row = col1.row()
-        row.scale_y = 1.5
-        row.label(text='Resolution :')
+
+        col1.label(text='Offset')
+        prop_geonode(col2, obj.modifiers['STM_waveform'], 'Offset', label=False)
+
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Thickness')
+        prop_geonode(col2, obj.modifiers['STM_waveform'], 'Thickness', label=False)
+
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Resample')
+
         row = col2.row(align=True)
-        row.scale_y = 1.5
-        row.prop(obj, 'waveform_resolution_choice', expand=True)
+        prop_geonode(row, obj.modifiers['STM_waveform'], 'doResample', label=False)
 
+        ccol = row.column(align=True)
+        ccol.enabled = context.object.modifiers["STM_waveform"]["Input_17"]
+        prop_geonode(ccol, obj.modifiers['STM_waveform'], 'Resample Resolution', label=False)
 
-        row2 = col2.row(align=True)
-        prop_geonode(row2, modifier, 'Resolution', label_name='', label=False)
-        row2.enabled = True if obj.waveform_resolution_choice == 'custom' else False
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Smooth')
+
+        row = col2.row(align=True)
+        prop_geonode(row, obj.modifiers['STM_waveform'], 'doSmooth', label=False)
+
+        ccol = row.column(align=True)
+        ccol.enabled = context.object.modifiers["STM_waveform"]["Socket_8"]
+        prop_geonode(ccol, obj.modifiers['STM_waveform'], 'Smooth Factor', label=False)
+        prop_geonode(ccol, obj.modifiers['STM_waveform'], 'Smooth Level', label_name='Level')
+
+        col1.separator()
+        col2.separator()
 
         if stm_ok:
             if modifier['Input_16'].modifiers['STM_spectrogram']['Socket_4'] == 2 :
                 col = layout.column(align=True)
                 prop_geonode(col, modifier, 'Curve Tilt')
 
-        col = layout.column(align=True)
-        prop_geonode(col, modifier, 'Smooth')
-        prop_geonode(col, modifier, 'Smooth Level')
 
         # col = layout.column()
         # prop_geonode(col, modifier, 'Merge Ends')
@@ -1411,7 +1447,7 @@ class STM_PT_material_waveform(Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "STM"
-    bl_parent_id = 'STM_PT_waveform_settings'
+    bl_parent_id = 'STM_PT_spectrogram'
 
     @classmethod
     def poll(self, context):
