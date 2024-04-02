@@ -1307,7 +1307,8 @@ class STM_PT_geometry_nodes_waveform(Panel):
 
     def draw_header(self, context):
         layout = self.layout
-        layout.label(text='Geometry Nodes', icon='GEOMETRY_NODES')
+        # layout.label(text='Geometry Nodes', icon='GEOMETRY_NODES')
+        layout.label(text='Waveform Settings', icon='RNDCURVE')
 
     def draw(self, context):
         layout = self.layout
@@ -1337,7 +1338,7 @@ class STM_PT_geometry_nodes_waveform(Panel):
 
 
         # layout = layout.box()
-        layout.enabled = stm_ok
+        # layout.enabled = stm_ok
 
         # split = layout.split(factor=split_fac)
         # split.label(text='Waveform Style :')
@@ -1358,22 +1359,15 @@ class STM_PT_geometry_nodes_waveform(Panel):
         # col1.operator('stm.previous_waveform_style', text='', icon='TRIA_LEFT')
         # col2.template_icon_view(context.object, "presets_waveform_style", show_labels=True, scale=gallery_scale, scale_popup=6.0)
         # col3.operator('stm.next_waveform_style', text='', icon='TRIA_RIGHT')
-
-
-        col = layout.column(align=True)
-        prop_geonode(col, modifier, 'Follow Spectrogram')
+        
         
 
-        if stm_ok:
-            if modifier['Input_16'].modifiers['STM_spectrogram']['Socket_4'] == 1:
-                if modifier['Input_8'] == 3 or modifier['Input_8'] == 4:
+        # if stm_ok:
+        #     if modifier['Input_16'].modifiers['STM_spectrogram']['Socket_4'] == 1:
+        #         if modifier['Input_8'] == 3 or modifier['Input_8'] == 4:
                     
-                        prop_geonode(col, modifier, 'Bar Height')
+        #                 prop_geonode(col, modifier, 'Bar Height')
         
-
-        col = layout.column()
-        # prop_geonode(col, modifier, 'Resolution Choice')
-        row = col.row()
 
         # row = col.row(align=True)
         # prop_geonode(row, modifier, 'Resolution')
@@ -1391,6 +1385,32 @@ class STM_PT_geometry_nodes_waveform(Panel):
         col1.alignment = 'RIGHT'
         col2 = split.column(align=True)
 
+
+        
+
+        col1.label(text='Spectrogram Object')
+
+        
+        row = col2.row(align=True)
+        prop_geonode(row, modifier, 'Object', label=False)
+
+        # if modifier['Input_16'] != None:
+        #     row.prop(modifier['Input_16'], 'hide_viewport', text='', invert_checkbox=False)
+        #     row.prop(modifier['Input_16'], 'hide_render', text='', invert_checkbox=False)
+        # else:
+        #     rrow = row.row(align=True)
+        #     rrow.operator('stm.dummy', text='', icon='RESTRICT_VIEW_OFF')
+        #     rrow.operator('stm.dummy', text='', icon='RESTRICT_RENDER_OFF')
+        #     rrow.enabled=False
+
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Follow Spectrogram')
+        prop_geonode(col2, obj.modifiers['STM_waveform'], 'Follow Spectrogram', label=False)
+
+        col1.separator()
+        col2.separator()
 
         col1.label(text='Offset')
         prop_geonode(col2, obj.modifiers['STM_waveform'], 'Offset', label=False)

@@ -80,7 +80,7 @@ classes = [
     STM_OT_hello,
     STM_PT_spectrogram,
     STM_PT_spectrogram_settings,
-    STM_PT_waveform_settings,
+    # STM_PT_waveform_settings,
     STM_PT_geometry_nodes_spectrogram,
     STM_PT_geometry_nodes_waveform,
     # STM_PT_geometry_nodes_subs,
