@@ -65,35 +65,35 @@ def seconds_to_timestring(seconds):
             return '{:.2f}s'.format(s)
     return
 
-def enum_members_from_type(rna_type, prop_str):
-    prop = rna_type.bl_rna.properties[prop_str]
-    return [e.identifier for e in prop.enum_items]
+# def enum_members_from_type(rna_type, prop_str):
+#     prop = rna_type.bl_rna.properties[prop_str]
+#     return [e.identifier for e in prop.enum_items]
 
-def select_obj_from_list(self, context):
-    scn = context.scene
-    idx = scn.stm_obj_list_index
+# def select_obj_from_list(self, context):
+#     scn = context.scene
+#     idx = scn.stm_obj_list_index
 
-    name = scn.objects[idx].name
-    obj = scn.objects.get(name, None)
-    try:
-        bpy.ops.object.select_all(action='DESELECT')
+#     name = scn.objects[idx].name
+#     obj = scn.objects.get(name, None)
+#     try:
+#         bpy.ops.object.select_all(action='DESELECT')
 
-        obj.select_set(True)
-        bpy.context.view_layer.objects.active = obj
-    except:
-        pass
+#         obj.select_set(True)
+#         bpy.context.view_layer.objects.active = obj
+#     except:
+#         pass
 
-def match_list_to_active_object():
-    scn = bpy.context.scene
+# def match_list_to_active_object():
+#     scn = bpy.context.scene
 
-    objs = [o for o in scn.objects]
-    idx = objs.index(bpy.context.active_object)
+#     objs = [o for o in scn.objects]
+#     idx = objs.index(bpy.context.active_object)
 
 
-    scn.stm_obj_list_index = idx
+#     scn.stm_obj_list_index = idx
 
-def _create_prop_from_list(context, data, list, name, icon='NONE', emboss=True):
-    context.prop(data, list[name][1], text=list[name][0], icon=icon, emboss=emboss)
+# def _create_prop_from_list(context, data, list, name, icon='NONE', emboss=True):
+#     context.prop(data, list[name][1], text=list[name][0], icon=icon, emboss=emboss)
 
 def refresh_all_areas():
     for wm in bpy.data.window_managers:
@@ -109,7 +109,10 @@ def redraw_all_viewports():
 def apply_spectrogram_preset(self, context):
     print('-INF- apply GN preset')
 
-    with open(r'%s'%bpy.context.scene.presets_json_file,'r') as f:
+    scn = context.scene
+    obj = context.object
+
+    with open(r'%s'%scn.stm_settings.presets_json_file,'r') as f:
         presets=json.load(f)
 
     #     if context.object.modifiers["STM_spectrogram"]["Socket_15"] == True:
@@ -119,7 +122,7 @@ def apply_spectrogram_preset(self, context):
     #         p = bpy.context.scene.presets_geonodes.replace('.png', '')
     #         p = p.split('-')[1]
 
-    p = bpy.context.scene.presets_geonodes
+    p = obj.presets_geonodes
 
     if p == 'reset_full':
         reset_spectrogram_values(resetAll=True)
@@ -337,6 +340,16 @@ def ffshowspectrumpic(ffmpegPath, audio_file, outputPath, width=1024, height=512
             print('-ERR- failed to generate spectrogram image')
             return None
 
+def ffgeneratethumbnail(ffmpegPath, image_path, size_x=128, size_y=-1):
+    addon_path = os.path.dirname(__file__)
+    outputPath = os.path.join(addon_path, './thumbs')
+    image_name = os.path.basename(image_path)
+    thumbnail_path = f'{outputPath}/{image_name}'
+
+    ffmCMD = f'{ffmpegPath} -y -i "{image_path}" -vf scale={size_x}:{size_y} "{thumbnail_path}"'
+    subprocess.call(ffmCMD)
+
+    return thumbnail_path
 
 
 def ffmetadata(ffmpegPath, audio_file):
@@ -496,16 +509,16 @@ def update_metadata(self, context):
     scn = context.scene
     obj = context.object
 
-    if obj.audio_file != None:
-        mdata = ffmetadata(scn.ffmpegPath, obj.audio_file)
+    if obj.stm_spectro.audio_file != None:
+        mdata = ffmetadata(scn.stm_settings.ffmpegPath, obj.stm_spectro.audio_file)
         # soundstrip.frame_final_duration
 
         if not mdata:
-            obj.title = '[unkown]'
-            obj.album = '[unkown]'
-            obj.artist = '[unkown]'
-            obj.duration_seconds = 0.0
-            obj.duration_format = ''
+            obj.stm_spectro.meta_title = '[unkown]'
+            obj.stm_spectro.meta_album = '[unkown]'
+            obj.stm_spectro.meta_artist = '[unkown]'
+            obj.stm_spectro.meta_duration_seconds = 0.0
+            obj.stm_spectro.meta_duration_format = ''
             
         else:
             title = get_first_match_from_metadata(mdata['metadata'], match='title')
@@ -514,12 +527,12 @@ def update_metadata(self, context):
             duration = mdata['duration']
 
 
-            obj.title = os.path.basename(obj.audio_file_path) if title == '' else title
-            obj.album = '[unkown]' if album == '' else album
-            obj.artist = '[unkown]' if artist == '' else artist
-            # scn.duration = str(datetime.timedelta(seconds=round(duration)))
-            obj.duration_seconds = duration
-            obj.duration_format = seconds_to_timestring(duration)
+            obj.stm_spectro.meta_title = os.path.basename(obj.stm_spectro.audio_file_path) if title == '' else title
+            obj.stm_spectro.meta_album = '[unkown]' if album == '' else album
+            obj.stm_spectro.meta_artist = '[unkown]' if artist == '' else artist
+            # scn.stm_settings.duration = str(datetime.timedelta(seconds=round(duration)))
+            obj.stm_spectro.meta_duration_seconds = duration
+            obj.stm_spectro.meta_duration_format = seconds_to_timestring(duration)
         
 
             # print(f'{duration = }')
@@ -531,12 +544,12 @@ def update_metadata(self, context):
 def update_curve_object(self, context):
     obj = context.object
 
-    obj.modifiers['STM_spectrogram']['Socket_3'] = obj.curve_object
+    obj.modifiers['STM_spectrogram']['Socket_3'] = obj.stm_spectro.curve_object
 
 def update_curve_deform_axis(self, context):
     obj = context.object
 
-    obj.modifiers['STM_spectrogram']['Socket_22'] = int(obj.curve_deform_axis)
+    obj.modifiers['STM_spectrogram']['Socket_22'] = int(obj.stm_spectro.curve_deform_axis)
 
 def set_sound_in_scene(audio_file, offset=0):
 
@@ -610,17 +623,17 @@ def frame_clip_in_sequencer():
 
 #     return obj
 
-def generate_spectrogram(stm_obj, audio_file, image_file, duration_seconds, max_volume_dB, peak_brightness=0):
+def generate_spectrogram(stm_obj, audio_file, image_file, duration_seconds, max_volume_dB=0, peak_brightness=0):
 
     print('-INF- updating spectrogram')
 
-    
+    scn = bpy.context.scene
 
     audioName = sanitize_input(os.path.basename(audio_file.filepath))
     stm_obj.name = f'STM_{audioName}'
 
 
-    assetFile = bpy.context.scene.assetFilePath
+    assetFile = scn.stm_settings.assetFilePath
 
     append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
 
@@ -651,8 +664,8 @@ def generate_spectrogram(stm_obj, audio_file, image_file, duration_seconds, max_
     spectro_texture.image = image_file
     spectro_texture.extension = 'CLIP'
 
-    stm_obj.image_texture = spectro_texture
-    stm_obj.image_filename = image_file.name
+    stm_obj.stm_spectro.image_texture = spectro_texture
+    stm_obj.stm_spectro.image_filename = image_file.name
     
     
 
@@ -669,13 +682,13 @@ def generate_spectrogram(stm_obj, audio_file, image_file, duration_seconds, max_
     mat_raw = get_stm_material(stm_obj, 'STM_rawTexture')
     mat_gradient = get_stm_material(stm_obj, 'STM_gradient')
 
-    mat = mat_raw if stm_obj.material_type == 'raw' else mat_gradient if stm_obj.material_type == 'gradient' else stm_obj.material_custom
+    mat = mat_raw if stm_obj.stm_spectro.material_type == 'raw' else mat_gradient if stm_obj.stm_spectro.material_type == 'gradient' else stm_obj.stm_spectro.material_custom
     
-    if stm_obj.material_type == 'waveform':
+    if stm_obj.stm_spectro.material_type == 'waveform':
         pass
-    elif stm_obj.material_type == 'raw':
+    elif stm_obj.stm_spectro.material_type == 'raw':
         mat.name = f'STM_rawTex_{audioName}'
-    elif stm_obj.material_type == 'gradient':
+    elif stm_obj.stm_spectro.material_type == 'gradient':
         mat.name = f'STM_gradient_{audioName}'
 
     stm_GN["Input_12"] = mat
@@ -699,10 +712,10 @@ def apply_gradient_preset(self, context):
 
     scn = bpy.context.scene
 
-    with open(r'%s'%scn.gradient_presets_json_file,'r') as f:
+    with open(r'%s'%scn.stm_settings.gradient_presets_json_file,'r') as f:
         presets=json.load(f)
 
-        # p = scn.gradient_preset
+        # p = scn.stm_settings.gradient_preset
         p = context.object.presets_gradient.replace('.png', '')
         p = p.split('-')[1]
         preset = presets[p]
@@ -754,7 +767,7 @@ def apply_eq_curve_preset(self, context):
     print('-INF- apply eq curve preset')
 
     obj = context.object
-    preset = int(context.scene.presets_eq_curve.split('-')[0])
+    preset = int(obj.presets_eq_curve.split('-')[0])
 
     obj.modifiers['STM_spectrogram']["Socket_20"] = preset
 
@@ -810,21 +823,21 @@ def is_stm_object_selected():
 def update_stm_material(self, context):
 
     obj = context.object
-    audioName = sanitize_input(os.path.basename(obj.audio_file.filepath))
-    assetFile = bpy.context.scene.assetFilePath
+    audioName = sanitize_input(os.path.basename(obj.stm_spectro.audio_file.filepath))
+    assetFile = bpy.context.scene.stm_settings.assetFilePath
     mat = None
 
-    if obj.material_type == 'gradient':
+    if obj.stm_spectro.material_type == 'gradient':
         mat = get_stm_material(obj, 'STM_gradient')
         mat.name = f'STM_gradient_{audioName}'
 
-    elif obj.material_type == 'raw':
+    elif obj.stm_spectro.material_type == 'raw':
         mat = get_stm_material(obj, 'STM_rawTexture')
         mat.name = f'STM_rawTex_{audioName}'
         
 
-    elif obj.material_type == 'custom':
-        mat = obj.material_custom
+    elif obj.stm_spectro.material_type == 'custom':
+        mat = obj.stm_spectro.material_custom
 
     obj.modifiers['STM_spectrogram']["Input_12"] = mat
 
@@ -833,36 +846,20 @@ def update_stm_material(self, context):
     else:                                       # else
         obj.data.materials.append(mat)          # append mat
 
-def set_geometry_type(self, context):
-    obj = context.object
-    obj.modifiers['STM_spectrogram']['Socket_4'] = 1 if obj.geometry_type == 'cylinder' else 2 if obj.geometry_type == 'curve' else 0
-
-def set_doExtrude(self, context):
-    obj = context.object
-    obj.modifiers['STM_spectrogram']['Input_52'] = True if obj.doExtrude == 'on' else False
-
-def set_doFlipCylinderOut(self, context):
-    obj = context.object
-    obj.modifiers['STM_spectrogram']['Socket_1'] = True if obj.doFlipCylinderOut == 'in' else False
-
-def set_showGrid(self, context):
-    obj = context.object
-    obj.modifiers['STM_spectrogram']['Input_58'] = True if obj.showGrid == 'on' else False
-
 def set_waveform_style(self, context):
     obj = context.object
-    style = obj.waveform_style
+    style = obj.stm_waveform.waveform_style
     style_arr = ['line', 'dots', 'plane', 'cubes', 'tubes', 'zigzag', 'zigzag_smooth']
     obj.modifiers['STM_waveform']['Input_8'] = style_arr.index(style)
 
 def set_curveAlignment(self, context):
     obj = context.object
-    obj.modifiers['STM_spectrogram']['Socket_5'] = True if obj.curveAlignment == 'edge' else False
+    obj.modifiers['STM_spectrogram']['Socket_5'] = True if obj.stm_spectro.curveAlignment == 'edge' else False
 
 def set_waveform_resolution_choice(self, context):
     obj = context.object
 
-    obj.modifiers['STM_waveform']['Input_17'] = True if obj.waveform_resolution_choice == 'custom' else False
+    obj.modifiers['STM_waveform']['Input_17'] = True if obj.stm_waveform.waveform_resolution_choice == 'custom' else False
 
 def convert_size(size_bytes):
    if size_bytes == 0:
@@ -886,7 +883,8 @@ def get_dir_size(path='.'):
 
 def get_stm_material(stm_obj, mat_name):
 
-    assetFile = bpy.context.scene.assetFilePath
+    scn = bpy.context.scene
+    assetFile = scn.stm_settings.assetFilePath
     mat = None
 
     for m in bpy.data.materials:
@@ -914,11 +912,11 @@ def stm_00_ffmetadata():
     obj = bpy.context.object
     scn = bpy.context.scene
 
-    data_raw = ffmetadata(scn.ffmpegPath, obj.audio_file)
+    data_raw = ffmetadata(scn.stm_settings.ffmpegPath, obj.stm_spectro.audio_file)
     
     artist = ''
     album = ''
-    title = obj.audio_file.name
+    title = obj.stm_spectro.audio_file.name
 
     if data_raw != None:
         artist = get_first_match_from_metadata(data_raw['metadata'], match='artist')
@@ -930,15 +928,15 @@ def stm_00_ffmetadata():
     print('album :', album)
     print('title :', title)
 
-    obj['title'] = title
-    obj['artist'] = artist
-    obj['album'] = album
+    # obj['title'] = title
+    # obj['artist'] = artist
+    # obj['album'] = album
 
-    obj.title = title if title != '' else os.path.basename(obj.audio_file.filepath)
-    obj.album = album if album != '' else '[unkown]'
-    obj.artist = artist if artist != '' else '[unkown]'
+    obj.stm_spectro.meta_title = title if title != '' else os.path.basename(obj.stm_spectro.audio_file.filepath)
+    obj.stm_spectro.meta_album = album if album != '' else '[unkown]'
+    obj.stm_spectro.meta_artist = artist if artist != '' else '[unkown]'
     
-    obj.modifiers['STM_spectrogram']['Input_60'] = obj.audio_filename
+    obj.modifiers['STM_spectrogram']['Input_60'] = obj.stm_spectro.audio_filename
 
 def stm_01_volume_data():
 
@@ -947,16 +945,16 @@ def stm_01_volume_data():
 
     # get peak volume using ffvolumedetect() (less accurate but quicker)
 
-    volume_data_raw = ffvolumedetect(scn.ffmpegPath, obj.audio_file)
+    volume_data_raw = ffvolumedetect(scn.stm_settings.ffmpegPath, obj.stm_spectro.audio_file)
     max_volume_dB = float(volume_data_raw['max_volume'])
-    obj['max_volume_dB'] = max_volume_dB
+    # obj['max_volume_dB'] = max_volume_dB
     print(f'{max_volume_dB = }')
 
 
 
     # get peak volume using ffastats() (more accurate but longer)
 
-    # astats = ffastats(scn.ffmpegPath, obj.audio_file.filepath)
+    # astats = ffastats(scn.stm_settings.ffmpegPath, obj.stm_spectro.audio_file.filepath)
     # peak_level_dB = round(float(astats['Peak level dB']), 2)
     # obj['peak_level_dB'] = peak_level_dB
     # print(f'{peak_level_dB = }')
@@ -966,12 +964,12 @@ def stm_02_generate_spectrogram_img():
     scn = bpy.context.scene
     obj = bpy.context.object
 
-    ffmpegPath = scn.ffmpegPath
-    audio_file = obj.audio_file
-    outputPath = scn.outputPath
+    ffmpegPath = scn.stm_settings.ffmpegPath
+    audio_file = obj.stm_spectro.audio_file
+    outputPath = scn.stm_settings.outputPath
 
-    w = scn.userWidth
-    h = scn.userHeight
+    w = scn.stm_settings.userWidth
+    h = scn.stm_settings.userHeight
 
     spectrogram_image_path = ffshowspectrumpic(
         ffmpegPath,
@@ -979,36 +977,37 @@ def stm_02_generate_spectrogram_img():
         outputPath,
         width=w,
         height=h,
-        scale=scn.spectro_scale,
-        fscale=scn.spectro_fscale,
-        colorMode=scn.spectro_colorMode,
-        drange=scn.spectro_drange,
-        limit=obj['max_volume_dB']
+        scale=scn.stm_settings.spectro_scale,
+        fscale=scn.stm_settings.spectro_fscale,
+        colorMode=scn.stm_settings.spectro_colorMode,
+        drange=scn.stm_settings.spectro_drange,
+        limit=obj.stm_spectro.max_volume_dB
     )
 
 
+
     # obj['spectrogram_file_path'] = spectrogram_image_path
-    obj.image_file = bpy.data.images.load(spectrogram_image_path, check_existing=True)
+    obj.stm_spectro.image_file = bpy.data.images.load(spectrogram_image_path, check_existing=True)
 
 def stm_03_build_spectrogram():
 
     scn = bpy.context.scene
     obj = bpy.context.object
 
-    ffmpegPath = scn.ffmpegPath
-    outputPath = scn.outputPath
+    ffmpegPath = scn.stm_settings.ffmpegPath
+    outputPath = scn.stm_settings.outputPath
 
     # I used to analyze the image brightness to normalize the displacement
     # but I don't need it anymore. Now I just analyze the max volume, and gives it
     # to the ffshowspectrumpic() function.
 
-    # peak_brightness = int(ffsignalstats(scn.ffmpegPath, obj['spectrogram_file_path'], 'YMAX'))
+    # peak_brightness = int(ffsignalstats(scn.stm_settings.ffmpegPath, obj['spectrogram_file_path'], 'YMAX'))
     # obj['peak_brightness'] = peak_brightness
 
     fps = bpy.context.scene.render.fps
 
     # generate soundstrip
-    soundstrip = set_sound_in_scene(obj.audio_file, 0)
+    soundstrip = set_sound_in_scene(obj.stm_spectro.audio_file, 0)
     duration_frames = soundstrip.frame_final_duration
     duration_seconds = duration_frames/fps
 
@@ -1019,27 +1018,27 @@ def stm_03_build_spectrogram():
     # generate stm_obj
     generate_spectrogram(
             stm_obj=obj,
-            audio_file=obj.audio_file,
-            image_file=obj['image_file'],
+            audio_file=obj.stm_spectro.audio_file,
+            image_file=obj.stm_spectro.image_file,
             duration_seconds=duration_seconds,
-            max_volume_dB=obj['max_volume_dB'],
+            max_volume_dB=obj.stm_spectro.max_volume_dB,
             # peak_brightness=obj['peak_brightness']
         )
 
 def stm_04_cleanup():
     scn = bpy.context.scene
 
-    if scn.force_standard_view_transform:
+    if scn.stm_settings.force_standard_view_transform:
         print('-INF- setting scene view transform to "Standard"')
         scn.view_settings.view_transform = 'Standard'
 
-    if scn.force_eevee_AO:
+    if scn.stm_settings.force_eevee_AO:
         scn.eevee.use_gtao = True
         
-    if scn.force_eevee_BLOOM:
+    if scn.stm_settings.force_eevee_BLOOM:
         scn.eevee.use_bloom = True
 
-    if scn.disable_eevee_viewport_denoising:
+    if scn.stm_settings.disable_eevee_viewport_denoising:
         scn.eevee.use_taa_reprojection = False
 
 
@@ -1071,7 +1070,7 @@ def add_spectrogram_object():
     mat_gradient = get_stm_material(obj, 'STM_gradient')
 
     mod["Input_12"] = mat_gradient
-    obj.material_type = 'gradient'
+    obj.stm_spectro.material_type = 'gradient'
 
     if obj.data.materials:
         obj.data.materials[0] = mat_gradient
@@ -1135,3 +1134,38 @@ def select_object_solo(obj):
 
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
+
+
+def reload_spectrogram_thumbnail(self, context):
+    pcoll = bpy.utils.previews['preview_thumb_folder']
+    image_location = pcoll.images_location
+    current_image = context.object.stm_spectro.image_file
+
+    # print(image_location)
+
+    enum_items = []
+
+    # Generate the thumbnails
+    for i, image in enumerate(os.listdir(image_location)):
+        # print(image)
+        # print(current_image.name)
+
+        item_name = image
+        filepath = os.path.join(image_location, image)
+
+        # if image == current_image.name:
+        #     filepath = current_image.filepath
+        if filepath in pcoll:
+            thumb = pcoll[filepath]
+        else:
+            thumb = pcoll.load(filepath, filepath, 'IMAGE', force_reload=True)
+            
+        enum_items.append((image, item_name, "", thumb.icon_id, i))
+
+        # print(thumb.icon_id)
+
+    return enum_items
+
+
+def stm_curve_object_poll(self, object):
+    return object.type == 'CURVE'
