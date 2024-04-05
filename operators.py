@@ -660,11 +660,8 @@ class STM_OT_add_waveform(Operator):
 
         print('-INF- add waveform')
 
-        assetFile = bpy.context.scene.assetFilePath
-
-        stm_object = context.object if funcs.is_stm_object_selected() else None
-
-
+        assetFile = bpy.context.scene.stm_settings.assetFilePath
+        
         funcs.append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
         
 
@@ -680,7 +677,7 @@ class STM_OT_add_waveform(Operator):
         if mat == None:
             mat = bpy.data.materials['STM_waveform']
         # mat.name = obj.name
-        # mat['STM_object'] = obj
+        # mat['stm_obj'] = obj
         # audioPath = context.object.audio_file_path
         # audioName = funcs.sanitize_input(os.path.basename(audioPath))
         # mat.name = f'STM_waveform_{audioName}'
@@ -692,36 +689,79 @@ class STM_OT_add_waveform(Operator):
         else:
             obj.data.materials.append(mat)
 
-        if stm_object != None:
-            mod["Input_16"] = stm_object
 
-        bpy.ops.object.select_all(action='DESELECT')
+        stm_obj = context.object
+        
+        if context.object.stm_spectro.stm_type == 'waveform':
+            stm_obj = context.object.stm_spectro.spectrogram_object
 
-        obj.select_set(True)
-        bpy.context.view_layer.objects.active = obj
+        
+
+        obj.stm_spectro.stm_type = 'waveform'
+        obj.stm_spectro.stm_status = 'done'
+        obj.stm_spectro.spectrogram_object = stm_obj
+        # obj.stm_spectro.waveform_type = self.waveform_type
+            
+        stm_items = stm_obj.stm_spectro.stm_items
+
+        item = stm_items.add()
+        item.name = obj.name
+        item.id = len(stm_items)
+        item.stm_type = 'waveform'
+
+        new_idx = len(stm_items)-1
+        
+        stm_obj.stm_spectro.stm_items_active_index = new_idx
+
+        
+        mod["Input_16"] = stm_obj
+        mod["Input_14"] = (new_idx-1)/20
+
+        
+        obj.hide_viewport = True
+        obj.hide_viewport = False
+        
+
+        funcs.select_object_solo(obj)
+
 
         print('-INF- added waveform object <%s>'%obj.name)
 
         return {'FINISHED'}
 
-class STM_OT_remove_waveform(Operator):
+class STM_OT_delete_waveform(Operator):
     """Remove waveform"""
-    bl_idname = "stm.remove_waveform"
+    bl_idname = "stm.delete_waveform"
     bl_label = 'Remove ?'
     bl_options = {'UNDO'}
 
 
-    # def invoke(self, context, event):
-    #     return context.window_manager.invoke_confirm(self, event)
+    @classmethod
+    def poll(cls, context):
+        stm_obj = context.object.stm_spectro.spectrogram_object if context.object.stm_spectro.stm_type == 'waveform' else context.object
+        return bool(stm_obj.stm_spectro.stm_items_active_index>0)
 
     def execute(self, context):
 
-        idx = bpy.context.scene.stm_obj_list_index
-        obj = context.scene.objects[idx]
-        obj_name = obj.name
-
-        bpy.data.objects.remove(bpy.context.scene.objects[idx], do_unlink = True)
-        print('-INF- removed waveform object <%s>'%obj_name)
+        obj = context.object
+        stm_obj = obj
+        
+        if obj.stm_spectro.stm_type == 'waveform':
+            stm_obj = obj.stm_spectro.spectrogram_object
+        
+        idx = stm_obj.stm_spectro.stm_items_active_index
+        
+        obj = bpy.data.objects[stm_obj.stm_spectro.stm_items[idx].name]
+        obj.stm_spectro.stm_status = 'delete'
+        
+        new_index = stm_obj.stm_spectro.stm_items_active_index - 1
+        
+        stm_obj.stm_spectro.stm_items_active_index = new_index
+        stm_obj.stm_spectro.stm_items.remove(idx)
+        
+        bpy.data.objects.remove(obj, do_unlink=True)
+        
+        stm_obj.stm_spectro.stm_items_active_index = new_index
 
 
 
@@ -1108,13 +1148,48 @@ class STM_OT_refresh_stm_objects(Operator):
     def execute(self, context):
         
         scn = context.scene
+        obj = context.object
 
-        for o in scn.objects:
-            if o.modifiers:
-                if any([m.name.startswith('STM_spectrogram') for m in o.modifiers]):
-                    o.stm_type = 'spectrogram'
-                elif any([m.name.startswith('STM_waveform') for m in o.modifiers]):
-                    o.stm_type = 'waveform'
+        funcs.update_stm_objects(self, context)
+
+        stm_obj = obj
+
+        if obj.stm_spectro.stm_type == 'waveform':
+            if obj.stm_spectro.spectrogram_object != None:
+                stm_obj = obj.stm_spectro.spectrogram_object
+
+        idx = stm_obj.stm_spectro.stm_items_active_index
+        item = stm_obj.stm_spectro.stm_items[idx]
+        
+        for o in context.scene.objects:
+            
+            stm_obj = None
+            
+            if o.stm_spectro:
+                if o.stm_spectro.stm_type == 'spectrogram':
+
+                    stm_items = obj.stm_spectro.stm_items
+
+                    stm_items.clear()
+            
+                    item = stm_items.add()
+                    item.name = o.name
+                    item.id = len(stm_items)
+                    item.stm_type = 'spectrogram'
+                    
+                    stm_obj = o
+            
+            for o in context.scene.objects:
+                if o.stm_spectro.stm_type == 'waveform':
+                    if stm_obj != None and o.stm_spectro.spectrogram_object == stm_obj:
+
+                        stm_items = stm_obj.stm_spectro.stm_items
+
+                        if o.name not in stm_items:
+                            item = stm_items.add()
+                            item.name = o.name
+                            item.id = len(stm_items)
+                            item.stm_type = 'waveform'
 
 
 

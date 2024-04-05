@@ -848,7 +848,7 @@ def update_stm_material(self, context):
 
 def set_waveform_style(self, context):
     obj = context.object
-    style = obj.stm_waveform.waveform_style
+    style = obj.stm_spectro.waveform_style
     style_arr = ['line', 'dots', 'plane', 'cubes', 'tubes', 'zigzag', 'zigzag_smooth']
     obj.modifiers['STM_waveform']['Input_8'] = style_arr.index(style)
 
@@ -859,7 +859,7 @@ def set_curveAlignment(self, context):
 def set_waveform_resolution_choice(self, context):
     obj = context.object
 
-    obj.modifiers['STM_waveform']['Input_17'] = True if obj.stm_waveform.waveform_resolution_choice == 'custom' else False
+    obj.modifiers['STM_waveform']['Input_17'] = True if obj.stm_spectro.waveform_resolution_choice == 'custom' else False
 
 def convert_size(size_bytes):
    if size_bytes == 0:
@@ -1169,3 +1169,82 @@ def reload_spectrogram_thumbnail(self, context):
 
 def stm_curve_object_poll(self, object):
     return object.type == 'CURVE'
+
+
+# ----------------------------------------------------------------------------------------------------------------
+
+
+
+def update_stm_objects(self, context):
+    scn = context.scene
+
+    for o in scn.objects:
+        if o.modifiers:
+            if any([m.name.startswith('STM_spectrogram') for m in o.modifiers]):
+                o.stm_spectro.stm_type = 'spectrogram'
+                o.stm_spectro.stm_status='done'
+                
+                stm_items = o.stm_spectro.stm_items
+                
+                stm_items.clear()
+                    
+                item = stm_items.add()
+                item.name = o.name
+                item.id = len(stm_items)
+                item.stm_type = 'spectrogram'                    
+                
+            elif any([m.name.startswith('STM_waveform') for m in o.modifiers]):
+                o.stm_spectro.stm_type = 'waveform'
+                o.stm_spectro.stm_status='done'
+
+    for o in scn.objects:
+        if o.stm_spectro.stm_type == 'spectrogram':
+            rebuild_stm_items(o)
+                
+                            
+def rebuild_stm_items(stm_obj):    
+    for o in bpy.context.scene.objects:
+        if o.stm_spectro.stm_type == 'waveform':
+            if stm_obj != None and o.stm_spectro.spectrogram_object == stm_obj:
+
+                stm_items = stm_obj.stm_spectro.stm_items
+
+                if o.name not in stm_items:
+                    item = stm_items.add()
+                    item.name = o.name
+                    item.id = len(stm_items)
+                    item.stm_type = 'waveform'
+
+    
+
+
+
+def select_object_solo(obj):
+    bpy.ops.object.select_all(action='DESELECT')
+
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    
+
+def update_obj_in_list(obj):
+    if obj.stm_type:
+        stm_obj = obj.spectrogram_object if obj.stm_type == 'waveform' else obj
+        
+        idx = stm_obj.stm_items_active_index
+        
+        if idx < len (stm_obj.stm_items) and stm_obj.stm_items[idx].name != obj.name:
+            for i, item in enumerate(stm_obj.stm_items):
+                if item.name == obj.name:
+                    stm_obj.stm_items_active_index = i   
+#                    print(f'set item to {i}')          
+
+
+def select_obj_from_list(self, context):
+    obj = context.object
+    stm_obj = obj.stm_spectro.spectrogram_object if obj.stm_spectro.stm_type == 'waveform' else obj
+    idx = stm_obj.stm_spectro.stm_items_active_index
+    obj = bpy.data.objects[stm_obj.stm_spectro.stm_items[idx].name]
+    
+    
+#    if context.object.name != obj.name and obj.stm_status != 'delete':
+    select_object_solo(obj)

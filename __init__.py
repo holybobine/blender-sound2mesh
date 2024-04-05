@@ -116,6 +116,10 @@ def generate_items_from_presets(self, context):
 
 class STM_spectrogram_props(bpy.types.PropertyGroup):
     stm_type : StringProperty() # type: ignore
+    stm_status : StringProperty() # type: ignore
+
+    stm_items : CollectionProperty(type=STM_UL_list_item) # type: ignore
+    stm_items_active_index : IntProperty(update=select_obj_from_list) # type: ignore
 
     audio_file_path : StringProperty() # type: ignore # type: ignore
     audio_filename : StringProperty() # type: ignore
@@ -163,6 +167,33 @@ class STM_spectrogram_props(bpy.types.PropertyGroup):
         type=bpy.types.Material,
         update=update_stm_material
     )
+
+    spectrogram_object : PointerProperty(type=bpy.types.Object) # type: ignore
+
+    waveform_style : bpy.props.EnumProperty( # type: ignore
+            items= (
+                        ('line', "Line", ""),
+                        ('dots', "Dots", ""),
+                        ('plane', "Plane", ""),
+                        ('cubes', "Cubes", ""),
+                        ('tubes', "Tubes", ""),
+                        ('zigzag', "Zigzag", ""),
+                        ('zigzag_smooth', "Smooth Zigzag", "")
+                    ),
+            default='line',
+            update=set_waveform_style
+        )
+
+    
+
+    waveform_resolution_choice : bpy.props.EnumProperty( # type: ignore
+            items= (
+                        ("default", "Default", ""),
+                        ("custom", "Custom", "")
+                    ),
+            default="default",
+            update=set_waveform_resolution_choice
+        )
     
     
     
@@ -350,7 +381,7 @@ classes = [
     STM_OT_import_spectrogram_setup,
     STM_OT_add_waveform,
     STM_OT_add_spectrogram,
-    STM_OT_remove_waveform,
+    STM_OT_delete_waveform,
     STM_OT_spectrogram_preset_popup,
     STM_OT_apply_spectrogram_preset,
     STM_OT_reset_spectrogram_full,
@@ -362,11 +393,15 @@ classes = [
     STM_OT_refresh_stm_objects,
 
     STM_PT_spectrogram,
+    STM_UL_list_item,
+    STM_UL_draw_items,
     STM_PT_spectrogram_settings,
     STM_PT_geometry_nodes_spectrogram,
     STM_PT_geometry_nodes_waveform,
     STM_PT_material_spectrogram,
     STM_PT_material_waveform,
+
+
     # STM_OT_dummy_op,
     # STM_OT_reload_previews,
 
@@ -399,7 +434,13 @@ def setup_new_preview_collection(name, dir):
     preview_collections[name] = bpy.utils.previews.new()
     preview_collections[name].images_location = os.path.join(addon_path, dir)
 
+def my_handler(scene):
+#    print("Frame Change", bpy.context.object)
+    if bpy.context.object:
+        update_obj_in_list(bpy.context.object)
 
+# bpy.app.handlers.depsgraph_update_post.clear()
+# bpy.app.handlers.depsgraph_update_post.append(my_handler)
 
 def register():
 
@@ -465,7 +506,7 @@ def register():
 
     bpy.types.Scene.stm_settings = PointerProperty(type=STM_scene_props)
     bpy.types.Object.stm_spectro = PointerProperty(type=STM_spectrogram_props)
-    bpy.types.Object.stm_waveform = PointerProperty(type=STM_waveform_props)
+    # bpy.types.Object.stm_waveform = PointerProperty(type=STM_waveform_props)
 
 
     

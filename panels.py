@@ -1,7 +1,7 @@
 import bpy
 import os
 from bpy.types import Panel
-from bpy.types import UIList
+from bpy.types import UIList, PropertyGroup
 import textwrap
 from . import funcs
 # from . funcs import *
@@ -45,6 +45,34 @@ def _label_multiline(context, text, parent, icon='NONE'):
     for text_line in text_lines:
         col.label(text=text_line)
 
+class STM_UL_list_item(PropertyGroup):
+    #name: StringProperty() -> Instantiated by default
+    id: bpy.props.IntProperty() # type: ignore
+    stm_type: bpy.props.StringProperty() # type: ignore
+    waveform_type: bpy.props.IntProperty() # type: ignore
+
+class STM_UL_draw_items(UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+
+        if item.name in context.scene.objects:
+            obj = context.scene.objects[item.name]
+            
+            if obj.stm_spectro.stm_type == 'spectrogram':
+                row = layout.row()
+                row.prop(item, "name", icon='SEQ_HISTOGRAM', emboss=False, text="")
+                row.prop(obj, "hide_viewport", text="", emboss=False)
+                
+            elif obj.stm_spectro.stm_type == 'waveform':
+                custom_icon = 'RNDCURVE'
+                row = layout.row(align=True)
+                row.label(text='', icon='DOT')
+                row.prop(item, "name", icon=custom_icon, emboss=False, text="")
+                row.prop(obj, "hide_viewport", text="", emboss=False)
+
+    def invoke(self, context, event):
+        pass
+
+
 class STM_PT_spectrogram(Panel):
     bl_label = "Sound To Mesh"
     bl_idname = "STM_PT_spectrogram"
@@ -60,6 +88,24 @@ class STM_PT_spectrogram(Panel):
 
         layout.operator('stm.import_spectrogram_setup', text='New Spectrogram', icon='SEQ_HISTOGRAM')
         layout.operator('stm.refresh_stm_objects', text='Refresh STM objects', icon='FILE_REFRESH')
+
+
+        if obj:
+            stm_obj = obj
+            
+            if obj.stm_spectro.stm_type == 'waveform':
+                if obj.stm_spectro.spectrogram_object != None:
+                    stm_obj = obj.stm_spectro.spectrogram_object
+
+            row = layout.row()
+
+            row.template_list("STM_UL_draw_items", "", stm_obj.stm_spectro, "stm_items", stm_obj.stm_spectro, "stm_items_active_index", rows=3, sort_lock=True)
+
+            col = row.column(align=True)
+            col.operator("stm.refresh_stm_objects", icon='FILE_REFRESH', text="")
+            col.separator()
+            col.operator("stm.add_waveform", icon='ADD', text="")
+            col.operator("stm.delete_waveform", icon='REMOVE', text="")
 
 
 
