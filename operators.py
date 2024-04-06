@@ -1,6 +1,7 @@
+from typing import Set
 import bpy
 
-from bpy.types import Operator
+from bpy.types import Context, Operator
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import *
 
@@ -10,30 +11,6 @@ import os
 from . import funcs
 # from . funcs import *
 
-class STM_OT_hello(bpy.types.Operator):
-    """Hello"""
-    bl_idname = 'stm.hello'
-    bl_label='Hello'
-
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        print('hello there my dude')
-
-
-        return {'FINISHED'}
-
-class STM_OT_dummy_op(bpy.types.Operator):
-    """"""
-    bl_idname = 'stm.dummy'
-    bl_label=''
-
-
-    def execute(self, context):
-        print('dummy')
-
-
-        return {'FINISHED'}
     
 class STM_OT_reload_previews(bpy.types.Operator):
     """"""
@@ -65,12 +42,7 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
 
     def execute(self, context):
 
-        scn = context.scene
-        obj = context.object
-        filepath = self.filepath
-
-        # obj.audio_file_path = self.filepath
-        
+        obj = context.object      
 
         sound = bpy.data.sounds.load(self.filepath, check_existing=True)
 
@@ -78,25 +50,6 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
         obj.stm_spectro.audio_filename = os.path.basename(self.filepath)
 
         funcs.update_metadata(self, context)
-
-        # mdata = funcs.ffmetadata(scn.ffmpegPath, sound)
-
-        # title = funcs.get_first_match_from_metadata(mdata['metadata'], match='title')
-        # album = funcs.get_first_match_from_metadata(mdata['metadata'], match='album', exclude='artist')
-        # artist = funcs.get_first_match_from_metadata(mdata['metadata'], match='artist')
-        # duration = mdata['duration']
-
-
-        # obj.title = os.path.basename(obj.audio_file_path) if title == '' else title
-        # obj.album = '[unkown]' if album == '' else album
-        # obj.artist = '[unkown]' if artist == '' else artist
-        # # scn.duration = str(datetime.timedelta(seconds=round(duration)))
-        # obj.duration_seconds = duration
-        # obj.duration_format = funcs.seconds_to_timestring(duration)
-
-        # # print(f'{duration = }')
-
-        # funcs.redraw_all_viewports()
 
         return {'FINISHED'}
 
@@ -110,10 +63,9 @@ class STM_OT_reset_audio_file(Operator):
 
     def execute(self, context):
 
-        scn = context.scene
-        obj = context.object
+        stm_obj = funcs.get_stm_object(context)
 
-        obj.stm_spectro.audio_file = None
+        stm_obj.stm_spectro.audio_file = None
 
 
         # seq = scn.sequence_editor
@@ -137,9 +89,9 @@ class STM_OT_reset_image_file(Operator):
 
     def execute(self, context):
 
-        obj = context.object
-        obj.stm_spectro.image_file = None
-        stm_modifier = obj.modifiers["STM_spectrogram"]
+        stm_obj = funcs.get_stm_object(context)
+        stm_obj.stm_spectro.image_file = None
+        stm_modifier = stm_obj.modifiers["STM_spectrogram"]
 
 
         stm_modifier["Input_2"] = None
@@ -171,10 +123,10 @@ class STM_OT_reset_spectrogram_settings(Operator):
 
         return {'FINISHED'}
 
-class STM_OT_add_audio_to_scene(Operator):
-    """Set sound in scene"""
-    bl_idname = "stm.set_sound_in_scene"
-    bl_label = "Set sound in scene"
+class STM_OT_use_audio_in_scene(Operator):
+    """Use audio in scene"""
+    bl_idname = "stm.use_audio_in_scene"
+    bl_label = "Use audio in scene"
     bl_options = {'UNDO'}
 
     def execute(self, context):
@@ -605,7 +557,7 @@ class STM_OT_import_spectrogram_setup(Operator):
             stm_obj = funcs.add_spectrogram_object()
             funcs.add_waveform_object(stm_obj)
 
-            funcs.select_object_solo(stm_obj)
+            funcs.select_object_solo(context, stm_obj)
 
         elif preset == "2-waveform_complex.png":
             stm_obj = funcs.add_spectrogram_object()
@@ -613,7 +565,7 @@ class STM_OT_import_spectrogram_setup(Operator):
             funcs.add_waveform_object(stm_obj, style=1, offset=0.0)
             funcs.add_waveform_object(stm_obj, style=2, offset=0.05)
 
-            funcs.select_object_solo(stm_obj)
+            funcs.select_object_solo(context, stm_obj)
 
 
         return {'FINISHED'}
@@ -717,12 +669,13 @@ class STM_OT_add_waveform(Operator):
         mod["Input_16"] = stm_obj
         mod["Input_14"] = (new_idx-1)/20
 
+        obj.parent = stm_obj
         
         obj.hide_viewport = True
         obj.hide_viewport = False
         
 
-        funcs.select_object_solo(obj)
+        funcs.select_object_solo(context, obj)
 
 
         print('-INF- added waveform object <%s>'%obj.name)
@@ -1141,7 +1094,7 @@ class THUMB_OT_previous_spectrogram_setup(Operator):
         return {'FINISHED'}
     
 class STM_OT_refresh_stm_objects(Operator):
-    """Previous preset"""
+    """Refresh list"""
     bl_idname = "stm.refresh_stm_objects"
     bl_label = ""
 
@@ -1152,45 +1105,91 @@ class STM_OT_refresh_stm_objects(Operator):
 
         funcs.update_stm_objects(self, context)
 
-        stm_obj = obj
 
-        if obj.stm_spectro.stm_type == 'waveform':
-            if obj.stm_spectro.spectrogram_object != None:
-                stm_obj = obj.stm_spectro.spectrogram_object
+        return {'FINISHED'}
 
-        idx = stm_obj.stm_spectro.stm_items_active_index
-        item = stm_obj.stm_spectro.stm_items[idx]
-        
-        for o in context.scene.objects:
-            
-            stm_obj = None
-            
-            if o.stm_spectro:
-                if o.stm_spectro.stm_type == 'spectrogram':
 
-                    stm_items = obj.stm_spectro.stm_items
 
-                    stm_items.clear()
-            
-                    item = stm_items.add()
-                    item.name = o.name
-                    item.id = len(stm_items)
-                    item.stm_type = 'spectrogram'
-                    
-                    stm_obj = o
-            
-            for o in context.scene.objects:
-                if o.stm_spectro.stm_type == 'waveform':
-                    if stm_obj != None and o.stm_spectro.spectrogram_object == stm_obj:
+class STM_OT_alert_audio_change(Operator):
+    """Audio seems to have changed."""
 
-                        stm_items = stm_obj.stm_spectro.stm_items
+    bl_idname = "stm.alert_audio_change"
+    bl_label = ''
 
-                        if o.name not in stm_items:
-                            item = stm_items.add()
-                            item.name = o.name
-                            item.id = len(stm_items)
-                            item.stm_type = 'waveform'
+    def execute(self, context):
+        pass
 
+        return {'FINISHED'}
+    
+
+class STM_OT_toggle_parent_waveform(Operator):
+    """Audio seems to have changed."""
+
+    bl_idname = "stm.toggle_parent_waveform"
+    bl_label = ''
+
+    waveform_name : StringProperty() # type: ignore
+
+    def execute(self, context):
+        stm_obj = funcs.get_stm_object(context)
+        waveform = context.scene.objects[self.waveform_name]
+
+        if waveform.parent != stm_obj:
+            waveform.parent = stm_obj
+        else:
+            waveform.parent = None
 
 
         return {'FINISHED'}
+
+
+classes = [
+    STM_OT_import_audio_file,
+    STM_OT_reset_audio_file,
+    STM_OT_reset_image_file,
+    STM_OT_reset_spectrogram_settings,
+    STM_OT_set_resolution_preset,
+    STM_OT_use_audio_in_scene,
+    STM_OT_open_image_folder,
+    STM_OT_open_image,
+    STM_OT_prompt_spectrogram_popup,
+    STM_OT_generate_spectrogram_modal,
+    STM_OT_select_stm_in_viewport,
+    STM_OT_import_spectrogram_setup,
+    STM_OT_add_waveform,
+    STM_OT_add_spectrogram,
+    STM_OT_delete_waveform,
+    STM_OT_spectrogram_preset_popup,
+    STM_OT_apply_spectrogram_preset,
+    STM_OT_reset_spectrogram_full,
+    STM_OT_reset_spectrogram_main_settings,
+    STM_OT_reset_spectrogram_geometry_values,
+    STM_OT_reset_eq_curve,
+    STM_OT_reset_gradient,
+    STM_OT_refresh_stm_objects,
+    STM_OT_toggle_parent_waveform,
+
+
+
+    STM_OT_alert_audio_change,
+    # STM_OT_reload_previews,
+
+
+    THUMB_OT_next_waveform_style,
+    THUMB_OT_previous_waveform_style,
+    THUMB_OT_next_spectrogram_style,
+    THUMB_OT_previous_spectrogram_style,
+    THUMB_OT_next_spectrogram_style_cylinder,
+    THUMB_OT_previous_spectrogram_style_cylinder,
+    THUMB_OT_next_spectrogram_setup,
+    THUMB_OT_previous_spectrogram_setup,
+]
+
+def register():
+    for c in classes:
+        bpy.utils.register_class(c)
+
+
+def unregister():
+    for c in classes:
+        bpy.utils.unregister_class(c)
