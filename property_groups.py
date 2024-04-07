@@ -56,6 +56,7 @@ class STM_spectrogram_props(PropertyGroup):
             items= (
                         ('raw', "Image", ""),
                         ('gradient', "Gradient", ""),
+                        ('emission', "Emission", ""),
                         ('custom', "Custom", "")
                     ),
             description = "Choose material type",
@@ -63,7 +64,7 @@ class STM_spectrogram_props(PropertyGroup):
             update=funcs.update_stm_material
         )
     
-    material_custom :  bpy.props.PointerProperty( # type: ignore
+    material_custom :  PointerProperty( # type: ignore
         type=bpy.types.Material,
         update=funcs.update_stm_material
     )

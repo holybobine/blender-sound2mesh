@@ -1,8 +1,8 @@
 {
   
   "reset_full":{
-    "name":"Reset All",
-    "desc":"this is the first preset.",
+    "name":"Default",
+    "desc":"this is the default preset.",
     "preset":{
       "Clip Lows" : 0.08,
       "Clip Highs" : 0.65,
@@ -37,7 +37,7 @@
       "Audio Sample (s)" : 2.0,
       "doSmooth" : true,
       "Smooth" : 100,
-      "Smooth Level" : 10,
+      "Smooth Level" : 1,
       "doContrast" : true,
       "Contrast" : 50
     }
@@ -56,7 +56,7 @@
       "Lower Bass" : 0.25,
       "doSmooth" : true,
       "Smooth" : 100,
-      "Smooth Level" : 10,
+      "Smooth Level" : 1,
       "doContrast" : true,
       "Contrast" : 50
     }

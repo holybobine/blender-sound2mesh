@@ -26,10 +26,10 @@ class STM_OT_reload_previews(bpy.types.Operator):
 
         return {'FINISHED'}
 
-class STM_OT_import_audio_file(Operator, ImportHelper):
+class STM_OT_select_audio_file(Operator, ImportHelper):
     """Select an audio file to import"""
-    bl_idname = "stm.import_audio_file"  # important since its how bpy.ops.import_test.some_data is constructed
-    bl_label = "Import audio file"
+    bl_idname = "stm.select_audio_file"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_label = "Select audio file"
 
     # ImportHelper mixin class uses this
     filename_ext = ".txt"
@@ -42,12 +42,12 @@ class STM_OT_import_audio_file(Operator, ImportHelper):
 
     def execute(self, context):
 
-        obj = context.object      
+        stm_obj = funcs.get_stm_object(context)
 
         sound = bpy.data.sounds.load(self.filepath, check_existing=True)
 
-        obj.stm_spectro.audio_file = sound
-        obj.stm_spectro.audio_filename = os.path.basename(self.filepath)
+        stm_obj.stm_spectro.audio_file = sound
+        stm_obj.stm_spectro.audio_filename = os.path.basename(self.filepath)
 
         funcs.update_metadata(self, context)
 
@@ -95,7 +95,9 @@ class STM_OT_reset_image_file(Operator):
 
 
         stm_modifier["Input_2"] = None
-        stm_modifier["Input_12"] = None
+        mat = stm_modifier["Input_12"]
+        mat.node_tree.nodes['spectro_image'].image = None
+        # stm_modifier["Input_12"] = None
 
         stm_modifier.show_viewport = False
         stm_modifier.show_viewport = True
@@ -207,7 +209,7 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
         layout = self.layout
         scn = context.scene
-        obj = context.object
+        obj = funcs.get_stm_object(context)
 
         layout.separator()
 
@@ -401,7 +403,7 @@ class STM_OT_generate_spectrogram_modal(Operator):
                 if self.step < self.max_step:
 
                     #run step function
-                    list(Operations.values())[self.step]()
+                    list(Operations.values())[self.step](self, context)
 
                     self.step += 1
                     if self.step==self.max_step:
@@ -457,6 +459,8 @@ class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
 
     def draw(self, context):
+
+        
 
         layout = self.layout
 
@@ -549,23 +553,30 @@ class STM_OT_import_spectrogram_setup(Operator):
     def execute(self, context):
 
         scn = context.scene
-        preset = scn.presets_setup
+        
+        stm_obj = funcs.add_spectrogram_object(context)
+        funcs.add_waveform_object(context, stm_obj)
+        funcs.select_object_solo(context, stm_obj)
 
-        print(preset)
+        funcs.update_stm_objects(context)
 
-        if preset == "1-waveform_simple.png":
-            stm_obj = funcs.add_spectrogram_object()
-            funcs.add_waveform_object(stm_obj)
+        # preset = scn.presets_setup
 
-            funcs.select_object_solo(context, stm_obj)
+        # print(preset)
 
-        elif preset == "2-waveform_complex.png":
-            stm_obj = funcs.add_spectrogram_object()
-            funcs.add_waveform_object(stm_obj, style=4, offset=-0.05)
-            funcs.add_waveform_object(stm_obj, style=1, offset=0.0)
-            funcs.add_waveform_object(stm_obj, style=2, offset=0.05)
+        # if preset == "1-waveform_simple.png":
+        #     stm_obj = funcs.add_spectrogram_object()
+        #     funcs.add_waveform_object(stm_obj)
 
-            funcs.select_object_solo(context, stm_obj)
+        #     funcs.select_object_solo(context, stm_obj)
+
+        # elif preset == "2-waveform_complex.png":
+        #     stm_obj = funcs.add_spectrogram_object()
+        #     funcs.add_waveform_object(stm_obj, style=4, offset=-0.05)
+        #     funcs.add_waveform_object(stm_obj, style=1, offset=0.0)
+        #     funcs.add_waveform_object(stm_obj, style=2, offset=0.05)
+
+        #     funcs.select_object_solo(context, stm_obj)
 
 
         return {'FINISHED'}
@@ -610,75 +621,15 @@ class STM_OT_add_waveform(Operator):
 
     def execute(self, context):
 
-        print('-INF- add waveform')
+        stm_obj = funcs.get_stm_object(context)
+        wave_offset = funcs.get_wave_offset(context)
+        wave_obj = funcs.add_waveform_object(context, stm_obj, wave_offset)
 
-        assetFile = bpy.context.scene.stm_settings.assetFilePath
-        
-        funcs.append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
-        
-
-        mesh = bpy.data.meshes.new('STM_waveform')
-        obj = bpy.data.objects.new("STM_waveform", mesh)
-        bpy.context.collection.objects.link(obj)
-
-        mod = obj.modifiers.new("STM_waveform", 'NODES')
-        mod.node_group = bpy.data.node_groups['STM_waveform']
+        funcs.select_object_solo(context, wave_obj)
+        funcs.add_waveform_to_stm_obj(stm_obj, wave_obj)
 
 
-        mat = funcs.append_from_blend_file(assetFile, 'Material', 'STM_waveform', forceImport=False)
-        if mat == None:
-            mat = bpy.data.materials['STM_waveform']
-        # mat.name = obj.name
-        # mat['stm_obj'] = obj
-        # audioPath = context.object.audio_file_path
-        # audioName = funcs.sanitize_input(os.path.basename(audioPath))
-        # mat.name = f'STM_waveform_{audioName}'
-
-        mod["Input_15"] = mat
-
-        if obj.data.materials:
-            obj.data.materials[0] = mat
-        else:
-            obj.data.materials.append(mat)
-
-
-        stm_obj = context.object
-        
-        if context.object.stm_spectro.stm_type == 'waveform':
-            stm_obj = context.object.stm_spectro.spectrogram_object
-
-        
-
-        obj.stm_spectro.stm_type = 'waveform'
-        obj.stm_spectro.stm_status = 'done'
-        obj.stm_spectro.spectrogram_object = stm_obj
-        # obj.stm_spectro.waveform_type = self.waveform_type
-            
-        stm_items = stm_obj.stm_spectro.stm_items
-
-        item = stm_items.add()
-        item.name = obj.name
-        item.id = len(stm_items)
-        item.stm_type = 'waveform'
-
-        new_idx = len(stm_items)-1
-        
-        stm_obj.stm_spectro.stm_items_active_index = new_idx
-
-        
-        mod["Input_16"] = stm_obj
-        mod["Input_14"] = (new_idx-1)/20
-
-        obj.parent = stm_obj
-        
-        obj.hide_viewport = True
-        obj.hide_viewport = False
-        
-
-        funcs.select_object_solo(context, obj)
-
-
-        print('-INF- added waveform object <%s>'%obj.name)
+        print(f'-INF- added waveform object {wave_obj.name}')
 
         return {'FINISHED'}
 
@@ -1144,7 +1095,7 @@ class STM_OT_toggle_parent_waveform(Operator):
 
 
 classes = [
-    STM_OT_import_audio_file,
+    STM_OT_select_audio_file,
     STM_OT_reset_audio_file,
     STM_OT_reset_image_file,
     STM_OT_reset_spectrogram_settings,

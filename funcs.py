@@ -509,7 +509,7 @@ def get_first_match_from_metadata(metadata, match, exclude=None):
 def update_metadata(self, context):
 
     scn = context.scene
-    obj = context.object
+    obj = get_stm_object(context)
 
     if obj.stm_spectro.audio_file != None:
         mdata = ffmetadata(scn.stm_settings.ffmpegPath, obj.stm_spectro.audio_file)
@@ -820,28 +820,55 @@ def is_stm_object_selected():
 def update_stm_material(self, context):
 
     obj = context.object
-    audioName = sanitize_input(os.path.basename(obj.stm_spectro.audio_file.filepath))
-    assetFile = bpy.context.scene.stm_settings.assetFilePath
+    audioName = ''
+    geonode_name = ''
+    geonode_slot = ''
+
+    if obj.stm_spectro.audio_file:
+        audioName = sanitize_input(os.path.basename(obj.stm_spectro.audio_file.filepath))
+
+    if obj.stm_spectro.stm_type == 'spectrogram':
+        geonode_name = 'STM_spectrogram'
+        geonode_slot = "Input_12"
+
+    elif obj.stm_spectro.stm_type == 'waveform':
+        geonode_name = 'STM_waveform'
+        geonode_slot = "Input_15"
+
     mat = None
 
-    if obj.stm_spectro.material_type == 'gradient':
+
+    if obj.stm_spectro.material_type == 'raw':
+        mat = get_stm_material(obj, 'STM_rawTexture')
+        mat.name = f'STM_rawTex_{audioName}'
+
+    elif obj.stm_spectro.material_type == 'gradient':
         mat = get_stm_material(obj, 'STM_gradient')
         mat.name = f'STM_gradient_{audioName}'
 
-    elif obj.stm_spectro.material_type == 'raw':
-        mat = get_stm_material(obj, 'STM_rawTexture')
-        mat.name = f'STM_rawTex_{audioName}'
+    elif obj.stm_spectro.material_type == 'emission':
+        mat = get_stm_material(obj, 'STM_waveform')
+        mat.name = f'STM_waveform_{audioName}'
         
-
     elif obj.stm_spectro.material_type == 'custom':
         mat = obj.stm_spectro.material_custom
 
-    obj.modifiers['STM_spectrogram']["Input_12"] = mat
+    
+    obj.modifiers[geonode_name][geonode_slot] = mat
+
 
     if obj.data.materials:                      # if obj has slots
         obj.data.materials[0] = mat             # assign to 1st material slot
     else:                                       # else
         obj.data.materials.append(mat)          # append mat
+
+    if mat:
+        obj.active_material.preview_render_type = 'FLAT'        # toggle active material 
+        obj.active_material.preview_render_type = 'SPHERE'      # to force update in "Material" window
+
+
+
+
 
 def set_waveform_style(self, context):
     obj = context.object
@@ -903,10 +930,13 @@ def get_stm_material(stm_obj, mat_name):
 
     return mat
 
+def get_wave_offset(context):
+    stm_obj = get_stm_object(context)
+    idx = len(stm_obj.stm_spectro.stm_items) - 1
+    return float(idx/20)
 
-
-def stm_00_ffmetadata():
-    obj = bpy.context.object
+def stm_00_ffmetadata(self, context):
+    obj = get_stm_object(context)
     scn = bpy.context.scene
 
     data_raw = ffmetadata(scn.stm_settings.ffmpegPath, obj.stm_spectro.audio_file)
@@ -932,9 +962,9 @@ def stm_00_ffmetadata():
     
     obj.modifiers['STM_spectrogram']['Input_60'] = obj.stm_spectro.audio_filename
 
-def stm_01_volume_data():
+def stm_01_volume_data(self, context):
 
-    obj = bpy.context.object
+    obj = get_stm_object(context)
     scn = bpy.context.scene
 
     # get peak volume using ffvolumedetect() (less accurate but quicker)
@@ -953,10 +983,10 @@ def stm_01_volume_data():
     # obj['peak_level_dB'] = peak_level_dB
     # print(f'{peak_level_dB = }')
 
-def stm_02_generate_spectrogram_img():
+def stm_02_generate_spectrogram_img(self, context):
 
     scn = bpy.context.scene
-    obj = bpy.context.object
+    obj = get_stm_object(context)
 
     ffmpegPath = scn.stm_settings.ffmpegPath
     audio_file = obj.stm_spectro.audio_file
@@ -983,10 +1013,10 @@ def stm_02_generate_spectrogram_img():
     # obj['spectrogram_file_path'] = spectrogram_image_path
     obj.stm_spectro.image_file = bpy.data.images.load(spectrogram_image_path, check_existing=True)
 
-def stm_03_build_spectrogram():
+def stm_03_build_spectrogram(self, context):
 
     scn = bpy.context.scene
-    obj = bpy.context.object
+    obj = get_stm_object(context)
 
     ffmpegPath = scn.stm_settings.ffmpegPath
     outputPath = scn.stm_settings.outputPath
@@ -1019,7 +1049,7 @@ def stm_03_build_spectrogram():
             # peak_brightness=obj['peak_brightness']
         )
 
-def stm_04_cleanup():
+def stm_04_cleanup(self, context):
     scn = bpy.context.scene
 
     if scn.stm_settings.force_standard_view_transform:
@@ -1038,50 +1068,67 @@ def stm_04_cleanup():
 
     set_playback_to_audioSync(bpy.context)
     frame_clip_in_sequencer()
-    update_stm_objects('', bpy.context)
+    update_stm_objects(bpy.context)
     # frame_all_timeline()
 
-def stm_05_sleep():
+def stm_05_sleep(self, context):
     time.sleep(0.5)
 
 
-def add_spectrogram_object():
+
+def add_spectrogram_object(context):
     print('-INF- add spectrogram object')
 
-    context = bpy.context
 
-    assetFile = bpy.context.scene.assetFilePath
+    scn = context.scene
+    assetFile = scn.stm_settings.assetFilePath
 
     # obj = append_from_blend_file(assetFile, 'Object', 'STM_spectrogram', forceImport=True)
     append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
 
     me = bpy.data.meshes.new('STM_spectrogram')
     obj = bpy.data.objects.new('STM_spectrogram', me)
-    context.collection.objects.link(obj)
-
     mod = obj.modifiers.new("STM_spectrogram", 'NODES')
     mod.node_group = bpy.data.node_groups['STM_spectrogram']
 
-    mat_gradient = get_stm_material(obj, 'STM_gradient')
+    obj.stm_spectro.stm_type = 'spectrogram'
 
-    mod["Input_12"] = mat_gradient
-    obj.stm_spectro.material_type = 'gradient'
+    context.collection.objects.link(obj)
+    select_object_solo(context, obj)
+
+    obj.stm_spectro.material_type = 'raw'
+    
+
+    
+
+    mat_gradient = get_stm_material(obj, 'STM_gradient')
+    mat_raw = get_stm_material(obj, 'STM_rawTexture')
+
+    # mod["Input_12"] = mat_gradient
+    # obj.stm_spectro.material_type = 'gradient'
+
+    mod["Input_12"] = mat_raw
+    
+
+    mat = mat_raw
 
     if obj.data.materials:
-        obj.data.materials[0] = mat_gradient
+        obj.data.materials[0] = mat
     else:
-        obj.data.materials.append(mat_gradient)
+        obj.data.materials.append(mat)
+
+
+    
 
     print('-INF- added spectrogram object <%s>'%obj.name)
 
     return obj
 
-def add_waveform_object(stm_obj, style=1, offset=0.0):
+def add_waveform_object(context, stm_obj, wave_offset=0.0):
     print('-INF- add waveform')
 
-    context = bpy.context
-
-    assetFile = bpy.context.scene.assetFilePath
+    scn = context.scene
+    assetFile = scn.stm_settings.assetFilePath
 
 
     append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
@@ -1089,45 +1136,54 @@ def add_waveform_object(stm_obj, style=1, offset=0.0):
 
     mesh = bpy.data.meshes.new('STM_waveform')
     obj = bpy.data.objects.new("STM_waveform", mesh)
-    
-    bpy.context.collection.objects.link(obj)
-    
-
     mod = obj.modifiers.new("STM_waveform", 'NODES')
     mod.node_group = bpy.data.node_groups['STM_waveform']
 
+    obj.stm_spectro.stm_type = 'waveform'
+    obj.stm_spectro.spectrogram_object = stm_obj
+
+    context.collection.objects.link(obj)
+    select_object_solo(context, obj)
+
+    obj.stm_spectro.material_type = 'emission'
+    obj.parent = stm_obj
+    
+    
 
     mat = append_from_blend_file(assetFile, 'Material', 'STM_waveform', forceImport=False)
-    if mat == None:
-        mat = bpy.data.materials['STM_waveform']
-    # mat.name = obj.name
-    # mat['STM_object'] = obj
-    # audioPath = context.object.audio_file_path
-    # audioName = funcs.sanitize_input(os.path.basename(audioPath))
-    # mat.name = f'STM_waveform_{audioName}'
 
-    mod["Input_15"] = mat
-    mod["Input_8"] = style
-    mod["Input_14"] = offset
+    if mat == None:
+        mat = bpy.data.materials['STM_waveform']    
 
     if obj.data.materials:
         obj.data.materials[0] = mat
     else:
         obj.data.materials.append(mat)
 
+    mod["Input_15"] = mat
+    mod["Input_14"] = wave_offset
     mod["Input_16"] = stm_obj
 
-    bpy.ops.object.select_all(action='DESELECT')
+    
 
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    obj.hide_viewport = True
+    obj.hide_viewport = False
 
     print('-INF- added waveform object <%s>'%obj.name)
 
     return obj
 
 
+def add_waveform_to_stm_obj(stm_obj, wave_obj):
+    stm_items = stm_obj.stm_spectro.stm_items
 
+    item = stm_items.add()
+    item.name = wave_obj.name
+    item.id = len(stm_items)
+    item.stm_type = 'waveform'
+
+    new_idx = len(stm_items)-1
+    stm_obj.stm_spectro.stm_items_active_index = new_idx
 
 def reload_spectrogram_thumbnail(self, context):
     pcoll = bpy.utils.previews['preview_thumb_folder']
@@ -1168,7 +1224,7 @@ def stm_curve_object_poll(self, object):
 
 
 
-def update_stm_objects(self, context):
+def update_stm_objects(context):
     print('update_stm_objects')
 
     scn = context.scene
@@ -1232,7 +1288,6 @@ def update_obj_in_list(obj):
 
 
     # print('update_obj_in_list')
-
     if obj.stm_spectro.stm_type in ['spectrogram', 'waveform']:
         stm_obj = obj.stm_spectro.spectrogram_object if obj.stm_spectro.stm_type == 'waveform' else obj
         
@@ -1243,7 +1298,7 @@ def update_obj_in_list(obj):
             for i, item in enumerate(stm_items):
                 if item.name == obj.name:
                     stm_obj.stm_spectro.stm_items_active_index = i   
-#                    print(f'set item to {i}')
+    #                    print(f'set item to {i}')
 
 
 def select_obj_from_list(self, context):

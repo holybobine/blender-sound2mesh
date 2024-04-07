@@ -36,12 +36,8 @@ from . import funcs
 def my_handler(scene):
     if bpy.context.object:
         funcs.update_obj_in_list(bpy.context.object)
+        pass
 
-
-# bpy.app.handlers.depsgraph_update_pre.append(my_handler)
-bpy.app.handlers.depsgraph_update_post.append(my_handler)
-# bpy.app.handlers.animation_playback_post.append(my_handler)
-bpy.app.handlers.frame_change_post.append(my_handler)
 
 def register():
     previews.register()
@@ -49,19 +45,22 @@ def register():
     operators.register()
     panels.register()
 
+    bpy.app.handlers.depsgraph_update_post.append(my_handler)
+    bpy.app.handlers.frame_change_post.append(my_handler)
+
 
 
 def unregister():
 
-    bpy.app.handlers.depsgraph_update_pre.clear()
-    bpy.app.handlers.depsgraph_update_post.clear()
-    bpy.app.handlers.animation_playback_post.clear()
-    bpy.app.handlers.frame_change_post.clear()
+    
 
     previews.unregister()
     property_groups.unregister()
     operators.unregister()
     panels.unregister()
+
+    bpy.app.handlers.depsgraph_update_post.clear()
+    bpy.app.handlers.frame_change_post.clear()
 
 
 if __name__ == "__main__":
