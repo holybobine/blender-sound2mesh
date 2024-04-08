@@ -183,6 +183,16 @@ class STM_PT_spectrogram_settings(STM_Panel, bpy.types.Panel):
         col.separator()
         col.operator("stm.add_waveform", icon='ADD', text="")
         col.operator("stm.delete_waveform", icon='REMOVE', text="")
+        col.separator()
+        if scn.stm_settings.is_sequencer_open:
+            col.operator('stm.close_sequencer', text='', icon='SEQUENCE')
+        else:
+            col.operator('stm.open_sequencer', text='', icon='SEQUENCE')
+
+
+        # layout.prop(obj.stm_spectro, 'max_volume_dB')
+        
+            
 
 
         row_audio = layout.row()
@@ -249,13 +259,17 @@ class STM_PT_spectrogram_settings(STM_Panel, bpy.types.Panel):
             rrow1.prop(stm_obj.stm_spectro, 'image_filename', text='', icon='IMAGE_DATA')
             rrow1.enabled = False
 
-            if stm_obj.stm_spectro.audio_filename != stm_obj.modifiers['STM_spectrogram']['Input_60']:
+            if stm_obj.stm_spectro.audio_filename == stm_obj.modifiers['STM_spectrogram']['Input_60']:
+                rrow2.operator('stm.prompt_spectrogram_popup', text='', icon='FILE_REFRESH', depress=False)
+            else:
+                
                 row = rrow2.row(align=True)
                 row.alert = True
-                row.operator('stm.alert_audio_change', icon='ERROR')
+                row.operator('stm.prompt_spectrogram_popup', text='Rebake', icon='FILE_REFRESH', depress=False)
+                # row.operator('stm.alert_audio_change', icon='ERROR')
                 
 
-            rrow2.operator('stm.prompt_spectrogram_popup', text='', icon='FILE_REFRESH', depress=False)
+            
             rrow2.operator('stm.reset_image_file', text='', icon='PANEL_CLOSE')
 
         # if stm_obj.stm_spectro.image_file != None:
@@ -331,6 +345,8 @@ class STM_PT_spectrogram_settings(STM_Panel, bpy.types.Panel):
 
         if stm_obj.stm_spectro.image_file:
             row_image.menu('STM_MT_image_menu', text='', icon='DOWNARROW_HLT')
+
+        
 
 
 class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
@@ -493,21 +509,37 @@ class STM_PT_geometry_nodes_spectrogram(STM_Panel, bpy.types.Panel):
 
         split_fac = 0.4
 
-        row = layout.row(align=True)
+        split = layout.split(factor=split_fac)
+        col1 = split.column(align=True)
+        col1.alignment = 'RIGHT'
+        col2 = split.column(align=True)
+
+        # row = layout.row(align=True)
+        # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_GRID', label_name='Plane', toggle=1, invert_checkbox=True)
+        # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_CYLINDER', label_name='Cylinder', toggle=1)
+
+
+        col1.label(text='Mode')
+        row = col2.row(align=True)
         prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_GRID', label_name='Plane', toggle=1, invert_checkbox=True)
         prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_CYLINDER', label_name='Cylinder', toggle=1)
 
-        
+        col1.separator()
+        col2.separator()  
 
-        # col1.separator()
-        # col2.separator()  
+        col1.label(text='Preset')
 
-        # col1.label(text='Preset')
 
-        # row = col2.row(align=True)
-        # row.prop(obj, "presets_geonodes", text='')
+        # col2.prop(obj, "presets_geonodes", text='', icon='OPTIONS')
+        col2.prop(obj.stm_spectro, 'presets_geonodes_proper', text='', icon='OPTIONS')
 
-        layout.prop(obj, "presets_geonodes", text='', icon='OPTIONS')
+        # box = layout.box()
+        # row = box.row(align=True)
+        # row.prop(obj.stm_spectro, 'presets_geonodes_proper', text='')
+        # row.operator('stm.write_spectrogram_preset_to_file', text='Save', icon='FILE_TICK')
+
+        # row = box.row()
+        # row.prop(obj.stm_spectro, 'preset_geonodes_name', text='Name')
 
 
 
@@ -540,7 +572,7 @@ class STM_PT_spectrogram_legend_settings(STM_Panel, bpy.types.Panel):
 
         ccol = row.column(align=True)
         ccol.enabled = context.object.modifiers["STM_spectrogram"]["Socket_16"]
-        prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Audio Filename', label=False)
+        prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Title', label=False)
 
         col1.separator()
         col2.separator()
@@ -625,6 +657,12 @@ class STM_PT_spectrogram_audio_settings(STM_Panel, bpy.types.Panel):
         rrow.enabled = context.object.modifiers["STM_spectrogram"]["Socket_9"]
         prop_geonode(rrow, obj.modifiers['STM_spectrogram'], 'Lin To Log', label=False)
 
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='')
+        prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'doClamp', label_name='Clamp Audio')
+
 class STM_PT_spectrogram_geometry_settings(STM_Panel, bpy.types.Panel):
     bl_label = ""
     bl_idname = "STM_PT_spectrogram_geometry_settings"
@@ -660,9 +698,9 @@ class STM_PT_spectrogram_geometry_settings(STM_Panel, bpy.types.Panel):
         col1.label(text='Flip')
         row = col2.row(align=True)
         
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flipCylinderX', label_name='X', toggle=1)
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flipCylinderY', label_name='Y', toggle=1)
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flipCylinderOutside', label_name='Z', toggle=1)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flip_X', label_name='X', toggle=1)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flip_Y', label_name='Y', toggle=1)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'flip_Z', label_name='Z', toggle=1)
 
         col1.separator()
         col2.separator()
@@ -679,7 +717,7 @@ class STM_PT_spectrogram_geometry_settings(STM_Panel, bpy.types.Panel):
 
             ccol = row.column(align=True)
             ccol.enabled = context.object.modifiers["STM_spectrogram"]["Input_52"]
-            prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Base Height', label=False)
+            prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'extrudeHeight', label=False)
 
 
         col1.separator()
@@ -794,7 +832,6 @@ class STM_PT_spectrogram_eqcurve_settings(STM_Panel, bpy.types.Panel):
         col2 = split.column(align=True)
 
         col1.label(text='Factor')
-
         prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'EQ Curve Factor', label=False)
            
 
@@ -961,6 +998,12 @@ class STM_PT_geometry_nodes_waveform(STM_Panel, bpy.types.Panel):
 
         # col1.separator()
         # col2.separator()
+
+        col1.label(text='Side')
+        prop_geonode(col2, obj.modifiers['STM_waveform'], 'Side', label=False)
+
+        col1.separator()
+        col2.separator()
 
         col1.label(text='Offset')
         prop_geonode(col2, obj.modifiers['STM_waveform'], 'Offset', label=False)

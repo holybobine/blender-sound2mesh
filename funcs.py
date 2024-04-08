@@ -162,6 +162,8 @@ def apply_spectrogram_preset(self, context):
             'flipCylinderY',
         ]
 
+        stm_modifier.show_viewport = False
+
         for i in stm_modifier.node_group.interface.items_tree:
             if i.name in preset:
                 value = preset[i.name]
@@ -171,9 +173,140 @@ def apply_spectrogram_preset(self, context):
                 else:
                     set_geonode_value(stm_modifier, i, value)
 
+            if i.name == 'EQCurve_type' and 'EQCurve_type' in preset.keys():
+                value = preset['EQCurve_type']
+                curve_presets = stm_obj.bl_rna.properties['presets_eq_curve']
+                preset_name = curve_presets.enum_items[value-1].identifier
+                stm_obj.presets_eq_curve = preset_name
+                apply_eq_curve_preset(self, context)
+        
 
-        stm_modifier.show_viewport = False
+
+        
         stm_modifier.show_viewport = True
+
+
+
+exclude_preset_inputs = [
+            'Geometry',
+            '---------------------',
+            'Image',
+            'Material',
+            'showTitle',
+            'Title',
+            'showGridFull',
+            'showGridX',
+            'showGridY',
+            'showGridZ',            
+            'flip_X',            
+            'flip_Y',            
+            'flip_Z',
+            'doExtrude',
+            'extrudeHeight',
+            'doCylinder',
+            'Cylinder Radius',
+            'Clip Lows',
+            'Clip Highs',
+            'Height Multiplier',
+            'doCurve',
+            'Curve Object',
+            'curveDirection',
+            'Follow Curve',
+            'Audio Duration',
+            'Audio Filename',
+            'max_volume_dB',
+            'Baked Volume',
+        ]
+
+def sanitize_string(str):
+    return ''.join(c for c in str.lower() if c.isalpha() or c.isdigit() or c==' ').rstrip().replace(' ', '_')
+
+def write_to_json_file(path, fname, content):
+
+    fpath = os.path.join(path, fname + '.json')
+
+    with open(fpath, "w") as outfile:     
+        json.dump(content, outfile, indent=4)
+
+    # f = open(fpath, "a")
+    # f.write(str(content))
+    # f.close()
+
+def write_spectrogram_preset_to_file(self, context):
+    scn = context.scene
+    obj = context.object
+
+    presets_folder = scn.stm_settings.presets_folder
+    preset_fpath = obj.stm_spectro.presets_geonodes_proper
+    
+    with open(r'%s'%preset_fpath,'r') as f:
+        preset_json=json.load(f)
+
+    preset_name = preset_json['name']
+    
+    preset_values = {}
+
+    modifier = obj.modifiers['STM_spectrogram']
+    
+    for i in modifier.node_group.interface.items_tree:
+        if i.name not in exclude_preset_inputs:
+
+            value = modifier[i.identifier]
+
+            if value != i.default_value:
+                preset_values[i.name] = value
+
+    preset = {}
+    preset['name'] = preset_name
+    preset['values'] = preset_values
+    fname = sanitize_string(preset_name)
+
+    # print(fname)
+
+    write_to_json_file(presets_folder, fname, preset)
+
+    
+
+
+            
+
+def apply_spectrogram_preset_proper(self, context):
+    scn = context.scene
+    obj = context.object
+    
+    preset_fpath = obj.stm_spectro.presets_geonodes_proper
+    
+
+    with open(r'%s'%preset_fpath,'r') as f:
+        preset_json=json.load(f)
+
+    preset_name = preset_json['name']
+    preset_values = preset_json['values']
+
+    obj.stm_spectro.preset_geonodes_name = preset_name
+
+    # print(preset_name)
+    # print(preset_values)
+    # print('')
+
+    modifier = obj.modifiers['STM_spectrogram']
+    
+    for i in modifier.node_group.interface.items_tree:
+        if type(i).__name__ != 'NodeTreeInterfaceSocketGeometry':
+            if  i.name not in exclude_preset_inputs:            
+                if i.name in preset_values and i.name:
+                    value = preset_values[i.name]
+                    set_geonode_value_proper(modifier, i.name, value)
+                else:
+                    reset_geonode_value(modifier, i.name)
+
+    
+
+
+
+
+def next_power_of_2(x):  
+    return 1 if x == 0 else 2**(x - 1).bit_length()
 
 def apply_waveform_style(self, context):
     style = context.object.presets_waveform_style.split('-')[0]
@@ -236,6 +369,26 @@ def set_geonode_value(gn_modifier, input, value):
 
     else:
         print('-ERR- invalid type. can\'t apply %s (%s) on input "%s" (%s)'%(value, value_type, input.name, input_type))
+
+
+
+def set_geonode_value_proper(modifier, input_name, value):
+    for i in modifier.node_group.interface.items_tree:
+        if i.name == input_name:
+
+            input_type = type(i.default_value).__name__
+            value_type = type(value).__name__
+
+            if input_type == value_type:
+                modifier[i.identifier] = value
+                i.default_value = i.default_value
+
+def reset_geonode_value(modifier, input_name):
+    for i in modifier.node_group.interface.items_tree:
+        if i.name == input_name:
+            modifier[i.identifier] = i.default_value
+            i.default_value = i.default_value
+
 
 def append_from_blend_file(blendfile, section, target, forceImport=False):
 
@@ -300,7 +453,7 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
 
         return result
 
-def ffshowspectrumpic(ffmpegPath, audio_file, outputPath, width=1024, height=512, scale='log', fscale='lin', colorMode='intensity', drange=120, limit=0):
+def ffshowspectrumpic(ffmpegPath, audio_file, outputPath, width=1024, height=512, scale='log', fscale='lin', colorMode='intensity', drange=120, limit=0, overwrite=False):
 
     # imagePath = outputPath + os.path.basename(audioPath)+'_%ix%i_%s_%s.png'%(width, height, scale, colorMode)
     audioName = os.path.basename(audio_file.filepath)
@@ -312,7 +465,7 @@ def ffshowspectrumpic(ffmpegPath, audio_file, outputPath, width=1024, height=512
     print(f"{imageName = }")
     print(f"{imagePath = }")
 
-    if os.path.exists(imagePath):
+    if os.path.exists(imagePath) and not overwrite:
         print('-INF- spectrogram image already exists with these parameters, skipping generation')
         return imagePath
     else:
@@ -596,8 +749,6 @@ def frame_clip_in_sequencer():
     print('-INF- frame_clip_in_sequencer()')
 
     for my_area in bpy.context.window.screen.areas:
-
-
         if my_area.type == 'SEQUENCE_EDITOR':
             for my_region in my_area.regions:
 
@@ -772,38 +923,8 @@ def apply_eq_curve_preset(self, context):
     obj.modifiers['STM_spectrogram'].show_viewport = True
 
     redraw_all_viewports()
-    
-
-    # with open(r'%s'%bpy.context.scene.eq_curve_presets_json_file,'r') as f:
-    #     presets=json.load(f)
 
 
-    # preset_name = context.scene.presets_eq_curve.replace('.png', '')
-    # preset_name = preset_name.split('-')[1]
-    # preset = presets[preset_name]
-    
-
-    # curve_node = bpy.data.node_groups['STM_spectrogram'].nodes['MACURVE']
-    # points = curve_node.mapping.curves[0].points
-
-    # preset_points = [preset[value] for value in preset]
-
-    # # Keep only 2
-    # while len(points) > 2:
-    #     points.remove(points[1]) #Can't remove at 0 (don't know why)
-
-    # # create as many points as needed
-    # while len(points) < len(preset_points):
-    #     points.new(0,0)
-
-    # # set location for each point
-    # for i, p in enumerate(preset_points):
-    #     points[i].location = (p[0], p[1])
-    #     points[i].handle_type = 'AUTO_CLAMPED'
-
-
-    # curve_node.mapping.update()
-    # curve_node.update()
 
 def is_stm_object_selected():
 
@@ -959,8 +1080,17 @@ def stm_00_ffmetadata(self, context):
     obj.stm_spectro.meta_title = title if title != '' else os.path.basename(obj.stm_spectro.audio_file.filepath)
     obj.stm_spectro.meta_album = album if album != '' else '[unkown]'
     obj.stm_spectro.meta_artist = artist if artist != '' else '[unkown]'
+
+    stm_mod = obj.modifiers['STM_spectrogram']
     
-    obj.modifiers['STM_spectrogram']['Input_60'] = obj.stm_spectro.audio_filename
+    # obj.modifiers['STM_spectrogram']['Input_60'] = obj.stm_spectro.audio_filename
+    # obj.modifiers['STM_spectrogram']['Socket_30'] = obj.stm_spectro.audio_filename
+
+    set_geonode_value_proper(stm_mod, 'Audio Filename', obj.stm_spectro.audio_filename)
+    set_geonode_value_proper(stm_mod, 'Title', obj.stm_spectro.audio_filename)
+
+
+
 
 def stm_01_volume_data(self, context):
 
@@ -971,7 +1101,7 @@ def stm_01_volume_data(self, context):
 
     volume_data_raw = ffvolumedetect(scn.stm_settings.ffmpegPath, obj.stm_spectro.audio_file)
     max_volume_dB = float(volume_data_raw['max_volume'])
-    # obj['max_volume_dB'] = max_volume_dB
+    obj.stm_spectro.max_volume_dB = max_volume_dB
     print(f'{max_volume_dB = }')
 
 
@@ -1005,7 +1135,8 @@ def stm_02_generate_spectrogram_img(self, context):
         fscale=scn.stm_settings.spectro_fscale,
         colorMode=scn.stm_settings.spectro_colorMode,
         drange=scn.stm_settings.spectro_drange,
-        limit=obj.stm_spectro.max_volume_dB
+        limit=obj.stm_spectro.max_volume_dB,
+        overwrite=scn.stm_settings.overwrite_image,
     )
 
 
@@ -1107,7 +1238,8 @@ def add_spectrogram_object(context):
     # mod["Input_12"] = mat_gradient
     # obj.stm_spectro.material_type = 'gradient'
 
-    mod["Input_12"] = mat_raw
+    # mod["Input_12"] = mat_raw
+    set_geonode_value_proper(mod, 'Material', mat_raw)
     
 
     mat = mat_raw
@@ -1310,3 +1442,15 @@ def select_obj_from_list(self, context):
     obj_to_select = bpy.data.objects[stm_obj.stm_spectro.stm_items[idx].name]
 
     select_object_solo(context, obj_to_select)
+
+
+def update_user_resolution(self, context):
+    scn = context.scene
+    preset = scn.stm_settings.resolutionPreset
+
+    if preset != 'custom':
+        width = preset.split('x')[0]
+        height = preset.split('x')[1]
+
+        scn.stm_settings.userWidth = int(width)
+        scn.stm_settings.userheight = int(height)

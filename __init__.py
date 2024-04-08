@@ -40,6 +40,7 @@ def my_handler(scene):
 
 
 def register():
+    
     previews.register()
     property_groups.register()
     operators.register()
@@ -51,8 +52,6 @@ def register():
 
 
 def unregister():
-
-    
 
     previews.unregister()
     property_groups.unregister()

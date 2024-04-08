@@ -76,6 +76,10 @@ def generate_items_from_presets(self, context):
 
     return enum_items
 
+
+
+
+
 def setup_new_preview_collection(name, dir):
     preview_collections[name] = bpy.utils.previews.new()
     preview_collections[name].images_location = os.path.join(addon_path, dir)
@@ -114,6 +118,8 @@ def register():
             items=generate_items_from_presets,
             update=funcs.apply_spectrogram_preset,
         )
+    
+    
 
     bpy.types.Object.presets_eq_curve = bpy.props.EnumProperty( # type: ignore
             name='presets_eq_curve',

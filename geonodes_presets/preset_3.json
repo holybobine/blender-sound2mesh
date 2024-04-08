@@ -1,0 +1,13 @@
+{
+    "name": "Preset #3",
+    "values": {
+        "Freq Min (Hz)": 0.1,
+        "Freq Max (Hz)": 3.5,
+        "Audio Sample (s)": 0.1,
+        "doLogScale": true,
+        "doContrast": true,
+        "doSmooth": true,
+        "EQ Curve Factor": 50,
+        "EQCurve_type": 2
+    }
+}

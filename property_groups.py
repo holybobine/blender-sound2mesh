@@ -1,5 +1,6 @@
 import bpy
 import os
+import json
 
 
 from bpy.props import *
@@ -7,6 +8,40 @@ from bpy.types import PropertyGroup
 
 from . import funcs
 
+def populate_geonodes_presets(self, context):
+    scn = context.scene
+
+    presets_dir = os.path.join(addon_path, './geonodes_presets')
+
+    enum_items = []
+
+    for i, file in enumerate(os.listdir(presets_dir)):
+        # if image.endswith('.json'):
+        preset_fpath = os.path.join(presets_dir, file)
+
+        with open(r'%s'%preset_fpath,'r') as f:
+            preset_json=json.load(f)
+        
+        preset_name = preset_json['name']
+
+        enum_items.append((preset_fpath, preset_name, "Boob"))
+            
+        # item_name = image.replace('.png', '')
+        # item_name = item_name.split('-')[1]
+        # item_name = item_name.replace('_', ' ')
+
+        # filepath = os.path.join(image_location, image)
+        # enum_items.append((image, item_name, "", thumb.icon_id, i))
+
+    # with open(r'%s'%scn.stm_settings.presets_json_file,'r') as f:
+    #     presets=json.load(f)
+
+    # for p in presets:
+    #     enum_items.append((p, presets[p]["name"], ""))
+
+    # print(enum_items)
+
+    return enum_items
 
 class STM_UL_list_item(PropertyGroup):
     #name: StringProperty() -> Instantiated by default
@@ -20,6 +55,15 @@ class STM_spectrogram_props(PropertyGroup):
 
     stm_items : CollectionProperty(type=STM_UL_list_item) # type: ignore
     stm_items_active_index : IntProperty(update=funcs.select_obj_from_list) # type: ignore
+
+    presets_geonodes_proper : bpy.props.EnumProperty( # type: ignore
+            name='Geonodes Presets',
+            # items=generate_previews('presets_geonodes'),
+            items=populate_geonodes_presets,
+            update=funcs.apply_spectrogram_preset_proper,
+        )
+    
+    preset_geonodes_name : bpy.props.StringProperty() # type: ignore
 
     audio_file_path : StringProperty() # type: ignore # type: ignore
     audio_filename : StringProperty() # type: ignore
@@ -108,8 +152,10 @@ class STM_scene_props(PropertyGroup):
     assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v43.blend')) # type: ignore
 
     presets_json_file : StringProperty(default=os.path.join(addon_path, 'presets_spectrogram.json')) # type: ignore
+
+    presets_folder : StringProperty(default=os.path.join(addon_path, './geonodes_presets'), subtype='DIR_PATH') # type: ignore
     eq_curve_presets_json_file : StringProperty(default=os.path.join(addon_path, 'presets_eq_curve.json')) # type: ignore
-    gradient_presets_json_file : StringProperty(default=os.path.join(addon_path, 'presets_gradients.json')) # type: ignore    
+    gradient_presets_json_file : StringProperty(default=os.path.join(addon_path, 'presets_gradients.json')) # type: ignore
 
     # Progress
     progress : bpy.props.FloatProperty( # type: ignore
@@ -122,7 +168,7 @@ class STM_scene_props(PropertyGroup):
         )
 
     progress_label : bpy.props.StringProperty() # type: ignore
-
+    
 
     stm_progress : bpy.props.FloatProperty( # type: ignore
             name="Progress",
@@ -132,6 +178,8 @@ class STM_scene_props(PropertyGroup):
             precision=0,
             default=0,
         )
+    
+    is_sequencer_open : bpy.props.BoolProperty(default=False) # type: ignore
 
     # Spectrogram settings
 
@@ -149,15 +197,21 @@ class STM_scene_props(PropertyGroup):
                         ('1024x512', "1K", "1024x512"),
                         ('2048x1024', "2K", "2048x1024"),
                         ('4096x2048', "4K", "4096x2048"),
-                        ('8192x4096', "8K", "8192x4096"),
-                        ('16384x8192', "16K", "16384x8192"),
+                        ('8192x2048', "8K", "8192x2048"),
+                        ('16384x2048', "16K", "16384x2048"),
                         ('custom', "Custom", "")
                     ),
             name = "Resolution Preset",
+            update=funcs.update_user_resolution, 
             default='4096x2048'
         )
-    userWidth : bpy.props.IntProperty(default=4096, subtype="PIXEL") # type: ignore
-    userHeight : bpy.props.IntProperty(default=2048, subtype="PIXEL") # type: ignore
+    
+    bool_custom_resolution : bpy.props.BoolProperty(default=False) # type: ignore
+
+    overwrite_image : bpy.props.BoolProperty(default=True) # type: ignore
+
+    userWidth : bpy.props.IntProperty(default=4096, min=512, subtype="PIXEL") # type: ignore
+    userHeight : bpy.props.IntProperty(default=2048, min=512, subtype="PIXEL") # type: ignore
 
     bool_advanced_spectrogram_settings : bpy.props.BoolProperty(default=False) # type: ignore
     
@@ -210,13 +264,17 @@ class STM_scene_props(PropertyGroup):
 
     spectro_drange : bpy.props.IntProperty(default=120, min=0, max=120)  # type: ignore
 
+    bool_use_audio_in_scene : bpy.props.BoolProperty(name='Import audio in scene', default=True) # type: ignore
+
 
     # EEVEE settings
+    
     bool_spectrogram_scene_settings : bpy.props.BoolProperty(default=False) # type: ignore
-    force_standard_view_transform : BoolProperty(name='Set scene view tranform to "Standard"', default=True) # type: ignore
-    force_eevee_AO : BoolProperty(name='Enable EEVEE Ambient Occlusion', default=True) # type: ignore
-    force_eevee_BLOOM : BoolProperty(name='Enable EEVEE Bloom', default=True) # type: ignore
-    disable_eevee_viewport_denoising : BoolProperty(name='Disable EEVEE Viewport Denoising', default=True) # type: ignore
+    
+    force_eevee_AO : BoolProperty(name='Enable AO', default=True) # type: ignore
+    force_eevee_BLOOM : BoolProperty(name='Enable Bloom', default=True) # type: ignore
+    disable_eevee_viewport_denoising : BoolProperty(name='Disable Viewport Denoising', default=True) # type: ignore
+    force_standard_view_transform : BoolProperty(name='Set View Tranform to "Standard"', default=True) # type: ignore
 
 
     # bool_output_path = bpy.props.BoolProperty(default=False)
@@ -240,6 +298,7 @@ def register():
 
     bpy.types.Scene.stm_settings = PointerProperty(type=STM_scene_props)
     bpy.types.Object.stm_spectro = PointerProperty(type=STM_spectrogram_props)
+    # bpy.types.Screen.areas.is_stm_sequencer = BoolProperty(default=False)
     # bpy.types.Object.stm_waveform = PointerProperty(type=STM_waveform_props)
 
 

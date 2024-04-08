@@ -1,0 +1,10 @@
+{
+    "name": "Preset #2",
+    "values": {
+        "Freq Max (Hz)": 12.0,
+        "Audio Sample (s)": 2.0,
+        "doLogScale": true,
+        "doContrast": true,
+        "doSmooth": true
+    }
+}

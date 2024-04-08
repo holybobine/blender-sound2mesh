@@ -47,8 +47,10 @@
     "name":"Preset #3",
     "desc":"this is the third and last preset.",
     "preset":{
-      "Resolution X" : 100,
-      "Freq Max (Hz)" : 12.0,
+      "Resolution X" : 200,
+      "Freq Min (Hz)" : 0.1,
+      "Freq Max (Hz)" : 3.5,
+      "Gain" : 1.0,
       "doLogScale" : true,
       "Lin To Log" : 90,
       "Audio Sample (s)" : 0.1,
@@ -58,7 +60,8 @@
       "Smooth" : 100,
       "Smooth Level" : 1,
       "doContrast" : true,
-      "Contrast" : 50
+      "EQ Curve Factor" : 50,
+      "EQCurve_type" : 2
     }
   }
 }

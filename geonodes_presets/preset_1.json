@@ -1,0 +1,7 @@
+{
+    "name": "Preset #1",
+    "values": {
+        "doLogScale": true,
+        "doSmooth": true
+    }
+}
