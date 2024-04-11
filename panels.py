@@ -6,6 +6,8 @@ import textwrap
 from . import funcs
 # from . funcs import *
 
+from .previews import preview_collections
+
 
 def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, label=True, icon='NONE', toggle=-1, invert_checkbox=False):
 
@@ -91,9 +93,19 @@ class STM_UL_draw_items(UIList):
                 
             elif obj.stm_spectro.stm_type == 'waveform':
                 custom_icon = 'RNDCURVE'
+
+                custom_icon = preview_collections['presets_waveform_style'][obj.presets_waveform_style].icon_id
+                
+                # print(custom_icoooon)
+                # row.prop_enum(obj, "presets_waveform_style", '0-line.png')
+                # row.prop_enum(obj, "presets_waveform_style", '1-dots.png')
+                # row.prop_enum(obj, "presets_waveform_style", '2-bars.png')
+                # row.prop_enum(obj, "presets_waveform_style", '3-full.png')
+
+
                 row = layout.row(align=True)
                 row.label(text='', icon='DOT')
-                row.prop(item, "name", icon=custom_icon, emboss=False, text="")
+                row.prop(item, "name", icon_value=custom_icon, emboss=False, text="")
 
                 parent_icon = 'LINKED' if obj.parent == obj.stm_spectro.spectrogram_object else 'UNLINKED'
                 row.operator('stm.toggle_parent_waveform', text='', icon=parent_icon, emboss=False).waveform_name=item.name
@@ -969,12 +981,54 @@ class STM_PT_geometry_nodes_waveform(STM_Panel, bpy.types.Panel):
                 if modifier['Input_16'].modifiers.get('STM_spectrogram'):
                     stm_ok = True
 
-        row = layout.row(align=True)
-        row.prop_enum(obj, "presets_waveform_style", '1-line.png')
-        row.prop_enum(obj, "presets_waveform_style", '2-dots.png')
-        row.prop_enum(obj, "presets_waveform_style", '3-bars.png')
+
+
 
         split_fac = 0.4
+
+        col = layout.column(align=True)
+
+        row = col.row(align=True)
+        row.prop_enum(obj, "presets_waveform_style", '0-line.png')
+        row.prop_enum(obj, "presets_waveform_style", '1-dots.png')
+        row.prop_enum(obj, "presets_waveform_style", '2-bars.png')
+        row.prop_enum(obj, "presets_waveform_style", '3-full.png')
+
+        box = col.box()
+
+        split = box.split(factor=split_fac)
+        col1 = split.column(align=True)
+        col1.alignment = 'RIGHT'
+        col2 = split.column(align=True)
+
+        col1.label(text='Handle Type')
+        row = col2.row(align=True)
+        prop_geonode(row, obj.modifiers['STM_waveform'], 'doHandleAuto', icon='HANDLE_VECTOR', label_name='Vector', toggle=1, invert_checkbox=True)
+        prop_geonode(row, obj.modifiers['STM_waveform'], 'doHandleAuto', icon='HANDLE_AUTO', label_name='Auto', toggle=1)
+
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Thickness')
+        prop_geonode(col2, obj.modifiers['STM_waveform'], 'Thickness', label=False)
+
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Ends')
+        row = col2.row(align=True)
+        prop_geonode(row, obj.modifiers['STM_waveform'], 'doRoundBars', icon='GP_CAPS_FLAT', label_name='Flat', toggle=1, invert_checkbox=True)
+        prop_geonode(row, obj.modifiers['STM_waveform'], 'doRoundBars', icon='GP_CAPS_ROUND', label_name='Round', toggle=1)
+
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Width')
+        prop_geonode(col2, obj.modifiers['STM_waveform'], 'Width', label=False)
+
+        
+
+        
 
         split = layout.split(factor=split_fac)
         col1 = split.column(align=True)
@@ -982,7 +1036,22 @@ class STM_PT_geometry_nodes_waveform(STM_Panel, bpy.types.Panel):
         col2 = split.column(align=True)
 
 
+
+
         
+
+        
+
+
+        col1.label(text='Side')
+        row = col2.row(align=True)
+        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'a')
+        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'b')
+        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'ab')
+
+
+        col1.separator()
+        col2.separator()
 
         # col1.label(text='Spectrogram Object')
 
@@ -996,23 +1065,10 @@ class STM_PT_geometry_nodes_waveform(STM_Panel, bpy.types.Panel):
         # col1.label(text='Follow Spectrogram')
         # prop_geonode(col2, obj.modifiers['STM_waveform'], 'Follow Spectrogram', label=False)
 
-        # col1.separator()
-        # col2.separator()
-
-        col1.label(text='Side')
-        prop_geonode(col2, obj.modifiers['STM_waveform'], 'Side', label=False)
-
-        col1.separator()
-        col2.separator()
-
         col1.label(text='Offset')
         prop_geonode(col2, obj.modifiers['STM_waveform'], 'Offset', label=False)
 
-        col1.separator()
-        col2.separator()
-
-        col1.label(text='Thickness')
-        prop_geonode(col2, obj.modifiers['STM_waveform'], 'Thickness', label=False)
+        
 
         col1.separator()
         col2.separator()
@@ -1041,6 +1097,16 @@ class STM_PT_geometry_nodes_waveform(STM_Panel, bpy.types.Panel):
 
         col1.separator()
         col2.separator()
+
+        
+
+        
+
+        
+
+        
+
+        
 
         if stm_ok:
             if modifier['Input_16'].modifiers['STM_spectrogram']['Socket_4'] == 2 :

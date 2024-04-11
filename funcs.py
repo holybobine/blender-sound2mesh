@@ -267,7 +267,9 @@ def write_spectrogram_preset_to_file(self, context):
 
     
 
-
+def get_enum_items_from_enum_prop(rna_type, prop_str):
+    prop = rna_type.bl_rna.properties[prop_str]
+    return [e.identifier for e in prop.enum_items]
             
 
 def apply_spectrogram_preset_proper(self, context):
@@ -300,7 +302,13 @@ def apply_spectrogram_preset_proper(self, context):
                 else:
                     reset_geonode_value(modifier, i.name)
 
+
     
+
+    eq_curve_presets = get_enum_items_from_enum_prop(obj, 'presets_eq_curve')
+    geonode_eqcurve_value = get_geonode_value_proper(modifier, 'EQCurve_type')
+
+    obj.presets_eq_curve = eq_curve_presets[geonode_eqcurve_value]
 
 
 
@@ -309,13 +317,25 @@ def next_power_of_2(x):
     return 1 if x == 0 else 2**(x - 1).bit_length()
 
 def apply_waveform_style(self, context):
-    style = context.object.presets_waveform_style.split('-')[0]
 
-    stm_modifier = context.object.modifiers['STM_waveform']
-    stm_modifier['Input_8'] = int(style)
+    bpy.ops.stm.detect_alt_pressed('INVOKE_DEFAULT')
+    is_alt_pressed = context.scene.stm_settings.is_alt_pressed
+    
+    if is_alt_pressed:
+        selection = context.selected_objects
+    else:
+        selection = [context.object]
 
-    stm_modifier.show_viewport = False
-    stm_modifier.show_viewport = True
+    for obj in selection:
+        if obj.stm_spectro.stm_type == 'waveform':
+            style = obj.presets_waveform_style.split('-')[0]
+
+            stm_modifier = obj.modifiers['STM_waveform']
+            stm_modifier['Input_8'] = int(style)
+
+            stm_modifier.show_viewport = False
+            stm_modifier.show_viewport = True
+
 
 def reset_spectrogram_values(resetAll=False, values=[]):
 
@@ -382,6 +402,12 @@ def set_geonode_value_proper(modifier, input_name, value):
             if input_type == value_type:
                 modifier[i.identifier] = value
                 i.default_value = i.default_value
+
+def get_geonode_value_proper(modifier, input_name):
+    for i in modifier.node_group.interface.items_tree:
+        if i.name == input_name:
+            return modifier[i.identifier]
+
 
 def reset_geonode_value(modifier, input_name):
     for i in modifier.node_group.interface.items_tree:
@@ -988,7 +1014,15 @@ def update_stm_material(self, context):
         obj.active_material.preview_render_type = 'SPHERE'      # to force update in "Material" window
 
 
+def get_enum_prop_value_from_index(context, enum_prop_name, idx):
+    items = context.bl_rna.properties[enum_prop_name].enum_items
+    return items[idx]
 
+
+def get_idx_value_from_enum_prop(context, enum_prop_name, prop_name):
+    items = context.bl_rna.properties[enum_prop_name].enum_items
+    if prop_name in items:
+        return items[prop_name].value
 
 
 def set_waveform_style(self, context):
@@ -996,6 +1030,27 @@ def set_waveform_style(self, context):
     style = obj.stm_spectro.waveform_style
     style_arr = ['line', 'dots', 'plane', 'cubes', 'tubes', 'zigzag', 'zigzag_smooth']
     obj.modifiers['STM_waveform']['Input_8'] = style_arr.index(style)
+
+def set_waveform_side_options(self, context):
+
+    bpy.ops.stm.detect_alt_pressed('INVOKE_DEFAULT')
+    is_alt_pressed = context.scene.stm_settings.is_alt_pressed
+    
+    if is_alt_pressed:
+        selection = context.selected_objects
+    else:
+        selection = [context.object]
+
+    for obj in selection:
+
+        modifier = obj.modifiers['STM_waveform']
+        side_options_value = obj.stm_spectro.waveform_side_options
+        idx = get_idx_value_from_enum_prop(obj.stm_spectro, 'waveform_side_options', side_options_value)
+        
+        set_geonode_value_proper(modifier, 'Side', idx)
+
+
+
 
 def set_curveAlignment(self, context):
     obj = context.object

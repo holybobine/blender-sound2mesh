@@ -153,7 +153,10 @@ class STM_OT_open_image_folder(Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        image_path = context.object.modifiers['STM_spectrogram']['Input_2'].filepath
+
+        stm_obj = funcs.get_stm_object(context)
+
+        image_path = stm_obj.modifiers['STM_spectrogram']['Input_2'].filepath
 
         if os.path.exists(image_path):
             print('-INF- open image folder')
@@ -171,7 +174,10 @@ class STM_OT_open_image(Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        image_path = context.object.modifiers['STM_spectrogram']['Input_2'].filepath
+
+        stm_obj = funcs.get_stm_object(context)
+
+        image_path = stm_obj.modifiers['STM_spectrogram']['Input_2'].filepath
 
         if os.path.exists(image_path):
             print('-INF- open image')
@@ -807,8 +813,28 @@ class STM_OT_apply_spectrogram_preset_proper(Operator):
 
         return {'FINISHED'}
 
+class STM_OT_detect_alt_pressed(Operator):
+    """"""
+    bl_idname = "stm.detect_alt_pressed"
+    bl_label = ""
 
+    def invoke(self, context, event):
+            ev = []
+            # if event.ctrl:
+            #     ev.append("Ctrl")
+            # if event.shift:
+            #     ev.append("Shift")
+            # if event.alt:
+            #     ev.append("Alt")
+            # if event.oskey:
+            #     ev.append("OS")
+            # ev.append("Click")
 
+            # self.report({'INFO'}, "+".join(ev))
+
+            context.scene.stm_settings.is_alt_pressed = bool(event.alt)
+
+            return {'FINISHED'}
 
 
 class STM_OT_spectrogram_preset_popup(Operator):
@@ -1193,7 +1219,7 @@ class STM_OT_refresh_stm_objects(Operator):
         scn = context.scene
         obj = context.object
 
-        funcs.update_stm_objects(self, context)
+        funcs.update_stm_objects(context)
 
 
         return {'FINISHED'}
@@ -1287,11 +1313,15 @@ class STM_OT_close_sequencer(bpy.types.Operator):
     bl_options = {'UNDO'}
     
     def close_sequencer(self, context):
-        for area in reversed(context.screen.areas):
+        
+        for area in context.screen.areas:
             if area.type == 'SEQUENCE_EDITOR': # 'VIEW_3D', 'CONSOLE', 'INFO' etc. 
                 with context.temp_override(area=area):
                     bpy.ops.screen.area_close()
+
                 break
+
+
 
     def execute(self, context):
         self.close_sequencer(context)
@@ -1332,6 +1362,8 @@ classes = [
     STM_OT_adjust_resolution,
     STM_OT_write_spectrogram_preset_to_file,
     STM_OT_apply_spectrogram_preset_proper,
+
+    STM_OT_detect_alt_pressed,
 
 
 

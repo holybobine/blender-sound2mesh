@@ -28,7 +28,7 @@ def generate_previews(pcoll_name):
             item_name = item_name.replace('_', ' ')
 
             filepath = os.path.join(image_location, image)
-            thumb = pcoll.load(filepath, filepath, 'IMAGE')
+            thumb = pcoll.load(image, filepath, 'IMAGE')
             enum_items.append((image, item_name, "", thumb.icon_id, i))
 
     return enum_items

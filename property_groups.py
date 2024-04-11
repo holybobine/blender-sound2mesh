@@ -128,6 +128,16 @@ class STM_spectrogram_props(PropertyGroup):
             default='line',
             update=funcs.set_waveform_style
         )
+    
+    waveform_side_options : bpy.props.EnumProperty( # type: ignore
+            items= (
+                        ('a', "A", ""),
+                        ('b', "B", ""),
+                        ('ab', "AB", ""),
+                    ),
+            default='a',
+            update=funcs.set_waveform_side_options
+        )
 
     
 
@@ -149,7 +159,9 @@ class STM_scene_props(PropertyGroup):
 
     ffmpegPath : StringProperty(default=os.path.join(addon_path, 'ffmpeg', 'ffmpeg.exe')) # type: ignore
     outputPath : StringProperty(default=os.path.join(addon_path, './output'), subtype="DIR_PATH") # type: ignore
-    assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v43.blend')) # type: ignore
+    assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v46.blend')) # type: ignore
+
+    is_alt_pressed : BoolProperty(default=False) # type: ignore
 
     presets_json_file : StringProperty(default=os.path.join(addon_path, 'presets_spectrogram.json')) # type: ignore
 
