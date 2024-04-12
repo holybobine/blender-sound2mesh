@@ -727,23 +727,25 @@ def update_curve_deform_axis(self, context):
 
     obj.modifiers['STM_spectrogram']['Socket_22'] = int(obj.stm_spectro.curve_deform_axis)
 
-def set_sound_in_scene(audio_file, offset=0):
+def use_audio_in_scene(context, offset=0):
 
-    context = bpy.context
-
-    filename = os.path.basename(audio_file.filepath)
-
-    scene = context.scene
-    seq = scene.sequence_editor
+    scn = context.scene
+    seq = scn.sequence_editor
 
     if not seq:
-        scene.sequence_editor_create()
+        scn.sequence_editor_create()
     for strip in seq.sequences:
         seq.sequences.remove(strip)
 
+    stm_obj = get_stm_object(context)
+
+    audio_fname = stm_obj.stm_spectro.audio_filename
+    audio_fpath = stm_obj.stm_spectro.audio_file.filepath
+
     #Will create duplicate datablocks if the same sound is imported multiple times.
     #the "new_sound" command is the only one I could find.
-    soundstrip = scene.sequence_editor.sequences.new_sound(filename, audio_file.filepath, 1, offset)
+
+    soundstrip = seq.sequences.new_sound(audio_fname, audio_fpath, 1, offset)
     soundstrip.show_waveform = True
 
     return soundstrip
@@ -770,11 +772,11 @@ def frame_all_timeline():
                     ):
                         bpy.ops.action.view_all()
 
-def frame_clip_in_sequencer():
+def frame_clip_in_sequencer(context):
 
     print('-INF- frame_clip_in_sequencer()')
 
-    for my_area in bpy.context.window.screen.areas:
+    for my_area in context.window.screen.areas:
         if my_area.type == 'SEQUENCE_EDITOR':
             for my_region in my_area.regions:
 
@@ -784,6 +786,10 @@ def frame_clip_in_sequencer():
                         area = my_area,
                         region = my_region,
                     ):
+                        
+                        context.space_data.show_region_channels = False
+                        context.space_data.show_region_toolbar = False
+
                         bpy.ops.sequencer.view_all()
                         bpy.ops.view2d.zoom(deltax=0.0, deltay=30, use_cursor_init=False)
                         bpy.ops.view2d.pan(deltax=0, deltay=-99999999)
@@ -796,6 +802,14 @@ def frame_clip_in_sequencer():
 #     coll.objects.link( obj )
 
 #     return obj
+
+def is_audio_in_sequencer(context, audio_file):
+    if not context.scene.sequence_editor:
+        return False
+    else:
+        return any([strip.sound.filepath == audio_file.filepath for strip in context.scene.sequence_editor.sequences])
+
+
 
 def generate_spectrogram(stm_obj, audio_file, image_file, duration_seconds, max_volume_dB=0, peak_brightness=0):
 
@@ -833,13 +847,12 @@ def generate_spectrogram(stm_obj, audio_file, image_file, duration_seconds, max_
     image_file.colorspace_settings.name = "sRGB"
     image_file.colorspace_settings.name = "sRGB"
 
-    spectro_texture = bpy.data.textures.new("NewTexture", type='IMAGE')
-    spectro_texture.name = image_file.name
+    spectro_texture = bpy.data.textures.new(image_file.name, type='IMAGE')
     spectro_texture.image = image_file
     spectro_texture.extension = 'CLIP'
 
     stm_obj.stm_spectro.image_texture = spectro_texture
-    stm_obj.stm_spectro.image_filename = image_file.name
+    stm_obj.stm_spectro.image_filename = os.path.basename(image_file.filepath)
     
     
 
@@ -1217,7 +1230,7 @@ def stm_03_build_spectrogram(self, context):
     fps = bpy.context.scene.render.fps
 
     # generate soundstrip
-    soundstrip = set_sound_in_scene(obj.stm_spectro.audio_file, 0)
+    soundstrip = use_audio_in_scene(context)
     duration_frames = soundstrip.frame_final_duration
     duration_seconds = duration_frames/fps
 
@@ -1252,9 +1265,9 @@ def stm_04_cleanup(self, context):
         scn.eevee.use_taa_reprojection = False
 
 
-    set_playback_to_audioSync(bpy.context)
-    frame_clip_in_sequencer()
-    update_stm_objects(bpy.context)
+    set_playback_to_audioSync(context)
+    frame_clip_in_sequencer(context)
+    update_stm_objects(context)
     # frame_all_timeline()
 
 def stm_05_sleep(self, context):

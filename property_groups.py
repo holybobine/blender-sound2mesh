@@ -8,6 +8,13 @@ from bpy.types import PropertyGroup
 
 from . import funcs
 
+def populate_resolution_prop_enum():
+    enum_items = []
+    for value in [512, 1024, 2048, 4096, 8192, 16384, 32768]:
+        enum_items.append((str(value), str(value)+' px', ''))
+
+    return enum_items
+
 def populate_geonodes_presets(self, context):
     scn = context.scene
 
@@ -204,6 +211,18 @@ class STM_scene_props(PropertyGroup):
             default="default",
         )
 
+    bake_image_width : bpy.props.EnumProperty( # type: ignore
+            name='',
+            items= populate_resolution_prop_enum(),
+            default='4096'
+        )
+    
+    bake_image_height : bpy.props.EnumProperty( # type: ignore
+            name='',
+            items= populate_resolution_prop_enum(),
+            default='2048'
+        )
+
     resolutionPreset : bpy.props.EnumProperty( # type: ignore
             items= (
                         ('1024x512', "1K", "1024x512"),
@@ -217,6 +236,17 @@ class STM_scene_props(PropertyGroup):
             update=funcs.update_user_resolution, 
             default='4096x2048'
         )
+    
+    bake_image_format : EnumProperty( # type: ignore
+            items= (
+                        ('JPG', "JPG", "", 'IMAGE_DATA', 0),
+                        ('PNG', "PNG", "", 'IMAGE_DATA', 1),
+                    ),
+            name = "File Format",
+            default='PNG'
+        )
+    
+    bake_image_compression : IntProperty(default=15, min=0, max=100, subtype='PERCENTAGE') # type: ignore
     
     bool_custom_resolution : bpy.props.BoolProperty(default=False) # type: ignore
 
@@ -282,6 +312,8 @@ class STM_scene_props(PropertyGroup):
     # EEVEE settings
     
     bool_spectrogram_scene_settings : bpy.props.BoolProperty(default=False) # type: ignore
+
+    bool_eevee_settings : bpy.props.BoolProperty(default=False) # type: ignore
     
     force_eevee_AO : BoolProperty(name='Enable AO', default=True) # type: ignore
     force_eevee_BLOOM : BoolProperty(name='Enable Bloom', default=True) # type: ignore

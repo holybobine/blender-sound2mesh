@@ -29,7 +29,7 @@ def generate_previews(pcoll_name):
 
             filepath = os.path.join(image_location, image)
             thumb = pcoll.load(image, filepath, 'IMAGE')
-            enum_items.append((image, item_name, "", thumb.icon_id, i))
+            enum_items.append((image, item_name.capitalize(), item_name.capitalize(), thumb.icon_id, i))
 
     return enum_items
 
@@ -135,7 +135,7 @@ def register():
         )
 
     bpy.types.Object.presets_waveform_style = bpy.props.EnumProperty( # type: ignore
-            name='presets_waveform_style',
+            name='Waveform Shape',
             items=generate_previews('presets_waveform_style'),
             update=funcs.apply_waveform_style,
         )

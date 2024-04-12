@@ -137,12 +137,9 @@ class STM_OT_use_audio_in_scene(Operator):
 
         print('-INF- add audio to scene')
 
-        funcs.set_sound_in_scene(
-            filepath=context.object.audio_file_path,
-            offset=0
-        )
+        funcs.use_audio_in_scene(context)
 
-        funcs.frame_clip_in_sequencer()
+        funcs.frame_clip_in_sequencer(context)
 
         return {'FINISHED'}
 
@@ -233,8 +230,46 @@ class STM_OT_adjust_resolution(Operator):
 
         return {'FINISHED'}
 
+
+class STM_OT_bake_resolution_up(Operator):
+    """"""
+    bl_idname = "stm.bake_resolution_up"
+    bl_label = ""
+
+    prop_name: bpy.props.StringProperty()  # type: ignore
+
+    def execute(self, context):
+        from math import ceil
+        prop = context.scene.stm_settings[self.prop_name] + 1
+        base = 512 if prop < 1024 else 1024 if prop < 2048 else 2048 if prop < 8192 else 8192
+        new_value = base * ceil(prop/base)
+
+        if 512 <= new_value <= 32768:
+            context.scene.stm_settings[self.prop_name] = new_value
+
+        return {'FINISHED'}
+    
+
+class STM_OT_bake_resolution_down(Operator):
+    """"""
+    bl_idname = "stm.bake_resolution_down"
+    bl_label = ""
+
+    prop_name: bpy.props.StringProperty()  # type: ignore
+
+    def execute(self, context):
+        from math import floor
+        prop = context.scene.stm_settings[self.prop_name] - 1
+        base = 512 if prop < 1024 else 1024 if prop < 2048 else 2048 if prop < 8192 else 8192
+        new_value = base * floor(prop/base)
+
+        if 512 <= new_value <= 32768:
+            context.scene.stm_settings[self.prop_name] = new_value
+
+        return {'FINISHED'}
+
 class STM_OT_prompt_spectrogram_popup(Operator):
-    """Generate spectrogram"""
+    """Bake Spectrogram Image"""
     bl_idname = "stm.prompt_spectrogram_popup"
     bl_label = "Generate spectrogram"
     bl_options = {'UNDO'}
@@ -250,69 +285,50 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
         split_fac = 0.35
 
-        # split = layout.split(factor=split_fac)
-        # col_L = split.column()
-        # col_R = split.column()
-
-
-        # col_L.label(text='Audio file :', icon='FILE_SOUND')
-
-        # box = layout.box()
-
         split = layout.split(factor=split_fac)
         col1 = split.column()
         col1.alignment = 'RIGHT'
         col2 = split.column()
 
-        # row = col1.row()
-        # row.scale_y = 1.5
-        # row.alignment = 'RIGHT'
-        # row.label(text='Audio File')
-        # box = col2.box()
-        # box.label(text=obj.stm_spectro.audio_filename, icon='FILE_SOUND')
 
-        col1.label(text='')
-        col2.prop(scn.stm_settings, 'bool_use_audio_in_scene')
-
-        col1.label(text='')
-        col2.prop(scn.stm_settings, 'overwrite_image')
-
-
-        # col1.label(text='Artist :')
-        # col2.label(text=obj.stm_spectro.meta_artist)
-        # col1.label(text='Album :')
-        # col2.label(text=obj.stm_spectro.meta_album)
-        # col1.label(text='Duration')
-        # col2.label(text=obj.stm_spectro.meta_duration_format)
-        
+        col1.label(text='Audio')
+        col2.prop(scn.stm_settings, 'bool_use_audio_in_scene', text='Use in Scene')
 
         if obj.stm_spectro.meta_duration_seconds > 1200:
-            col2.separator()
+            col1.separator()
+            col1.separator()
+            col1.separator()
+            col1.separator()
+            col1.separator()
             box = col2.box()
             row = box.row()
-            col1=row.column(align=True)
-            col2=row.column(align=True)
-            col1.label(text='', icon='ERROR')
-            # col1.scale_y = 2
-            col2.label(text='Long audio file.')
-            # col2.label(text='Generation may take a while...')
+            ccol1=row.column(align=True)
+            ccol2=row.column(align=True)
+            ccol1.label(text='', icon='ERROR')
+            ccol2.label(text='Long audio file.')
 
-
-        # layout.separator()
-
-        # split = layout.split(factor=split_fac)
-        # col_L = split.column()
-        # col_R = split.column(align=True)
-
-
-        # col_L.label(text='Spectrogram:', icon='TEXTURE')
-
+        # col1.separator()
+        # col2.separator()
 
         
-        split = layout.split(factor=split_fac)
-        col1 = split.column(align=True)
-        col1.alignment = 'RIGHT'
-        col2 = split.column(align=True)
+
+        col1.label(text='Image')
+        col2.prop(scn.stm_settings, 'overwrite_image', text='Overwrite') 
+
+        # col1.separator()
+        # col2.separator()
+
+        # col1.label(text='File Format')
+        # col2.prop(scn.stm_settings, 'bake_image_format', text='', icon='IMAGE_DATA')
+
+        # col1.separator()
+        # col2.separator()
+
+        # col1.label(text='Compression')
+        # col2.prop(scn.stm_settings, 'bake_image_compression', text='')
+
+        # col1.separator()
+        # col2.separator()       
 
         
         # row = col1.row()
@@ -347,31 +363,51 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         # ccol.prop(scn.stm_settings, 'userHeight', text='')
 
         
-        col1.label(text='Resolution X')
-        
-
+        col1.label(text='')
+        # col2.prop(scn.stm_settings, 'bake_image_width', text='')
         row = col2.row()
-        op = row.operator('stm.adjust_resolution', text='', icon='REMOVE')
-        op.prop_name = 'userWidth'
-        op.operation = 'SUBSTRACT'
         row.prop(scn.stm_settings, 'userWidth', text='')
-        op = row.operator('stm.adjust_resolution', text='', icon='ADD')
-        op.prop_name = 'userWidth'
-        op.operation = 'ADD'
+        rrow = row.row(align=True)
+
+        
+        rrow.operator('stm.bake_resolution_down', text='', icon='TRIA_DOWN').prop_name = 'userWidth'
+        rrow.operator('stm.bake_resolution_up', text='', icon='TRIA_UP').prop_name = 'userWidth'
 
         # col1.separator()
         # col2.separator()
 
-        col1.label(text='Y')
+        # row = col2.row()
+        # op = row.operator('stm.adjust_resolution', text='', icon='REMOVE')
+        # op.prop_name = 'userWidth'
+        # op.operation = 'SUBSTRACT'
+        # row.prop(scn.stm_settings, 'userWidth', text='')
+        # op = row.operator('stm.adjust_resolution', text='', icon='ADD')
+        # op.prop_name = 'userWidth'
+        # op.operation = 'ADD'
 
+        # col1.separator()
+        # col2.separator()
+
+        col1.label(text='')
+        # col2.prop(scn.stm_settings, 'bake_image_height', text='')
         row = col2.row()
-        op = row.operator('stm.adjust_resolution', text='', icon='REMOVE')
-        op.prop_name = 'userHeight'
-        op.operation = 'SUBSTRACT'
         row.prop(scn.stm_settings, 'userHeight', text='')
-        op = row.operator('stm.adjust_resolution', text='', icon='ADD')
-        op.prop_name = 'userHeight'
-        op.operation = 'ADD'
+        rrow = row.row(align=True)
+
+        
+        rrow.operator('stm.bake_resolution_down', text='', icon='TRIA_DOWN').prop_name = 'userHeight'
+        rrow.operator('stm.bake_resolution_up', text='', icon='TRIA_UP').prop_name = 'userHeight'
+
+        
+
+        # row = col2.row()
+        # op = row.operator('stm.adjust_resolution', text='', icon='REMOVE')
+        # op.prop_name = 'userHeight'
+        # op.operation = 'SUBSTRACT'
+        # row.prop(scn.stm_settings, 'userHeight', text='')
+        # op = row.operator('stm.adjust_resolution', text='', icon='ADD')
+        # op.prop_name = 'userHeight'
+        # op.operation = 'ADD'
 
         # col_R.separator()
 
@@ -406,16 +442,28 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         # col1.separator()
         # col2.separator()
 
+
+
         col1.separator()
         col2.separator()
 
+
         col1.label(text='EEVEE Settings')
 
+        row = col2.row(align=True)
         
-        col2.prop(scn.stm_settings, 'force_eevee_AO')
-        col2.prop(scn.stm_settings, 'force_eevee_BLOOM')
-        col2.prop(scn.stm_settings, 'disable_eevee_viewport_denoising')
-        col2.prop(scn.stm_settings, 'force_standard_view_transform')
+        row.prop(scn.stm_settings, 'bool_eevee_settings', text='Auto', toggle=1, invert_checkbox=True)
+        row.prop(scn.stm_settings, 'bool_eevee_settings', text='Manual', toggle=1)
+
+        if scn.stm_settings.bool_eevee_settings:
+
+            ccol = col2.column()
+            ccol.prop(scn.stm_settings, 'force_eevee_AO')
+            ccol.prop(scn.stm_settings, 'force_eevee_BLOOM')
+            ccol.prop(scn.stm_settings, 'disable_eevee_viewport_denoising')
+            ccol.prop(scn.stm_settings, 'force_standard_view_transform')
+
+        layout.separator()
 
 
         # box = layout.box()
@@ -438,9 +486,6 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         #     col2.prop(scn.stm_settings, 'disable_eevee_viewport_denoising')
         #     col2.prop(scn.stm_settings, 'force_standard_view_transform')
 
-        
-
-        layout.separator()
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=300)
@@ -1229,6 +1274,8 @@ class STM_OT_refresh_stm_objects(Operator):
 class STM_OT_alert_audio_change(Operator):
     """Audio seems to have changed."""
 
+    custom_label : StringProperty() # type: ignore
+
     bl_idname = "stm.alert_audio_change"
     bl_label = ''
 
@@ -1260,53 +1307,57 @@ class STM_OT_toggle_parent_waveform(Operator):
 
 
 class STM_OT_open_sequencer(bpy.types.Operator):
-    """Open/Close sequencer area"""
+    """Open sequencer area"""
     bl_idname = 'stm.open_sequencer'
     bl_label=''
 
     bl_options = {'UNDO'}
     
-    def open_sequencer(self, context):
-        for area in context.screen.areas:
-            if area.type == 'VIEW_3D': # 'VIEW_3D', 'CONSOLE', 'INFO' etc. 
-                with context.temp_override(area=area):
-                    bpy.ops.screen.area_split(direction='HORIZONTAL', factor=0.15)
-                break
+    def open_sequencer_area(self, context):
 
+        areas = context.screen.areas
+        is_sequencer_open = bool(any([a.type == 'SEQUENCE_EDITOR' for a in areas]))
 
-        area = context.screen.areas[-1]
-        area.type = 'SEQUENCE_EDITOR'
+        if is_sequencer_open:
+            return next(a for a in areas if a.type == 'SEQUENCE_EDITOR')
+        else:
+            area_view_3D = next(a for a in areas if a.type == 'VIEW_3D')
+            with context.temp_override(area=area_view_3D):
+                bpy.ops.screen.area_split(direction='HORIZONTAL', factor=0.15)
 
-    def frame_all_in_sequencer(self, context):
-        for area in context.window.screen.areas:
-            if area.type == 'SEQUENCE_EDITOR':
-                for region in area.regions:
-                    if region.type == 'WINDOW':
-                        with context.temp_override(
-                            window = context.window,
-                            area = area,
-                            region = region,
-                        ):
-                            context.space_data.show_region_channels = False
-                            context.space_data.show_region_toolbar = False
+            
+            context.screen.areas[-1].type = 'SEQUENCE_EDITOR'
+            return context.screen.areas[-1]
 
-                            bpy.ops.sequencer.view_all()
-                            bpy.ops.view2d.zoom(deltax=0.0, deltay=30, use_cursor_init=False)
-                            bpy.ops.view2d.pan(deltax=0, deltay=-99999999)
-                            bpy.ops.view2d.pan(deltax=0, deltay=125)
-                            bpy.ops.view2d.zoom(deltax=0.0, deltay=-0.5, use_cursor_init=False)
+    def frame_all_in_sequencer(self, context, area_seq_editor):
+        for region in area_seq_editor.regions:
+            if region.type == 'WINDOW':
+                with context.temp_override(
+                    window = context.window,
+                    area = area_seq_editor,
+                    region = region,
+                ):
+                    context.space_data.show_region_channels = False
+                    context.space_data.show_region_toolbar = False
+
+                    bpy.ops.sequencer.view_all()
+                    bpy.ops.view2d.zoom(deltax=0.0, deltay=30, use_cursor_init=False)
+                    bpy.ops.view2d.pan(deltax=0, deltay=-99999999)
+                    bpy.ops.view2d.pan(deltax=0, deltay=125)
+                    bpy.ops.view2d.zoom(deltax=0.0, deltay=-0.5, use_cursor_init=False)
+                    
 
     def execute(self, context):
-        self.open_sequencer(context)
-        self.frame_all_in_sequencer(context)
+        area_seq_editor = self.open_sequencer_area(context)
+        self.frame_all_in_sequencer(context, area_seq_editor)
 
-        context.scene.stm_settings.is_sequencer_open = True
+        # context.scene.stm_settings.is_sequencer_open = True
 
         return {'FINISHED'}
         
         
 class STM_OT_close_sequencer(bpy.types.Operator):
-    """Open/Close sequencer area"""
+    """Close sequencer area"""
     bl_idname = 'stm.close_sequencer'
     bl_label=''
 
@@ -1328,6 +1379,33 @@ class STM_OT_close_sequencer(bpy.types.Operator):
         context.scene.stm_settings.is_sequencer_open = False
         return {'FINISHED'}
 
+
+class STM_OT_view_spectrogram_settings(Operator):
+    """"""
+    bl_idname = "stm.view_spectrogram_settings"
+    bl_label = 'Open settings'
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+
+        area_properties = next(a for a in context.window.screen.areas if a.type == 'PROPERTIES')
+
+        for my_region in area_properties.regions:
+
+            if my_region.type == 'WINDOW':
+                with bpy.context.temp_override(
+                    window = bpy.context.window,
+                    area = area_properties,
+                    region = my_region,
+                ):
+                    
+                    context.space_data.context = 'OBJECT'
+
+
+        return {'FINISHED'}
+        
+
+        
 
 
 classes = [
@@ -1360,10 +1438,15 @@ classes = [
     STM_OT_close_sequencer,
 
     STM_OT_adjust_resolution,
+    STM_OT_bake_resolution_up,
+    STM_OT_bake_resolution_down,
+    
     STM_OT_write_spectrogram_preset_to_file,
     STM_OT_apply_spectrogram_preset_proper,
 
     STM_OT_detect_alt_pressed,
+
+    STM_OT_view_spectrogram_settings,
 
 
 
