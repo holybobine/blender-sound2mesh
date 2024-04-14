@@ -33,10 +33,36 @@ from . import panels
 from . import funcs
 
 
-def my_handler(scene):
-    if bpy.context.object:
-        funcs.update_obj_in_list(bpy.context.object)
+def stm_handler_depsgraph_update(scene):
+
+    # print('depsgraph_update')
+
+    if bpy.context.screen.is_animation_playing:
         pass
+    elif not bpy.context.object:
+        pass
+    elif bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
+        funcs.check_if_new_waveform(bpy.context.object)
+        funcs.check_for_deleted_items(bpy.context.object)
+        funcs.update_obj_in_list(bpy.context.object)
+
+
+def stm_handler_playback(scene):
+    if bpy.context.object:
+        if bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
+            funcs.update_obj_in_list(bpy.context.object)
+
+# def stm_handler_playback_pre(scene):
+#     scene.stm_settings.is_scene_playing = True
+#     funcs.redraw_all_viewports()
+
+# def stm_handler_playback_post(scene):
+#     scene.stm_settings.is_scene_playing = False
+
+#     if bpy.context.object:
+#         if bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
+#             funcs.update_obj_in_list(bpy.context.object)
+#             pass
 
 
 def register():
@@ -46,8 +72,10 @@ def register():
     operators.register()
     panels.register()
 
-    bpy.app.handlers.depsgraph_update_post.append(my_handler)
-    bpy.app.handlers.frame_change_post.append(my_handler)
+    bpy.app.handlers.depsgraph_update_post.append(stm_handler_depsgraph_update)
+    # bpy.app.handlers.animation_playback_pre.append(stm_handler_playback_pre)
+    # bpy.app.handlers.animation_playback_post.append(stm_handler_playback_post)
+    bpy.app.handlers.frame_change_post.append(stm_handler_playback)
 
 
 
@@ -59,6 +87,8 @@ def unregister():
     panels.unregister()
 
     bpy.app.handlers.depsgraph_update_post.clear()
+    bpy.app.handlers.animation_playback_pre.clear()
+    bpy.app.handlers.animation_playback_post.clear()
     bpy.app.handlers.frame_change_post.clear()
 
 

@@ -107,12 +107,12 @@ def redraw_all_viewports():
             area.tag_redraw()
 
 
-def get_stm_object(context):
-    if context.object.stm_spectro.stm_type == 'waveform':
-        if context.object.stm_spectro.spectrogram_object != None:
-            return context.object.stm_spectro.spectrogram_object
+def get_stm_object(object):
+    if object.stm_spectro.stm_type == 'waveform':
+        if object.stm_spectro.spectrogram_object != None:
+            return object.stm_spectro.spectrogram_object
         
-    return context.object
+    return object
 
 
 def apply_spectrogram_preset(self, context):
@@ -318,7 +318,7 @@ def next_power_of_2(x):
 
 def apply_waveform_style(self, context):
 
-    bpy.ops.stm.detect_alt_pressed('INVOKE_DEFAULT')
+    bpy.ops.stm.detect_key_pressed('INVOKE_DEFAULT', key='ALT')
     is_alt_pressed = context.scene.stm_settings.is_alt_pressed
     
     if is_alt_pressed:
@@ -688,7 +688,7 @@ def get_first_match_from_metadata(metadata, match, exclude=None):
 def update_metadata(self, context):
 
     scn = context.scene
-    obj = get_stm_object(context)
+    obj = get_stm_object(context.object)
 
     if obj.stm_spectro.audio_file != None:
         mdata = ffmetadata(scn.stm_settings.ffmpegPath, obj.stm_spectro.audio_file)
@@ -737,7 +737,7 @@ def use_audio_in_scene(context, offset=0):
     for strip in seq.sequences:
         seq.sequences.remove(strip)
 
-    stm_obj = get_stm_object(context)
+    stm_obj = get_stm_object(context.object)
 
     audio_fname = stm_obj.stm_spectro.audio_filename
     audio_fpath = stm_obj.stm_spectro.audio_file.filepath
@@ -1046,7 +1046,7 @@ def set_waveform_style(self, context):
 
 def set_waveform_side_options(self, context):
 
-    bpy.ops.stm.detect_alt_pressed('INVOKE_DEFAULT')
+    bpy.ops.stm.detect_key_pressed('INVOKE_DEFAULT', key='ALT')
     is_alt_pressed = context.scene.stm_settings.is_alt_pressed
     
     if is_alt_pressed:
@@ -1055,12 +1055,12 @@ def set_waveform_side_options(self, context):
         selection = [context.object]
 
     for obj in selection:
-
-        modifier = obj.modifiers['STM_waveform']
-        side_options_value = obj.stm_spectro.waveform_side_options
-        idx = get_idx_value_from_enum_prop(obj.stm_spectro, 'waveform_side_options', side_options_value)
-        
-        set_geonode_value_proper(modifier, 'Side', idx)
+        if obj.stm_spectro.stm_type == 'waveform':
+            modifier = obj.modifiers['STM_waveform']
+            side_options_value = obj.stm_spectro.waveform_side_options
+            idx = get_idx_value_from_enum_prop(obj.stm_spectro, 'waveform_side_options', side_options_value)
+            
+            set_geonode_value_proper(modifier, 'Side', idx)
 
 
 
@@ -1120,12 +1120,12 @@ def get_stm_material(stm_obj, mat_name):
     return mat
 
 def get_wave_offset(context):
-    stm_obj = get_stm_object(context)
+    stm_obj = get_stm_object(context.object)
     idx = len(stm_obj.stm_spectro.stm_items) - 1
     return float(idx/20)
 
 def stm_00_ffmetadata(self, context):
-    obj = get_stm_object(context)
+    obj = get_stm_object(context.object)
     scn = bpy.context.scene
 
     data_raw = ffmetadata(scn.stm_settings.ffmpegPath, obj.stm_spectro.audio_file)
@@ -1162,7 +1162,7 @@ def stm_00_ffmetadata(self, context):
 
 def stm_01_volume_data(self, context):
 
-    obj = get_stm_object(context)
+    obj = get_stm_object(context.object)
     scn = bpy.context.scene
 
     # get peak volume using ffvolumedetect() (less accurate but quicker)
@@ -1184,7 +1184,7 @@ def stm_01_volume_data(self, context):
 def stm_02_generate_spectrogram_img(self, context):
 
     scn = bpy.context.scene
-    obj = get_stm_object(context)
+    obj = get_stm_object(context.object)
 
     ffmpegPath = scn.stm_settings.ffmpegPath
     audio_file = obj.stm_spectro.audio_file
@@ -1215,7 +1215,7 @@ def stm_02_generate_spectrogram_img(self, context):
 def stm_03_build_spectrogram(self, context):
 
     scn = bpy.context.scene
-    obj = get_stm_object(context)
+    obj = get_stm_object(context.object)
 
     ffmpegPath = scn.stm_settings.ffmpegPath
     outputPath = scn.stm_settings.outputPath
@@ -1346,7 +1346,7 @@ def add_waveform_object(context, stm_obj, wave_offset=0.0):
     select_object_solo(context, obj)
 
     obj.stm_spectro.material_type = 'emission'
-    obj.parent = stm_obj
+    # obj.parent = stm_obj
     
     
 
@@ -1422,60 +1422,40 @@ def stm_curve_object_poll(self, object):
 
 # ----------------------------------------------------------------------------------------------------------------
 
-
-
-def update_stm_objects(context):
-    print('update_stm_objects')
-
-    scn = context.scene
-
-    for o in scn.objects:
-        if o.modifiers:
-            if any([m.name.startswith('STM_spectrogram') for m in o.modifiers]):
-                o.stm_spectro.stm_type = 'spectrogram'
-                o.stm_spectro.stm_status='done'
-                
-                stm_items = o.stm_spectro.stm_items
-                
-                stm_items.clear()
-                
-
-                item = stm_items.add()
-                item.name = o.name
-                item.id = len(stm_items)
-                item.stm_type = 'spectrogram'    
-
-                o.stm_spectro.stm_items_active_index = 0                
-                
-            elif any([m.name.startswith('STM_waveform') for m in o.modifiers]):
-                o.stm_spectro.stm_type = 'waveform'
-                o.stm_spectro.stm_status='done'
-
-    for o in scn.objects:
-        if o.stm_spectro.stm_type == 'spectrogram':
-            get_waveforms_for_stm_object(o)
-                
+             
                             
-def get_waveforms_for_stm_object(stm_obj):
-    for o in bpy.context.scene.objects:
-        if o.stm_spectro.stm_type == 'waveform':
-            if stm_obj != None and o.stm_spectro.spectrogram_object == stm_obj:
+def check_if_new_waveform(obj):
+    stm_obj = get_stm_object(obj)
+    stm_items = stm_obj.stm_spectro.stm_items
 
-                stm_items = stm_obj.stm_spectro.stm_items
+    if obj.name not in stm_items:
 
-                if o.name not in stm_items:
-                    item = stm_items.add()
-                    item.name = o.name
-                    item.id = len(stm_items)
-                    item.stm_type = 'waveform'
+        stm_obj.stm_spectro.stm_status = 'updating_list'
 
-    
+        print(f'adding {obj.name} to list')
+        item = stm_items.add()
+        item.name = obj.name
+        item.id = len(stm_items)
+        item.stm_type = 'waveform'
+
+        stm_obj.stm_spectro.stm_status='done'
+
+def check_for_deleted_items(obj):
+    stm_obj = get_stm_object(obj)
+    stm_items = stm_obj.stm_spectro.stm_items
+
+    for i, item in enumerate(stm_items):
+        if item.name not in bpy.context.scene.objects:
+            stm_obj.stm_spectro.stm_status = 'updating_list'
+            print(f'removing {item.name} from list')
+            stm_items.remove(i)
+            stm_obj.stm_spectro.stm_items_active_index = 0
+            stm_obj.stm_spectro.stm_status = 'done'
+            
 
 
 
 def select_object_solo(context, obj):
-
-    # bpy.ops.object.select_all(action='DESELECT')
 
     for o in context.scene.objects:
         o.select_set(False)
@@ -1486,30 +1466,52 @@ def select_object_solo(context, obj):
 
 def update_obj_in_list(obj):
 
+    stm_obj = get_stm_object(obj)
+    stm_status = stm_obj.stm_spectro.stm_status
 
-    # print('update_obj_in_list')
-    if obj.stm_spectro.stm_type in ['spectrogram', 'waveform']:
-        stm_obj = obj.stm_spectro.spectrogram_object if obj.stm_spectro.stm_type == 'waveform' else obj
+    if stm_status == 'updating_list':
+        pass
+
+    if obj.name == stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].name:
+        pass
+
+    else:
+        stm_obj.stm_spectro.stm_status = 'selecting'
+
+        # print('update_obj_in_list')
+        # print(stm_obj.stm_spectro.stm_items_active_index)
         
-        stm_items = stm_obj.stm_spectro.stm_items
-        idx = stm_obj.stm_spectro.stm_items_active_index
-        
-        if idx < len (stm_items) and stm_items[idx].name != obj.name:
-            for i, item in enumerate(stm_items):
-                if item.name == obj.name:
-                    stm_obj.stm_spectro.stm_items_active_index = i   
-    #                    print(f'set item to {i}')
+        for i, item in enumerate(stm_obj.stm_spectro.stm_items):
+            if item.name == obj.name:
+                obj.stm_spectro.stm_status = 'selecting'
+                stm_obj.stm_spectro.stm_items_active_index = i
+                obj.stm_spectro.stm_status = 'done'
+
+        stm_obj.stm_spectro.stm_status = 'done'
+                
+#                    print(f'set item to {i}')
 
 
 def select_obj_from_list(self, context):
 
-    # print('select_obj_from_list')
+    bpy.ops.stm.detect_key_pressed('INVOKE_DEFAULT', key='SHIFT')
 
-    stm_obj = get_stm_object(context)
-    idx = stm_obj.stm_spectro.stm_items_active_index
-    obj_to_select = bpy.data.objects[stm_obj.stm_spectro.stm_items[idx].name]
+    if not context.scene.stm_settings.is_shift_pressed and context.object.stm_spectro.stm_status != 'selecting':
 
-    select_object_solo(context, obj_to_select)
+        stm_obj = get_stm_object(context.object)
+        idx = stm_obj.stm_spectro.stm_items_active_index
+        obj_to_select = bpy.data.objects[stm_obj.stm_spectro.stm_items[idx].name]
+
+        
+
+        if obj_to_select.stm_spectro.stm_status != 'selecting':
+            # print(obj_to_select)
+            # print('select_obj_from_list')
+            stm_obj.stm_spectro.stm_status = 'updating_list'
+            select_object_solo(context, obj_to_select)
+            stm_obj.stm_spectro.stm_status = 'done'
+
+            # print(stm_obj.stm_spectro.stm_items_active_index)
 
 
 def update_user_resolution(self, context):
@@ -1522,3 +1524,22 @@ def update_user_resolution(self, context):
 
         scn.stm_settings.userWidth = int(width)
         scn.stm_settings.userheight = int(height)
+
+
+def toggle_parent_spectrogram(self, context):
+    obj = self.id_data
+    modifier = obj.modifiers['STM_waveform']
+
+    stm_obj = get_stm_object(obj)
+    follow_spectrogram = get_geonode_value_proper(modifier, 'Follow Spectrogram')
+    
+
+    if not follow_spectrogram:
+        # obj.parent = stm_obj
+        set_geonode_value_proper(modifier, 'Follow Spectrogram', True)
+        
+    else:
+        # obj.parent = None
+        set_geonode_value_proper(modifier, 'Follow Spectrogram', False)
+
+    

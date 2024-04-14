@@ -71,6 +71,9 @@ class STM_spectrogram_props(PropertyGroup):
         )
     
     preset_geonodes_name : bpy.props.StringProperty() # type: ignore
+    
+
+    is_parented_to_spectrogram : BoolProperty(default = True, update=funcs.toggle_parent_spectrogram) # type: ignore
 
     audio_file_path : StringProperty() # type: ignore # type: ignore
     audio_filename : StringProperty() # type: ignore
@@ -120,6 +123,16 @@ class STM_spectrogram_props(PropertyGroup):
         update=funcs.update_stm_material
     )
 
+    gradient_custom : BoolProperty(default=False) # type: ignore
+
+    gradient_type : EnumProperty( # type: ignore
+            items= (
+                        ('preset', "Preset", ""),
+                        ('custom', "Custom Gradient", "")
+                    ),
+            default='preset',
+        )
+
     spectrogram_object : PointerProperty(type=bpy.types.Object) # type: ignore
 
     waveform_style : bpy.props.EnumProperty( # type: ignore
@@ -168,7 +181,11 @@ class STM_scene_props(PropertyGroup):
     outputPath : StringProperty(default=os.path.join(addon_path, './output'), subtype="DIR_PATH") # type: ignore
     assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v46.blend')) # type: ignore
 
-    is_alt_pressed : BoolProperty(default=False) # type: ignore
+    is_alt_pressed : BoolProperty() # type: ignore
+    is_shift_pressed : BoolProperty() # type: ignore
+    is_ctrl_pressed : BoolProperty() # type: ignore
+
+    is_scene_playing : BoolProperty() # type: ignore
 
     presets_json_file : StringProperty(default=os.path.join(addon_path, 'presets_spectrogram.json')) # type: ignore
 

@@ -42,7 +42,7 @@ class STM_OT_select_audio_file(Operator, ImportHelper):
 
     def execute(self, context):
 
-        stm_obj = funcs.get_stm_object(context)
+        stm_obj = funcs.get_stm_object(context.object)
 
         sound = bpy.data.sounds.load(self.filepath, check_existing=True)
 
@@ -63,7 +63,7 @@ class STM_OT_reset_audio_file(Operator):
 
     def execute(self, context):
 
-        stm_obj = funcs.get_stm_object(context)
+        stm_obj = funcs.get_stm_object(context.object)
 
         stm_obj.stm_spectro.audio_file = None
 
@@ -89,7 +89,7 @@ class STM_OT_reset_image_file(Operator):
 
     def execute(self, context):
 
-        stm_obj = funcs.get_stm_object(context)
+        stm_obj = funcs.get_stm_object(context.object)
         stm_obj.stm_spectro.image_file = None
         stm_modifier = stm_obj.modifiers["STM_spectrogram"]
 
@@ -151,7 +151,7 @@ class STM_OT_open_image_folder(Operator):
 
     def execute(self, context):
 
-        stm_obj = funcs.get_stm_object(context)
+        stm_obj = funcs.get_stm_object(context.object)
 
         image_path = stm_obj.modifiers['STM_spectrogram']['Input_2'].filepath
 
@@ -172,7 +172,7 @@ class STM_OT_open_image(Operator):
 
     def execute(self, context):
 
-        stm_obj = funcs.get_stm_object(context)
+        stm_obj = funcs.get_stm_object(context.object)
 
         image_path = stm_obj.modifiers['STM_spectrogram']['Input_2'].filepath
 
@@ -279,7 +279,7 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
         layout = self.layout
         scn = context.scene
-        obj = funcs.get_stm_object(context)
+        obj = funcs.get_stm_object(context.object)
 
         layout.separator()
 
@@ -714,10 +714,23 @@ class STM_OT_import_spectrogram_setup(Operator):
         scn = context.scene
         
         stm_obj = funcs.add_spectrogram_object(context)
-        funcs.add_waveform_object(context, stm_obj)
+        stm_wave = funcs.add_waveform_object(context, stm_obj)
         funcs.select_object_solo(context, stm_obj)
 
-        funcs.update_stm_objects(context)
+
+        stm_items = stm_obj.stm_spectro.stm_items
+
+        item = stm_items.add()
+        item.name = stm_obj.name
+        item.id = len(stm_items)
+        item.stm_type = 'spectrogram'
+
+        item = stm_items.add()
+        item.name = stm_wave.name
+        item.id = len(stm_items)
+        item.stm_type = 'waveform'
+
+        # funcs.update_stm_objects(context)
 
         # preset = scn.presets_setup
 
@@ -780,7 +793,7 @@ class STM_OT_add_waveform(Operator):
 
     def execute(self, context):
 
-        stm_obj = funcs.get_stm_object(context)
+        stm_obj = funcs.get_stm_object(context.object)
         stm_items = stm_obj.stm_spectro.stm_items
 
         if len(stm_items) < 19:
@@ -858,28 +871,39 @@ class STM_OT_apply_spectrogram_preset_proper(Operator):
 
         return {'FINISHED'}
 
-class STM_OT_detect_alt_pressed(Operator):
+class STM_OT_detect_key_pressed(Operator):
     """"""
-    bl_idname = "stm.detect_alt_pressed"
+    bl_idname = "stm.detect_key_pressed"
     bl_label = ""
 
+    key: bpy.props.EnumProperty(
+        items=(
+            ('CTRL', 'ctrl', ''),
+            ('SHIFT', 'shift', ''),
+            ('ALT', 'alt', ''),
+        )
+    ) # type: ignore
+
     def invoke(self, context, event):
-            ev = []
-            # if event.ctrl:
-            #     ev.append("Ctrl")
-            # if event.shift:
-            #     ev.append("Shift")
-            # if event.alt:
-            #     ev.append("Alt")
-            # if event.oskey:
-            #     ev.append("OS")
-            # ev.append("Click")
+        # ev = []
+        # if event.ctrl:
+        #     ev.append("Ctrl")
+        # if event.shift:
+        #     ev.append("Shift")
+        # if event.alt:
+        #     ev.append("Alt")
+        # if event.oskey:
+        #     ev.append("OS")
+        # ev.append("Click")
 
-            # self.report({'INFO'}, "+".join(ev))
+        # self.report({'INFO'}, "+".join(ev))
 
-            context.scene.stm_settings.is_alt_pressed = bool(event.alt)
+        context.scene.stm_settings.is_ctrl_pressed = bool(event.ctrl)
+        context.scene.stm_settings.is_shift_pressed = bool(event.shift)
+        context.scene.stm_settings.is_alt_pressed = bool(event.alt)
+        
 
-            return {'FINISHED'}
+        return {'FINISHED'}
 
 
 class STM_OT_spectrogram_preset_popup(Operator):
@@ -1285,27 +1309,6 @@ class STM_OT_alert_audio_change(Operator):
         return {'FINISHED'}
     
 
-class STM_OT_toggle_parent_waveform(Operator):
-    """Audio seems to have changed."""
-
-    bl_idname = "stm.toggle_parent_waveform"
-    bl_label = ''
-
-    waveform_name : StringProperty() # type: ignore
-
-    def execute(self, context):
-        stm_obj = funcs.get_stm_object(context)
-        waveform = context.scene.objects[self.waveform_name]
-
-        if waveform.parent != stm_obj:
-            waveform.parent = stm_obj
-        else:
-            waveform.parent = None
-
-
-        return {'FINISHED'}
-
-
 class STM_OT_open_sequencer(bpy.types.Operator):
     """Open sequencer area"""
     bl_idname = 'stm.open_sequencer'
@@ -1405,8 +1408,6 @@ class STM_OT_view_spectrogram_settings(Operator):
         return {'FINISHED'}
         
 
-        
-
 
 classes = [
     STM_OT_select_audio_file,
@@ -1432,7 +1433,6 @@ classes = [
     STM_OT_reset_eq_curve,
     STM_OT_reset_gradient,
     STM_OT_refresh_stm_objects,
-    STM_OT_toggle_parent_waveform,
 
     STM_OT_open_sequencer,
     STM_OT_close_sequencer,
@@ -1444,7 +1444,7 @@ classes = [
     STM_OT_write_spectrogram_preset_to_file,
     STM_OT_apply_spectrogram_preset_proper,
 
-    STM_OT_detect_alt_pressed,
+    STM_OT_detect_key_pressed,
 
     STM_OT_view_spectrogram_settings,
 
