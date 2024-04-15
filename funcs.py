@@ -492,6 +492,9 @@ def ffshowspectrumpic(ffmpegPath, audio_file, outputPath, width=1024, height=512
     print(f"{imageName = }")
     print(f"{imagePath = }")
 
+    if not os.path.exists(outputPath):
+        os.mkdir(outputPath)
+
     if os.path.exists(imagePath) and not overwrite:
         print('-INF- spectrogram image already exists with these parameters, skipping generation')
         return imagePath
