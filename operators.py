@@ -242,6 +242,7 @@ class STM_OT_bake_resolution_up(Operator):
         from math import ceil
         prop = context.scene.stm_settings[self.prop_name] + 1
         base = 512 if prop < 1024 else 1024 if prop < 2048 else 2048 if prop < 8192 else 8192
+        # base = 512 if prop < 1024 else 1024 if prop < 4096 else 2048
         new_value = base * ceil(prop/base)
 
         if 512 <= new_value <= 32768:
@@ -315,57 +316,29 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         col1.label(text='Image')
         col2.prop(scn.stm_settings, 'overwrite_image', text='Overwrite') 
 
-        # col1.separator()
-        # col2.separator()
-
-        # col1.label(text='File Format')
-        # col2.prop(scn.stm_settings, 'bake_image_format', text='', icon='IMAGE_DATA')
-
-        # col1.separator()
-        # col2.separator()
-
-        # col1.label(text='Compression')
-        # col2.prop(scn.stm_settings, 'bake_image_compression', text='')
-
-        # col1.separator()
-        # col2.separator()       
+        
+        
 
         
-        # row = col1.row()
-        # row.scale_y = 1.5
-        # row.alignment='RIGHT'
-        # row.label(text='Resolution')
-        # row = col1.row()
-        # row.label(text='')
 
+        split = layout.split(factor=split_fac)
         
-        # row = col2.row(align=True)
-        # row.enabled = not scn.stm_settings.bool_custom_resolution
-        # row.scale_y=1.5
-        # row.prop_enum(scn.stm_settings, 'resolutionPreset', '1024x512')
-        # row.prop_enum(scn.stm_settings, 'resolutionPreset', '2048x1024')
-        # row.prop_enum(scn.stm_settings, 'resolutionPreset', '4096x2048')
-        # row.prop_enum(scn.stm_settings, 'resolutionPreset', '8192x2048')
-        # row.prop_enum(scn.stm_settings, 'resolutionPreset', '16384x2048')
+        col1 = split.column()
+        col1.alignment = 'RIGHT'
+        col2 = split.column(align=True)
 
-        # row = col2.row(align=True)
-        # row.prop_enum(scn.stm_settings, 'resolutionPreset', 'custom', text='Custom')
-        
-        # col1.separator()
-        # col2.separator()
-
-        # col1.label(text='Width')
-        # col1.label(text='Height')
-
-        # ccol = col2.column(align=True)
-        # ccol.enabled = bool(scn.stm_settings.resolutionPreset == 'custom')
-        # ccol.prop(scn.stm_settings, 'userWidth', text='')
-        # ccol.prop(scn.stm_settings, 'userHeight', text='')
+        col1.label(text='Resolution')
+        row = col2.row(align=True)
+        row.prop(scn.stm_settings, 'bool_resolution', text='Auto', toggle=1, invert_checkbox=True)
+        row.prop(scn.stm_settings, 'bool_resolution', text='Manual', toggle=1)
 
         
         col1.label(text='')
         # col2.prop(scn.stm_settings, 'bake_image_width', text='')
-        row = col2.row()
+        box = col2.box()
+        col = box.column()
+        box.enabled = scn.stm_settings.bool_resolution
+        row = col.row()
         row.prop(scn.stm_settings, 'userWidth', text='')
         rrow = row.row(align=True)
 
@@ -390,7 +363,7 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
         col1.label(text='')
         # col2.prop(scn.stm_settings, 'bake_image_height', text='')
-        row = col2.row()
+        row = col.row()
         row.prop(scn.stm_settings, 'userHeight', text='')
         rrow = row.row(align=True)
 
@@ -444,8 +417,10 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
 
 
-        col1.separator()
-        col2.separator()
+        split = layout.split(factor=split_fac)
+        col1 = split.column()
+        col1.alignment = 'RIGHT'
+        col2 = split.column()
 
 
         col1.label(text='EEVEE Settings')
@@ -719,16 +694,19 @@ class STM_OT_import_spectrogram_setup(Operator):
 
 
         stm_items = stm_obj.stm_spectro.stm_items
+        stm_items.clear()
 
         item = stm_items.add()
-        item.name = stm_obj.name
-        item.id = len(stm_items)
-        item.stm_type = 'spectrogram'
+        # item.name = stm_obj.name
+        # item.id = len(stm_items)
+        # item.stm_type = 'spectrogram'
+        item.object = bpy.data.objects[stm_obj.name]
 
         item = stm_items.add()
-        item.name = stm_wave.name
-        item.id = len(stm_items)
-        item.stm_type = 'waveform'
+        # item.name = stm_wave.name
+        # item.id = len(stm_items)
+        # item.stm_type = 'waveform'
+        item.object = bpy.data.objects[stm_wave.name]
 
         # funcs.update_stm_objects(context)
 
@@ -791,19 +769,27 @@ class STM_OT_add_waveform(Operator):
     bl_label = ''
     bl_options = {'UNDO'}
 
+    @classmethod
+    def poll(cls, context):
+        stm_obj = funcs.get_stm_object(context.object)
+
+        return not bool(len(stm_obj.stm_spectro.stm_items) >= 10)
+
     def execute(self, context):
 
         stm_obj = funcs.get_stm_object(context.object)
         stm_items = stm_obj.stm_spectro.stm_items
 
-        if len(stm_items) < 19:
+        if len(stm_items) >= 10:
+            pass
+        else:
             wave_offset = funcs.get_wave_offset(context)
             wave_obj = funcs.add_waveform_object(context, stm_obj, wave_offset)
             funcs.select_object_solo(context, wave_obj)
-            funcs.add_waveform_to_stm_obj(stm_obj, wave_obj)
+            # funcs.add_waveform_to_stm_obj(stm_obj, wave_obj)
 
 
-            print(f'-INF- added waveform object {wave_obj.name}')
+            # print(f'-INF- added waveform object {wave_obj.name}')
 
         return {'FINISHED'}
 
@@ -816,30 +802,28 @@ class STM_OT_delete_waveform(Operator):
 
     @classmethod
     def poll(cls, context):
-        stm_obj = context.object.stm_spectro.spectrogram_object if context.object.stm_spectro.stm_type == 'waveform' else context.object
-        return bool(stm_obj.stm_spectro.stm_items_active_index>0)
+        stm_obj = funcs.get_stm_object(context.object)
+        return bool(stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object != stm_obj)
 
     def execute(self, context):
 
-        obj = context.object
-        stm_obj = obj
-        
-        if obj.stm_spectro.stm_type == 'waveform':
-            stm_obj = obj.stm_spectro.spectrogram_object
+        stm_obj = funcs.get_stm_object(context.object)
         
         idx = stm_obj.stm_spectro.stm_items_active_index
+        obj = stm_obj.stm_spectro.stm_items[idx].object
         
-        obj = bpy.data.objects[stm_obj.stm_spectro.stm_items[idx].name]
-        obj.stm_spectro.stm_status = 'delete'
         
         new_index = stm_obj.stm_spectro.stm_items_active_index - 1
         
-        stm_obj.stm_spectro.stm_items_active_index = new_index
+        # stm_obj.stm_spectro.stm_items_active_index = new_index
+        stm_obj.stm_spectro.stm_status = 'deleting_from_list'
         stm_obj.stm_spectro.stm_items.remove(idx)
-        
-        bpy.data.objects.remove(obj, do_unlink=True)
-        
         stm_obj.stm_spectro.stm_items_active_index = new_index
+        stm_obj.stm_spectro.stm_status = 'done'
+
+        bpy.data.objects.remove(obj)
+
+        
 
 
 

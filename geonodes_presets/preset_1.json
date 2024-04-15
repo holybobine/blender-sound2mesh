@@ -2,6 +2,6 @@
     "name": "Preset #1",
     "values": {
         "doLogScale": true,
-        "doSmooth": true
+        "Freq Max (Hz)": 6.0
     }
 }

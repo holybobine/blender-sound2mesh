@@ -82,13 +82,14 @@ def poll_draw_waveform_settings(context):
 
 class STM_UL_draw_items(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-
-        if item.name in context.scene.objects:
-            obj = context.scene.objects[item.name]
+        if not item.object:
+            pass
+        elif item.object.name in context.scene.objects:
+            obj = item.object
             
             if obj.stm_spectro.stm_type == 'spectrogram':
                 row = layout.row()
-                row.prop(item, "name", icon='SEQ_HISTOGRAM', emboss=False, text="")
+                row.prop(obj, "name", icon='SEQ_HISTOGRAM', emboss=False, text="")
                 # row.prop(item, "name", icon='OBJECT_DATAMODE', emboss=False, text="")
                 row.prop(obj, "hide_viewport", text="", emboss=False)
                 
@@ -103,7 +104,7 @@ class STM_UL_draw_items(UIList):
                 # row.alert = bool(obj in context.selected_objects)
                 
                 row.label(text='', icon=select_icon)
-                row.prop(item, "name", icon_value=custom_icon, emboss=False, text="")
+                row.prop(obj, "name", icon_value=custom_icon, emboss=False, text="")
                 row.prop(obj.stm_spectro, 'is_parented_to_spectrogram', text='', icon=parent_icon, emboss=False)
                 row.prop(obj, "hide_viewport", text="", emboss=False)
 
@@ -343,8 +344,9 @@ class STM_PT_spectrogram_settings(STM_Panel, bpy.types.Panel):
 
 
         box = layout.box()
+        box.enabled = scn.stm_settings.progress == 0
         col = box.column()
-        col.enabled = False
+        # col.enabled = False
         # box.emboss = 'PULLDOWN_MENU'
 
         audio_label = '- no audio -' if stm_obj.stm_spectro.audio_file == None else stm_obj.stm_spectro.meta_duration_format
@@ -367,13 +369,29 @@ class STM_PT_spectrogram_settings(STM_Panel, bpy.types.Panel):
         split = col.split(factor=split_fac)
         col1 = split.column(align=True)
         col1.alignment = 'RIGHT'
+        col1.enabled = False
+        
         col2 = split.column(align=True)
+        
+        col1.label(text='Audio File')
 
-        col1.label(text='Audio Duration')
-        col2.label(text=audio_label, icon=audio_icon)
+        row = col2.row()
+        row.alert = bool(stm_obj.stm_spectro.audio_file == None)
+        row.enabled = bool(stm_obj.stm_spectro.audio_file == None)
+
+        row.label(text=audio_label, icon=audio_icon)
+        
+        # if stm_obj.stm_spectro.audio_file != None:
+        #     col1.label(text='')
+        #     col2.label(text=stm_obj.stm_spectro.meta_duration_format)
 
         col1.label(text='Image Size')
-        col2.label(text=image_label, icon=image_icon)
+
+        row = col2.row()
+        row.alert = bool(stm_obj.stm_spectro.image_file == None)
+        row.enabled = bool(stm_obj.stm_spectro.image_file == None)
+
+        row.label(text=image_label, icon=image_icon)
 
         
 
@@ -395,9 +413,12 @@ class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
         layout = self.layout
         scn = context.scene
 
+        layout.enabled = scn.stm_settings.progress == 0
+
         obj = context.object
         stm_obj = funcs.get_stm_object(context.object)
-        obj_type = ''
+
+        
 
 
         if poll_draw_spectrogram_settings(context):
@@ -499,7 +520,9 @@ class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
             if obj.stm_spectro.material_type == 'emission':
 
                 row = layout.row()
-                layout.template_color_picker(modifier, '["Socket_3"]', value_slider=False)
+                row = layout.row()
+                row.scale_y = 0.95
+                row.template_color_picker(modifier, '["Socket_3"]', value_slider=False)
                 row = layout.row()
 
                 col = layout.column(align=True)
@@ -518,7 +541,7 @@ class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
                 else:
                     col = layout.column(align=True)
                     box = col.box()
-                    box.scale_y = 17
+                    box.scale_y = 20
                     box.separator()
 
                     col.template_ID(obj.stm_spectro, "material_custom", new="material.new")
@@ -561,17 +584,21 @@ class STM_PT_geometry_nodes_spectrogram(STM_Object_Panel, bpy.types.Panel):
         # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_GRID', label_name='Plane', toggle=1, invert_checkbox=True)
         # prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_CYLINDER', label_name='Cylinder', toggle=1)
 
+        col1.label(text='Shape')
+        row = col2.row(align=True)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Plane', toggle=1, invert_checkbox=True)
+        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Cylinder', toggle=1)
+
+        col1.separator()
+        col2.separator()
+
         col1.label(text='Active Preset')
         # col2.prop(obj, "presets_geonodes", text='', icon='OPTIONS')
         col2.prop(obj.stm_spectro, 'presets_geonodes_proper', text='', icon='OPTIONS')
 
-        col1.separator()
-        col2.separator()  
+          
         
-        col1.label(text='Shape')
-        row = col2.row(align=True)
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_GRID', label_name='Plane', toggle=1, invert_checkbox=True)
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='MESH_CYLINDER', label_name='Cylinder', toggle=1)
+        
 
         
 
@@ -636,7 +663,7 @@ class STM_PT_spectrogram_audio_settings(STM_Object_Panel, bpy.types.Panel):
     bl_label = ""
     bl_idname = "STM_PT_spectrogram_audio_settings"
     bl_parent_id = 'STM_PT_geometry_nodes_spectrogram'
-    # bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw_header(self, context):
         self.layout.label(text='Settings', icon='NONE')
@@ -955,7 +982,7 @@ class STM_PT_spectrogram_modifiers_settings(STM_Object_Panel, bpy.types.Panel):
     bl_label = ""
     bl_idname = "STM_PT_spectrogram_modifiers_settings"
     bl_parent_id = 'STM_PT_geometry_nodes_spectrogram'
-    # bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw_header(self, context):
 
@@ -1255,7 +1282,9 @@ class STM_PT_geometry_nodes_waveform(STM_Object_Panel, bpy.types.Panel):
         col2 = split.column(align=True)
 
         col1.label(text='Shape')
-        col2.prop(obj, "presets_waveform_style", text='')
+        row =col2.row(align=True)
+        row.scale_x = 5
+        row.prop(obj, "presets_waveform_style", text='', expand=True)
 
         col1.separator()
         col2.separator()

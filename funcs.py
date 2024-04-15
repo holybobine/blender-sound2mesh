@@ -437,7 +437,8 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
     alreadyExist = dataSet.get(target)
 
     if alreadyExist and not forceImport:
-        print('-INF- '+section+' "'+target+'" already in scene, skipping import.')
+        # print('-INF- '+section+' "'+target+'" already in scene, skipping import.')
+        pass
     else:
         #append command, with added backslashes to fit python filepath formating
 
@@ -459,7 +460,7 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
             print('-ERR- Failed importing '+section+' "'+target+'" from "'+blendfile+'"')
             result = False
         else:
-            print(f'-INF- successfully imported {new_datablock}')
+            # print(f'-INF- successfully imported {new_datablock}')
             result = new_datablock
 
         # bpy.ops.object.select_all(action='DESELECT')
@@ -474,7 +475,7 @@ def append_from_blend_file(blendfile, section, target, forceImport=False):
 
         for lib in bpy.data.libraries:
             if lib.name == os.path.basename(blendfile):
-                print(f'-INF- removing lib {lib}')
+                # print(f'-INF- removing lib {lib}')
                 bpy.data.batch_remove(ids=(lib,))
 
         return result
@@ -539,55 +540,60 @@ def ffgeneratethumbnail(ffmpegPath, image_path, size_x=128, size_y=-1):
 
 def ffmetadata(ffmpegPath, audio_file):
 
-    try:
-        ffmCMD = '%s -i "%s" -f ffmetadata -hide_banner -'%(ffmpegPath, audio_file.filepath)
-        ffmCMD_out = subprocess.run(ffmCMD, check=True, capture_output=True).stderr.decode('utf-8')
-        #subprocess.call(ffmCMD)
+
+    ffmCMD = '%s -i "%s" -f ffmetadata -hide_banner -'%(ffmpegPath, audio_file.filepath)
+    ffmCMD_out = subprocess.run(ffmCMD, check=True, capture_output=True).stderr.decode('utf-8')
+    # print(ffmCMD_out)
+    #subprocess.call(ffmCMD)
 
 
-        sub1 = os.path.basename(audio_file.filepath) + "':"
-        sub2 = "Output #0, ffmetadata, to 'pipe:':"
-        json_output = {}
+    sub1 = os.path.basename(audio_file.filepath) + "':"
+    sub2 = "Output #0, ffmetadata, to 'pipe:':"
+    json_output = {}
 
-        metadata_output = str(ffmCMD_out).split(sub1)[1].split(sub2)[0]
+    metadata_output = str(ffmCMD_out).split(sub1)[1].split(sub2)[0]
 
+    metadata = []
+
+    if 'Metadata:' in metadata_output:
         metadata = metadata_output.split('Metadata:')[1].split('Duration:')[0]
         metadata = [line for line in metadata.strip().split('\n')]
+    else:
+        print(f'-ERR- couldn\'t decrypt metadata from file <{audio_file.name}>')
+        
 
-        metadata_list = {}
+    metadata_list = {}
 
-        for i, m in enumerate(metadata):
-            name = m.split(':')[0].strip()
-            value = m.split(':')[1].strip()
+    for m in metadata:
+        name = m.split(':')[0].strip()
+        value = m.split(':')[1].strip()
 
-            metadata_list[name] = value
+        metadata_list[name] = value
 
-        duration = metadata_output.split('Duration:')[1].split('Stream #0:0:')[0].split(',')[0]
-        try:
-            duration = timestring_to_seconds(duration.strip())
-        except:
-            pass
-
-        bitrate = metadata_output.split('bitrate:')[1].split('Stream #0:0:')[0]
-
-        stream0 = metadata_output.split('Stream #0:0:')[1].split('\n')[0]
-        # stream1 = metadata_output.split('Stream #0:1:')[1].split('\n')[0]
-
-        json_output = {}
-
-        json_output['filepath'] = audio_file.filepath
-        json_output['filename'] = os.path.basename(audio_file.filepath)
-        json_output['metadata'] = metadata_list
-        json_output['duration'] = duration
-        json_output['bitrate'] = bitrate.strip()
-        json_output['stream0'] = stream0.strip()
-        # json_output['stream1'] = stream1.strip()
-
-        return json_output
+    duration = metadata_output.split('Duration:')[1].split('Stream #0:0:')[0].split(',')[0]
+    try:
+        duration = timestring_to_seconds(duration.strip())
     except:
-        print('-ERR- failed to retrieve metadata')
+        print('can\'t figure out duration')
+        pass
 
-        return None
+    bitrate = metadata_output.split('bitrate:')[1].split('Stream #0:0:')[0]
+
+    stream0 = metadata_output.split('Stream #0:0:')[1].split('\n')[0]
+    # stream1 = metadata_output.split('Stream #0:1:')[1].split('\n')[0]
+
+    json_output = {}
+
+    json_output['filepath'] = audio_file.filepath
+    json_output['filename'] = os.path.basename(audio_file.filepath)
+    json_output['metadata'] = metadata_list
+    json_output['duration'] = duration
+    json_output['bitrate'] = bitrate.strip()
+    json_output['stream0'] = stream0.strip()
+    # json_output['stream1'] = stream1.strip()
+
+    return json_output
+
 
 def ffvolumedetect(ffmpegPath, audio_file):
     ffmCMD = '%s -i "%s" -af volumedetect -f null /dev/null -hide_banner'%(ffmpegPath, audio_file.filepath)
@@ -818,6 +824,7 @@ def generate_spectrogram(stm_obj, audio_file, image_file, duration_seconds, max_
     scn = bpy.context.scene
 
     audioName = sanitize_input(os.path.basename(audio_file.filepath))
+    # stm_obj.stm_spectro.stm_items[stm_obj.name].name = f'STM_{audioName}'
     stm_obj.name = f'STM_{audioName}'
 
 
@@ -854,16 +861,6 @@ def generate_spectrogram(stm_obj, audio_file, image_file, duration_seconds, max_
     stm_obj.stm_spectro.image_texture = spectro_texture
     stm_obj.stm_spectro.image_filename = os.path.basename(image_file.filepath)
     
-    
-
-    
-
-
-
-    
-    
-
-
 
 
     mat_raw = get_stm_material(stm_obj, 'STM_rawTexture')
@@ -1104,11 +1101,11 @@ def get_stm_material(stm_obj, mat_name):
         if m.get('STM_material_type') and m.get('STM_object'):
             if m['STM_material_type'] == mat_name and m['STM_object'] == stm_obj:
 
-                print('-INF- found matching rawTexture material to apply, skipping import')
+                # print('-INF- found matching rawTexture material to apply, skipping import')
                 mat = m
 
     if mat is None:
-        print('-INF- importing new rawTexture material')
+        # print('-INF- importing new rawTexture material')
 
         mat = append_from_blend_file(assetFile, 'Material', mat_name, forceImport=True)
         mat['STM_object'] = stm_obj
@@ -1267,7 +1264,7 @@ def stm_04_cleanup(self, context):
 
     set_playback_to_audioSync(context)
     frame_clip_in_sequencer(context)
-    update_stm_objects(context)
+    # update_stm_objects(context)
     # frame_all_timeline()
 
 def stm_05_sleep(self, context):
@@ -1325,7 +1322,7 @@ def add_spectrogram_object(context):
     return obj
 
 def add_waveform_object(context, stm_obj, wave_offset=0.0):
-    print('-INF- add waveform')
+    # print('-INF- add waveform')
 
     scn = context.scene
     assetFile = scn.stm_settings.assetFilePath
@@ -1378,9 +1375,10 @@ def add_waveform_to_stm_obj(stm_obj, wave_obj):
     stm_items = stm_obj.stm_spectro.stm_items
 
     item = stm_items.add()
-    item.name = wave_obj.name
-    item.id = len(stm_items)
-    item.stm_type = 'waveform'
+    # item.name = wave_obj.name
+    # item.id = len(stm_items)
+    # item.stm_type = 'waveform'
+    item.object = bpy.data.objects[wave_obj.name]
 
     new_idx = len(stm_items)-1
     stm_obj.stm_spectro.stm_items_active_index = new_idx
@@ -1428,15 +1426,16 @@ def check_if_new_waveform(obj):
     stm_obj = get_stm_object(obj)
     stm_items = stm_obj.stm_spectro.stm_items
 
-    if obj.name not in stm_items:
+    if obj not in [i.object for i in stm_items]:
 
         stm_obj.stm_spectro.stm_status = 'updating_list'
 
-        print(f'adding {obj.name} to list')
+        # print(f'adding {obj.name} to list')
         item = stm_items.add()
-        item.name = obj.name
-        item.id = len(stm_items)
-        item.stm_type = 'waveform'
+        # item.name = obj.name
+        # item.id = len(stm_items)
+        # item.stm_type = 'waveform'
+        item.object = bpy.data.objects[obj.name]
 
         stm_obj.stm_spectro.stm_status='done'
 
@@ -1444,10 +1443,16 @@ def check_for_deleted_items(obj):
     stm_obj = get_stm_object(obj)
     stm_items = stm_obj.stm_spectro.stm_items
 
+    # print('check_for_deleted_items',stm_obj)
+
     for i, item in enumerate(stm_items):
-        if item.name not in bpy.context.scene.objects:
+        if not item.object:
+            pass
+        elif stm_obj.stm_spectro.stm_status == 'deleting_from_list':
+            pass
+        elif item.object.name not in bpy.context.scene.objects:
             stm_obj.stm_spectro.stm_status = 'updating_list'
-            print(f'removing {item.name} from list')
+            # print(f'removing {item.object.name} from list')
             stm_items.remove(i)
             stm_obj.stm_spectro.stm_items_active_index = 0
             stm_obj.stm_spectro.stm_status = 'done'
@@ -1472,7 +1477,7 @@ def update_obj_in_list(obj):
     if stm_status == 'updating_list':
         pass
 
-    if obj.name == stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].name:
+    if obj.name == stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object.name:
         pass
 
     else:
@@ -1482,7 +1487,7 @@ def update_obj_in_list(obj):
         # print(stm_obj.stm_spectro.stm_items_active_index)
         
         for i, item in enumerate(stm_obj.stm_spectro.stm_items):
-            if item.name == obj.name:
+            if item.object.name == obj.name:
                 obj.stm_spectro.stm_status = 'selecting'
                 stm_obj.stm_spectro.stm_items_active_index = i
                 obj.stm_spectro.stm_status = 'done'
@@ -1500,18 +1505,19 @@ def select_obj_from_list(self, context):
 
         stm_obj = get_stm_object(context.object)
         idx = stm_obj.stm_spectro.stm_items_active_index
-        obj_to_select = bpy.data.objects[stm_obj.stm_spectro.stm_items[idx].name]
 
-        
+        if idx < len(stm_obj.stm_spectro.stm_items):
 
-        if obj_to_select.stm_spectro.stm_status != 'selecting':
-            # print(obj_to_select)
-            # print('select_obj_from_list')
-            stm_obj.stm_spectro.stm_status = 'updating_list'
-            select_object_solo(context, obj_to_select)
-            stm_obj.stm_spectro.stm_status = 'done'
+            obj_to_select = bpy.data.objects[stm_obj.stm_spectro.stm_items[idx].object.name]
 
-            # print(stm_obj.stm_spectro.stm_items_active_index)
+            if obj_to_select.stm_spectro.stm_status != 'selecting':
+                # print(obj_to_select)
+                # print('select_obj_from_list')
+                stm_obj.stm_spectro.stm_status = 'updating_list'
+                select_object_solo(context, obj_to_select)
+                stm_obj.stm_spectro.stm_status = 'done'
+
+                # print(stm_obj.stm_spectro.stm_items_active_index)
 
 
 def update_user_resolution(self, context):
@@ -1543,3 +1549,7 @@ def toggle_parent_spectrogram(self, context):
         set_geonode_value_proper(modifier, 'Follow Spectrogram', False)
 
     
+
+def set_default_bake_resolution(self, context):
+    context.scene.stm_settings.userWidth = 4096
+    context.scene.stm_settings.userHeight = 2048

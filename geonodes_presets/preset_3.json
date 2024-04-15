@@ -6,7 +6,9 @@
         "Audio Sample (s)": 0.1,
         "doLogScale": true,
         "doContrast": true,
+        "doModifiers": true,
         "doSmooth": true,
+        "doEQCurve": true,
         "EQ Curve Factor": 50,
         "EQCurve_type": 2
     }

@@ -55,6 +55,7 @@ class STM_UL_list_item(PropertyGroup):
     id: bpy.props.IntProperty() # type: ignore
     stm_type: bpy.props.StringProperty() # type: ignore
     waveform_type: bpy.props.IntProperty() # type: ignore
+    object: bpy.props.PointerProperty(type=bpy.types.Object) # type: ignore
 
 class STM_spectrogram_props(PropertyGroup):
     stm_type : StringProperty() # type: ignore
@@ -77,7 +78,7 @@ class STM_spectrogram_props(PropertyGroup):
 
     audio_file_path : StringProperty() # type: ignore # type: ignore
     audio_filename : StringProperty() # type: ignore
-    audio_file : PointerProperty(type=bpy.types.Sound, update=funcs.update_metadata) # type: ignore
+    audio_file : PointerProperty(type=bpy.types.Sound) # type: ignore
 
     meta_title : StringProperty() # type: ignore
     meta_album : StringProperty() # type: ignore
@@ -239,6 +240,8 @@ class STM_scene_props(PropertyGroup):
             items= populate_resolution_prop_enum(),
             default='2048'
         )
+    
+    bool_resolution : bpy.props.BoolProperty(default=False, update=funcs.set_default_bake_resolution) # type: ignore
 
     resolutionPreset : bpy.props.EnumProperty( # type: ignore
             items= (

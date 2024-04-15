@@ -31,8 +31,9 @@ from . import property_groups
 from . import operators
 from . import panels
 from . import funcs
+from bpy.app.handlers import persistent
 
-
+@persistent
 def stm_handler_depsgraph_update(scene):
 
     # print('depsgraph_update')
@@ -45,11 +46,14 @@ def stm_handler_depsgraph_update(scene):
         funcs.check_if_new_waveform(bpy.context.object)
         funcs.check_for_deleted_items(bpy.context.object)
         funcs.update_obj_in_list(bpy.context.object)
+        pass
 
-
+@persistent
 def stm_handler_playback(scene):
     if bpy.context.object:
         if bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
+            funcs.check_if_new_waveform(bpy.context.object)
+            funcs.check_for_deleted_items(bpy.context.object)
             funcs.update_obj_in_list(bpy.context.object)
 
 # def stm_handler_playback_pre(scene):
