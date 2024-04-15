@@ -1430,6 +1430,7 @@ def add_obj_to_stm_items(stm_items, obj):
     item.object = obj
 
 def update_stm_list(context):
+
     stm_obj = get_stm_object(context.object)
     stm_items = stm_obj.stm_spectro.stm_items
 
@@ -1441,15 +1442,22 @@ def update_stm_list(context):
         if o.stm_spectro.spectrogram_object == stm_obj:
             add_obj_to_stm_items(stm_items, o)
 
+    
+
+def select_item_in_list_from_handler(context):
+    stm_obj = get_stm_object(context.object)
+    stm_items = stm_obj.stm_spectro.stm_items
+
     if stm_obj.stm_spectro.stm_status == 'selecting_from_list':
         pass
+    elif context.object == stm_items[stm_obj.stm_spectro.stm_items_active_index].object:
+        pass
     else:
-        for i, item in enumerate(stm_items):
-            if context.object == item.object:
-                stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
-                stm_obj.stm_spectro.stm_items_active_index = i
-                stm_obj.stm_spectro.stm_status = 'done'
+        new_idx = next(i for i, item in enumerate(stm_items) if context.object == item.object)
 
+        stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
+        stm_obj.stm_spectro.stm_items_active_index = new_idx
+        stm_obj.stm_spectro.stm_status = 'done'
 
 def select_obj_from_stm_list(self, context):
 

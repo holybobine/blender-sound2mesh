@@ -42,28 +42,25 @@ def stm_handler_depsgraph_update(scene):
         pass
     elif not bpy.context.object:
         pass
-    elif len(scene.objects) == scene.stm_settings.object_count_tmp:
-        pass
     elif bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
-        # funcs.check_if_new_waveform(bpy.context.object)
-        # funcs.check_for_deleted_items(bpy.context.object)
-        funcs.update_stm_list(bpy.context)
-        scene.stm_settings.object_count_tmp = len(scene.objects)
-        # funcs.update_obj_in_list(bpy.context.object)
-        pass
+        
+        if len(scene.objects) != scene.stm_settings.object_count_tmp:
+            funcs.update_stm_list(bpy.context)
+            scene.stm_settings.object_count_tmp = len(scene.objects)
+
+        funcs.select_item_in_list_from_handler(bpy.context)
+        # pass
 
 @persistent
 def stm_handler_playback(scene):
     if not bpy.context.object:
         pass
-    elif len(scene.objects) == scene.stm_settings.object_count_tmp:
-        pass
     elif bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
-        # funcs.check_if_new_waveform(bpy.context.object)
-        # funcs.check_for_deleted_items(bpy.context.object)
-        # funcs.update_obj_in_list(bpy.context.object)
-        funcs.update_stm_list(bpy.context)
-        scene.stm_settings.object_count_tmp = len(scene.objects)
+        if len(scene.objects) != scene.stm_settings.object_count_tmp:
+            funcs.update_stm_list(bpy.context)
+            scene.stm_settings.object_count_tmp = len(scene.objects)
+
+        funcs.select_item_in_list_from_handler(bpy.context)
         pass
 
 # def stm_handler_playback_pre(scene):
