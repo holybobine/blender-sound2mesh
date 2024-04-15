@@ -1424,43 +1424,53 @@ def stm_curve_object_poll(self, object):
 # ----------------------------------------------------------------------------------------------------------------
 
              
-                            
-def check_if_new_waveform(obj):
-    stm_obj = get_stm_object(obj)
-    stm_items = stm_obj.stm_spectro.stm_items
-
-    if obj not in [i.object for i in stm_items]:
-
-        stm_obj.stm_spectro.stm_status = 'updating_list'
-
-        # print(f'adding {obj.name} to list')
-        item = stm_items.add()
-        # item.name = obj.name
-        # item.id = len(stm_items)
-        # item.stm_type = 'waveform'
-        item.object = bpy.data.objects[obj.name]
-
-        stm_obj.stm_spectro.stm_status='done'
-
-def check_for_deleted_items(obj):
-    stm_obj = get_stm_object(obj)
-    stm_items = stm_obj.stm_spectro.stm_items
-
-    # print('check_for_deleted_items',stm_obj)
-
-    for i, item in enumerate(stm_items):
-        if not item.object:
-            pass
-        elif stm_obj.stm_spectro.stm_status == 'deleting_from_list':
-            pass
-        elif item.object.name not in bpy.context.scene.objects:
-            stm_obj.stm_spectro.stm_status = 'updating_list'
-            # print(f'removing {item.object.name} from list')
-            stm_items.remove(i)
-            stm_obj.stm_spectro.stm_items_active_index = 0
-            stm_obj.stm_spectro.stm_status = 'done'
             
+def add_obj_to_stm_items(stm_items, obj):
+    item = stm_items.add()
+    item.object = obj
 
+def update_stm_list(context):
+    stm_obj = get_stm_object(context.object)
+    stm_items = stm_obj.stm_spectro.stm_items
+
+    stm_items.clear()
+
+    add_obj_to_stm_items(stm_items, stm_obj)
+
+    for o in context.scene.objects:
+        if o.stm_spectro.spectrogram_object == stm_obj:
+            add_obj_to_stm_items(stm_items, o)
+
+    if stm_obj.stm_spectro.stm_status == 'selecting_from_list':
+        pass
+    else:
+        for i, item in enumerate(stm_items):
+            if context.object == item.object:
+                stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
+                stm_obj.stm_spectro.stm_items_active_index = i
+                stm_obj.stm_spectro.stm_status = 'done'
+
+
+def select_obj_from_stm_list(self, context):
+
+    stm_obj = get_stm_object(context.object)
+    
+    if stm_obj.stm_spectro.stm_status == 'selecting_from_handler':
+        pass
+    else:
+        bpy.ops.stm.detect_key_pressed('INVOKE_DEFAULT', key='SHIFT')
+
+        if not context.scene.stm_settings.is_shift_pressed:
+
+            obj_to_select = stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object
+
+            # print(obj_to_select)
+            stm_obj.stm_spectro.stm_status = 'selecting_from_list'
+            select_object_solo(context, obj_to_select)
+            stm_obj.stm_spectro.stm_status = 'done'
+    
+
+            # print(stm_obj.stm_spectro.stm_items_active_index)
 
 
 def select_object_solo(context, obj):
@@ -1470,57 +1480,9 @@ def select_object_solo(context, obj):
 
     obj.select_set(True)
     context.view_layer.objects.active = obj
-    
-
-def update_obj_in_list(obj):
-
-    stm_obj = get_stm_object(obj)
-    stm_status = stm_obj.stm_spectro.stm_status
-
-    if stm_status == 'updating_list':
-        pass
-
-    if obj.name == stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object.name:
-        pass
-
-    else:
-        stm_obj.stm_spectro.stm_status = 'selecting'
-
-        # print('update_obj_in_list')
-        # print(stm_obj.stm_spectro.stm_items_active_index)
-        
-        for i, item in enumerate(stm_obj.stm_spectro.stm_items):
-            if item.object.name == obj.name:
-                obj.stm_spectro.stm_status = 'selecting'
-                stm_obj.stm_spectro.stm_items_active_index = i
-                obj.stm_spectro.stm_status = 'done'
-
-        stm_obj.stm_spectro.stm_status = 'done'
-                
-#                    print(f'set item to {i}')
 
 
-def select_obj_from_list(self, context):
 
-    bpy.ops.stm.detect_key_pressed('INVOKE_DEFAULT', key='SHIFT')
-
-    if not context.scene.stm_settings.is_shift_pressed and context.object.stm_spectro.stm_status != 'selecting':
-
-        stm_obj = get_stm_object(context.object)
-        idx = stm_obj.stm_spectro.stm_items_active_index
-
-        if idx < len(stm_obj.stm_spectro.stm_items):
-
-            obj_to_select = bpy.data.objects[stm_obj.stm_spectro.stm_items[idx].object.name]
-
-            if obj_to_select.stm_spectro.stm_status != 'selecting':
-                # print(obj_to_select)
-                # print('select_obj_from_list')
-                stm_obj.stm_spectro.stm_status = 'updating_list'
-                select_object_solo(context, obj_to_select)
-                stm_obj.stm_spectro.stm_status = 'done'
-
-                # print(stm_obj.stm_spectro.stm_items_active_index)
 
 
 def update_user_resolution(self, context):

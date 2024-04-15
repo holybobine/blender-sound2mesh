@@ -773,23 +773,20 @@ class STM_OT_add_waveform(Operator):
     def poll(cls, context):
         stm_obj = funcs.get_stm_object(context.object)
 
-        return not bool(len(stm_obj.stm_spectro.stm_items) >= 10)
+        return bool(len(stm_obj.stm_spectro.stm_items) <= 10)
 
     def execute(self, context):
 
         stm_obj = funcs.get_stm_object(context.object)
         stm_items = stm_obj.stm_spectro.stm_items
 
-        if len(stm_items) >= 10:
-            pass
-        else:
-            wave_offset = funcs.get_wave_offset(context)
-            wave_obj = funcs.add_waveform_object(context, stm_obj, wave_offset)
-            funcs.select_object_solo(context, wave_obj)
-            # funcs.add_waveform_to_stm_obj(stm_obj, wave_obj)
+        wave_offset = funcs.get_wave_offset(context)
+        wave_obj = funcs.add_waveform_object(context, stm_obj, wave_offset)
+        funcs.select_object_solo(context, wave_obj)
+        # funcs.add_waveform_to_stm_obj(stm_obj, wave_obj)
 
 
-            # print(f'-INF- added waveform object {wave_obj.name}')
+        # print(f'-INF- added waveform object {wave_obj.name}')
 
         return {'FINISHED'}
 

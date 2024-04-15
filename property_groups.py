@@ -62,7 +62,7 @@ class STM_spectrogram_props(PropertyGroup):
     stm_status : StringProperty() # type: ignore
 
     stm_items : CollectionProperty(type=STM_UL_list_item) # type: ignore
-    stm_items_active_index : IntProperty(update=funcs.select_obj_from_list) # type: ignore
+    stm_items_active_index : IntProperty(update=funcs.select_obj_from_stm_list) # type: ignore
 
     presets_geonodes_proper : bpy.props.EnumProperty( # type: ignore
             name='Geonodes Presets',
@@ -181,6 +181,8 @@ class STM_scene_props(PropertyGroup):
     ffmpegPath : StringProperty(default=os.path.join(addon_path, 'ffmpeg', 'ffmpeg.exe')) # type: ignore
     outputPath : StringProperty(default=os.path.join(addon_path, './output'), subtype="DIR_PATH") # type: ignore
     assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v46.blend')) # type: ignore
+
+    object_count_tmp : IntProperty() # type: ignore
 
     is_alt_pressed : BoolProperty() # type: ignore
     is_shift_pressed : BoolProperty() # type: ignore
