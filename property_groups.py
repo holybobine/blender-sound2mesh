@@ -31,22 +31,9 @@ def populate_geonodes_presets(self, context):
         
         preset_name = preset_json['name']
 
-        enum_items.append((preset_fpath, preset_name, "Boob"))
-            
-        # item_name = image.replace('.png', '')
-        # item_name = item_name.split('-')[1]
-        # item_name = item_name.replace('_', ' ')
+        # enum_items.append((preset_fpath, preset_name, "Boob"))
+        enum_items.append((preset_name, preset_name, ""))
 
-        # filepath = os.path.join(image_location, image)
-        # enum_items.append((image, item_name, "", thumb.icon_id, i))
-
-    # with open(r'%s'%scn.stm_settings.presets_json_file,'r') as f:
-    #     presets=json.load(f)
-
-    # for p in presets:
-    #     enum_items.append((p, presets[p]["name"], ""))
-
-    # print(enum_items)
 
     return enum_items
 
@@ -68,7 +55,7 @@ class STM_spectrogram_props(PropertyGroup):
             name='Geonodes Presets',
             # items=generate_previews('presets_geonodes'),
             items=populate_geonodes_presets,
-            update=funcs.apply_spectrogram_preset_proper,
+            # update=funcs.apply_spectrogram_preset_proper,
         )
     
     preset_geonodes_name : bpy.props.StringProperty() # type: ignore
@@ -338,7 +325,7 @@ class STM_scene_props(PropertyGroup):
     bool_eevee_settings : bpy.props.BoolProperty(default=False) # type: ignore
     
     force_eevee_AO : BoolProperty(name='Enable AO', default=True) # type: ignore
-    force_eevee_BLOOM : BoolProperty(name='Enable Bloom', default=True) # type: ignore
+    # force_eevee_BLOOM : BoolProperty(name='Enable Bloom', default=True) # type: ignore
     disable_eevee_viewport_denoising : BoolProperty(name='Disable Viewport Denoising', default=True) # type: ignore
     force_standard_view_transform : BoolProperty(name='Set View Tranform to "Standard"', default=True) # type: ignore
 

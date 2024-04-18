@@ -1,5 +1,5 @@
 {
-    "name": "Preset #1",
+    "name": "Log 0:6 kHz",
     "values": {
         "doLogScale": true,
         "Freq Max (Hz)": 6.0

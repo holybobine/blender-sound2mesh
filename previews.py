@@ -116,7 +116,7 @@ def register():
             name='presets_geonodes',
             # items=generate_previews('presets_geonodes'),
             items=generate_items_from_presets,
-            update=funcs.apply_spectrogram_preset,
+            # update=funcs.apply_spectrogram_preset,
         )
     
     

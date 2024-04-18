@@ -434,7 +434,7 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
             ccol = col2.column()
             ccol.prop(scn.stm_settings, 'force_eevee_AO')
-            ccol.prop(scn.stm_settings, 'force_eevee_BLOOM')
+            # ccol.prop(scn.stm_settings, 'force_eevee_BLOOM')
             ccol.prop(scn.stm_settings, 'disable_eevee_viewport_denoising')
             ccol.prop(scn.stm_settings, 'force_standard_view_transform')
 
@@ -846,10 +846,15 @@ class STM_OT_apply_spectrogram_preset_proper(Operator):
     bl_label = "Apply spectrogram preset"
     bl_options = {'UNDO'}
 
+    preset_fpath: StringProperty() # type: ignore
+
 
     def execute(self, context):
-        funcs.apply_spectrogram_preset_proper(self, context)
 
+        stm_obj = funcs.get_stm_object(context.object)
+
+        funcs.apply_spectrogram_preset_proper(stm_obj, self.preset_fpath)
+        
         return {'FINISHED'}
 
 class STM_OT_detect_key_pressed(Operator):
@@ -977,12 +982,14 @@ class STM_OT_apply_spectrogram_preset(Operator):
 
     bl_options = {'UNDO'}
 
+    preset_name: StringProperty() # type: ignore
+
     def execute(self, context):
         
         preset = context.scene.presets_geonodes
         print(f'-INF- apply spectrogram preset "{preset}"')
 
-        funcs.apply_spectrogram_preset(self, context)
+        funcs.apply_spectrogram_preset(self.preset_name)
 
 
         return {'FINISHED'}

@@ -115,13 +115,11 @@ def get_stm_object(object):
     return object
 
 
-def apply_spectrogram_preset(self, context):
+def apply_spectrogram_preset(preset_name):
     print('-INF- apply GN preset')
 
-    scn = context.scene
-    obj = context.object
 
-    with open(r'%s'%scn.stm_settings.presets_json_file,'r') as f:
+    with open(r'%s'%bpy.context.scene.stm_settings.presets_json_file,'r') as f:
         presets=json.load(f)
 
     #     if context.object.modifiers["STM_spectrogram"]["Socket_15"] == True:
@@ -131,59 +129,53 @@ def apply_spectrogram_preset(self, context):
     #         p = bpy.context.scene.presets_geonodes.replace('.png', '')
     #         p = p.split('-')[1]
 
-    p = obj.presets_geonodes
 
-    if p == 'reset_full':
-        reset_spectrogram_values(resetAll=True)
-
-    else:
-
-        preset = presets[p]["preset"]
+    preset = presets[preset_name]["preset"]
 
 
-        stm_obj = bpy.context.active_object
-        stm_name = bpy.context.active_object.name
+    stm_obj = bpy.context.active_object
+    stm_name = bpy.context.active_object.name
 
-        stm_modifier = stm_obj.modifiers['STM_spectrogram']
+    stm_modifier = stm_obj.modifiers['STM_spectrogram']
 
-        exclude_inputs = [
-            'Geometry',
-            'Audio Duration',
-            'Log to Lin',
-            'Audio Filename',
-            'Baked Volume',
-            'Image',
-            'Material',
-            'max_volume_dB',
-            'max_intensity',
-            'geometryType',
-            'flipCylinderOutside',
-            'flipCylinderX',
-            'flipCylinderY',
-        ]
+    exclude_inputs = [
+        'Geometry',
+        'Audio Duration',
+        'Log to Lin',
+        'Audio Filename',
+        'Baked Volume',
+        'Image',
+        'Material',
+        'max_volume_dB',
+        'max_intensity',
+        'geometryType',
+        'flipCylinderOutside',
+        'flipCylinderX',
+        'flipCylinderY',
+    ]
 
-        stm_modifier.show_viewport = False
+    stm_modifier.show_viewport = False
 
-        for i in stm_modifier.node_group.interface.items_tree:
-            if i.name in preset:
-                value = preset[i.name]
+    for i in stm_modifier.node_group.interface.items_tree:
+        if i.name in preset:
+            value = preset[i.name]
 
-                if value == 'reset':
-                    set_geonode_value(stm_modifier, i, i.default_value)
-                else:
-                    set_geonode_value(stm_modifier, i, value)
+            if value == 'reset':
+                set_geonode_value(stm_modifier, i, i.default_value)
+            else:
+                set_geonode_value(stm_modifier, i, value)
 
-            if i.name == 'EQCurve_type' and 'EQCurve_type' in preset.keys():
-                value = preset['EQCurve_type']
-                curve_presets = stm_obj.bl_rna.properties['presets_eq_curve']
-                preset_name = curve_presets.enum_items[value-1].identifier
-                stm_obj.presets_eq_curve = preset_name
-                apply_eq_curve_preset(self, context)
-        
+        # if i.name == 'EQCurve_type' and 'EQCurve_type' in preset.keys():
+        #     value = preset['EQCurve_type']
+        #     curve_presets = stm_obj.bl_rna.properties['presets_eq_curve']
+        #     preset_name = curve_presets.enum_items[value-1].identifier
+        #     stm_obj.presets_eq_curve = preset_name
+        #     apply_eq_curve_preset(self, context)
+    
 
 
-        
-        stm_modifier.show_viewport = True
+    
+    stm_modifier.show_viewport = True
 
 
 
@@ -272,11 +264,7 @@ def get_enum_items_from_enum_prop(rna_type, prop_str):
     return [e.identifier for e in prop.enum_items]
             
 
-def apply_spectrogram_preset_proper(self, context):
-    scn = context.scene
-    obj = context.object
-    
-    preset_fpath = obj.stm_spectro.presets_geonodes_proper
+def apply_spectrogram_preset_proper(stm_obj, preset_fpath):
     
 
     with open(r'%s'%preset_fpath,'r') as f:
@@ -285,13 +273,15 @@ def apply_spectrogram_preset_proper(self, context):
     preset_name = preset_json['name']
     preset_values = preset_json['values']
 
-    obj.stm_spectro.preset_geonodes_name = preset_name
+    stm_obj.stm_spectro.presets_geonodes_proper = preset_name
+
+    # obj.stm_spectro.preset_geonodes_name = preset_name
 
     # print(preset_name)
     # print(preset_values)
     # print('')
 
-    modifier = obj.modifiers['STM_spectrogram']
+    modifier = stm_obj.modifiers['STM_spectrogram']
     
     for i in modifier.node_group.interface.items_tree:
         if type(i).__name__ != 'NodeTreeInterfaceSocketGeometry':
@@ -305,10 +295,10 @@ def apply_spectrogram_preset_proper(self, context):
 
     
 
-    eq_curve_presets = get_enum_items_from_enum_prop(obj, 'presets_eq_curve')
-    geonode_eqcurve_value = get_geonode_value_proper(modifier, 'EQCurve_type')
+    # eq_curve_presets = get_enum_items_from_enum_prop(stm_obj, 'presets_eq_curve')
+    # geonode_eqcurve_value = get_geonode_value_proper(modifier, 'EQCurve_type')
 
-    obj.presets_eq_curve = eq_curve_presets[geonode_eqcurve_value]
+    # stm_obj.presets_eq_curve = eq_curve_presets[geonode_eqcurve_value]
 
 
 
@@ -828,7 +818,8 @@ def generate_spectrogram(stm_obj, audio_file, image_file, duration_seconds, max_
 
     audioName = sanitize_input(os.path.basename(audio_file.filepath))
     # stm_obj.stm_spectro.stm_items[stm_obj.name].name = f'STM_{audioName}'
-    stm_obj.name = f'STM_{audioName}'
+    # stm_obj.name = f'STM_{audioName}'
+    stm_obj.name = audioName
 
 
     assetFile = scn.stm_settings.assetFilePath
@@ -1258,8 +1249,8 @@ def stm_04_cleanup(self, context):
     if scn.stm_settings.force_eevee_AO:
         scn.eevee.use_gtao = True
         
-    if scn.stm_settings.force_eevee_BLOOM:
-        scn.eevee.use_bloom = True
+    # if scn.stm_settings.force_eevee_BLOOM:
+    #     scn.eevee.use_bloom = True
 
     if scn.stm_settings.disable_eevee_viewport_denoising:
         scn.eevee.use_taa_reprojection = False
@@ -1285,8 +1276,8 @@ def add_spectrogram_object(context):
     # obj = append_from_blend_file(assetFile, 'Object', 'STM_spectrogram', forceImport=True)
     append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
 
-    me = bpy.data.meshes.new('STM_spectrogram')
-    obj = bpy.data.objects.new('STM_spectrogram', me)
+    me = bpy.data.meshes.new('Spectrogram')
+    obj = bpy.data.objects.new('Spectrogram', me)
     mod = obj.modifiers.new("STM_spectrogram", 'NODES')
     mod.node_group = bpy.data.node_groups['STM_spectrogram']
 
@@ -1334,8 +1325,8 @@ def add_waveform_object(context, stm_obj, wave_offset=0.0):
     append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
     
 
-    mesh = bpy.data.meshes.new('STM_waveform')
-    obj = bpy.data.objects.new("STM_waveform", mesh)
+    mesh = bpy.data.meshes.new('Waveform')
+    obj = bpy.data.objects.new("Waveform", mesh)
     mod = obj.modifiers.new("STM_waveform", 'NODES')
     mod.node_group = bpy.data.node_groups['STM_waveform']
 
