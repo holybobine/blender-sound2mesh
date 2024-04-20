@@ -46,7 +46,7 @@ class STM_UL_list_item(PropertyGroup):
 
 class STM_spectrogram_props(PropertyGroup):
     stm_type : StringProperty() # type: ignore
-    stm_status : StringProperty() # type: ignore
+    stm_status : StringProperty(default='init') # type: ignore
 
     stm_items : CollectionProperty(type=STM_UL_list_item) # type: ignore
     stm_items_active_index : IntProperty(update=funcs.select_obj_from_stm_list) # type: ignore

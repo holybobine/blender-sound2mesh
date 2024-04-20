@@ -686,82 +686,13 @@ class STM_OT_import_spectrogram_setup(Operator):
 
     def execute(self, context):
 
-        scn = context.scene
-        
         stm_obj = funcs.add_spectrogram_object(context)
         stm_wave = funcs.add_waveform_object(context, stm_obj)
+
         funcs.select_object_solo(context, stm_obj)
 
-
-        stm_items = stm_obj.stm_spectro.stm_items
-        stm_items.clear()
-
-        item = stm_items.add()
-        # item.name = stm_obj.name
-        # item.id = len(stm_items)
-        # item.stm_type = 'spectrogram'
-        item.object = bpy.data.objects[stm_obj.name]
-
-        item = stm_items.add()
-        # item.name = stm_wave.name
-        # item.id = len(stm_items)
-        # item.stm_type = 'waveform'
-        item.object = bpy.data.objects[stm_wave.name]
-
-        # funcs.update_stm_objects(context)
-
-        # preset = scn.presets_setup
-
-        # print(preset)
-
-        # if preset == "1-waveform_simple.png":
-        #     stm_obj = funcs.add_spectrogram_object()
-        #     funcs.add_waveform_object(stm_obj)
-
-        #     funcs.select_object_solo(context, stm_obj)
-
-        # elif preset == "2-waveform_complex.png":
-        #     stm_obj = funcs.add_spectrogram_object()
-        #     funcs.add_waveform_object(stm_obj, style=4, offset=-0.05)
-        #     funcs.add_waveform_object(stm_obj, style=1, offset=0.0)
-        #     funcs.add_waveform_object(stm_obj, style=2, offset=0.05)
-
-        #     funcs.select_object_solo(context, stm_obj)
-
-
         return {'FINISHED'}
 
-class STM_OT_add_spectrogram(Operator):
-    """Add a new spectrogram object"""
-    bl_idname = "stm.add_spectrogram"
-    bl_label = ''
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-
-        print('-INF- add spectrogram object')
-
-        assetFile = bpy.context.scene.assetFilePath
-
-        # obj = append_from_blend_file(assetFile, 'Object', 'STM_spectrogram', forceImport=True)
-        funcs.append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
-
-        me = bpy.data.meshes.new('STM_spectrogram')
-        obj = bpy.data.objects.new('STM_spectrogram', me)
-        context.collection.objects.link(obj)
-
-        mod = obj.modifiers.new("STM_spectrogram", 'NODES')
-        mod.node_group = bpy.data.node_groups['STM_spectrogram']
-
-
-        bpy.ops.object.select_all(action='DESELECT')
-
-        obj.select_set(True)
-        bpy.context.view_layer.objects.active = obj
-
-        print('-INF- added spectrogram object <%s>'%obj.name)
-
-        return {'FINISHED'}
 
 class STM_OT_add_waveform(Operator):
     """Add waveform"""
@@ -778,15 +709,10 @@ class STM_OT_add_waveform(Operator):
     def execute(self, context):
 
         stm_obj = funcs.get_stm_object(context.object)
-        stm_items = stm_obj.stm_spectro.stm_items
 
         wave_offset = funcs.get_wave_offset(context)
         wave_obj = funcs.add_waveform_object(context, stm_obj, wave_offset)
         funcs.select_object_solo(context, wave_obj)
-        # funcs.add_waveform_to_stm_obj(stm_obj, wave_obj)
-
-
-        # print(f'-INF- added waveform object {wave_obj.name}')
 
         return {'FINISHED'}
 
@@ -800,7 +726,7 @@ class STM_OT_delete_waveform(Operator):
     @classmethod
     def poll(cls, context):
         stm_obj = funcs.get_stm_object(context.object)
-        return bool(stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object != stm_obj)
+        return bool(stm_obj.stm_spectro.stm_items_active_index > 0)
 
     def execute(self, context):
 
@@ -1411,7 +1337,6 @@ classes = [
     STM_OT_select_stm_in_viewport,
     STM_OT_import_spectrogram_setup,
     STM_OT_add_waveform,
-    STM_OT_add_spectrogram,
     STM_OT_delete_waveform,
     STM_OT_spectrogram_preset_popup,
     STM_OT_apply_spectrogram_preset,

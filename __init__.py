@@ -42,18 +42,24 @@ def stm_handler_depsgraph_update(scene):
         pass
     elif not bpy.context.object:
         pass
+    elif bpy.context.object.stm_spectro.stm_status == 'generating':
+        pass
     elif bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
         
         if len(scene.objects) != scene.stm_settings.object_count_tmp:
+            # print('update_stm_list()')
             funcs.update_stm_list(bpy.context)
             scene.stm_settings.object_count_tmp = len(scene.objects)
 
         funcs.select_item_in_list_from_handler(bpy.context)
+        # print('select_item_in_list_from_handler()')
         # pass
 
 @persistent
 def stm_handler_playback(scene):
     if not bpy.context.object:
+        pass
+    elif bpy.context.object.stm_spectro.stm_status == 'generating':
         pass
     elif bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
         if len(scene.objects) != scene.stm_settings.object_count_tmp:

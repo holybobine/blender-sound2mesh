@@ -1276,31 +1276,33 @@ def add_spectrogram_object(context):
     # obj = append_from_blend_file(assetFile, 'Object', 'STM_spectrogram', forceImport=True)
     append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
 
+    
+
     me = bpy.data.meshes.new('Spectrogram')
     obj = bpy.data.objects.new('Spectrogram', me)
-    mod = obj.modifiers.new("STM_spectrogram", 'NODES')
-    mod.node_group = bpy.data.node_groups['STM_spectrogram']
+    
 
+    obj.stm_spectro.stm_status = 'generating'
     obj.stm_spectro.stm_type = 'spectrogram'
 
-    context.collection.objects.link(obj)
-    select_object_solo(context, obj)
+    stm_coll = create_collection('Spectrogram')
+    stm_coll.objects.link(obj)
 
+
+    mod = obj.modifiers.new("STM_spectrogram", 'NODES')
+    mod.node_group = bpy.data.node_groups['STM_spectrogram']
+    
     obj.stm_spectro.material_type = 'raw'
     
 
     
 
-    mat_gradient = get_stm_material(obj, 'STM_gradient')
+    # mat_gradient = get_stm_material(obj, 'STM_gradient')
+    # set_geonode_value_proper(mod, 'Material', mat_gradient)
+
     mat_raw = get_stm_material(obj, 'STM_rawTexture')
-
-    # mod["Input_12"] = mat_gradient
-    # obj.stm_spectro.material_type = 'gradient'
-
-    # mod["Input_12"] = mat_raw
     set_geonode_value_proper(mod, 'Material', mat_raw)
     
-
     mat = mat_raw
 
     if obj.data.materials:
@@ -1309,7 +1311,7 @@ def add_spectrogram_object(context):
         obj.data.materials.append(mat)
 
 
-    
+    obj.stm_spectro.stm_status = 'done'
 
     print('-INF- added spectrogram object <%s>'%obj.name)
 
@@ -1333,8 +1335,9 @@ def add_waveform_object(context, stm_obj, wave_offset=0.0):
     obj.stm_spectro.stm_type = 'waveform'
     obj.stm_spectro.spectrogram_object = stm_obj
 
-    context.collection.objects.link(obj)
-    select_object_solo(context, obj)
+    for coll in stm_obj.users_collection:
+        coll.objects.link(obj)
+
 
     obj.stm_spectro.material_type = 'emission'
     # obj.parent = stm_obj
@@ -1360,7 +1363,7 @@ def add_waveform_object(context, stm_obj, wave_offset=0.0):
     obj.hide_viewport = True
     obj.hide_viewport = False
 
-    print('-INF- added waveform object <%s>'%obj.name)
+    # print('-INF- added waveform object <%s>'%obj.name)
 
     return obj
 
@@ -1421,6 +1424,7 @@ def add_obj_to_stm_items(stm_items, obj):
     item.object = obj
 
 def update_stm_list(context):
+    
 
     stm_obj = get_stm_object(context.object)
     stm_items = stm_obj.stm_spectro.stm_items
@@ -1438,17 +1442,48 @@ def update_stm_list(context):
 def select_item_in_list_from_handler(context):
     stm_obj = get_stm_object(context.object)
     stm_items = stm_obj.stm_spectro.stm_items
+    idx = stm_obj.stm_spectro.stm_items_active_index
 
     if stm_obj.stm_spectro.stm_status == 'selecting_from_list':
         pass
-    elif context.object == stm_items[stm_obj.stm_spectro.stm_items_active_index].object:
+
+    elif idx >= len(stm_items):     # update idx in case of deleted objects
+        stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
+        stm_obj.stm_spectro.stm_items_active_index = len(stm_items) - 1
+        stm_obj.stm_spectro.stm_status = 'done'
+
+    elif context.object == stm_items[idx].object:
         pass
+    
     else:
         new_idx = next(i for i, item in enumerate(stm_items) if context.object == item.object)
 
         stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
         stm_obj.stm_spectro.stm_items_active_index = new_idx
         stm_obj.stm_spectro.stm_status = 'done'
+
+
+# def select_item_in_list_from_handler(context):
+#     stm_obj = get_stm_object(context.object)
+
+#     if stm_obj.stm_spectro.stm_status == 'selecting_from_list':
+#         pass
+#     else:
+        
+#         stm_items = stm_obj.stm_spectro.stm_items
+#         new_idx = 0
+
+#         if stm_obj.stm_spectro.stm_items_active_index >= len(stm_items):
+#             pass
+#         elif len(stm_items) == 0:
+#             pass
+#         else:
+#             new_idx = next(i for i, item in enumerate(stm_items) if context.object == item.object)
+
+#         stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
+#         stm_obj.stm_spectro.stm_items_active_index = new_idx
+#         stm_obj.stm_spectro.stm_status = 'done'
+
 
 def select_obj_from_stm_list(self, context):
 
@@ -1517,3 +1552,11 @@ def toggle_parent_spectrogram(self, context):
 def set_default_bake_resolution(self, context):
     context.scene.stm_settings.userWidth = 4096
     context.scene.stm_settings.userHeight = 2048
+
+
+
+def create_collection(coll_name):
+    coll = bpy.data.collections.new(coll_name)
+    bpy.context.scene.collection.children.link(coll)
+
+    return coll
