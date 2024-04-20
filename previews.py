@@ -96,6 +96,7 @@ def register():
     setup_new_preview_collection(name="presets_gradient", dir=r'.\icons\icons_gradient_presets')
     setup_new_preview_collection(name="presets_eq_curve", dir=r'.\icons\icons_eq_presets')
     setup_new_preview_collection(name="presets_waveform_style", dir=r'.\icons\icons_waveform_style')
+    setup_new_preview_collection(name="presets_waveform_style_AB", dir=r'.\icons\icons_waveform_style_AB')
 
     preview_collections["preview_image_enum"] = bpy.utils.previews.new()
 
@@ -124,7 +125,7 @@ def register():
     bpy.types.Object.presets_eq_curve = bpy.props.EnumProperty( # type: ignore
             name='presets_eq_curve',
             items=generate_previews('presets_eq_curve'),
-            update=funcs.apply_eq_curve_preset,
+            update=funcs.apply_eq_curve_preset_proper,
         )
 
     bpy.types.Object.presets_gradient = bpy.props.EnumProperty(
@@ -137,6 +138,12 @@ def register():
     bpy.types.Object.presets_waveform_style = bpy.props.EnumProperty( # type: ignore
             name='Waveform Shape',
             items=generate_previews('presets_waveform_style'),
+            update=funcs.apply_waveform_style,
+        )
+    
+    bpy.types.Scene.presets_waveform_style_AB = bpy.props.EnumProperty( # type: ignore
+            name='Waveform Shape',
+            items=generate_previews('presets_waveform_style_AB'),
             update=funcs.apply_waveform_style,
         )
     

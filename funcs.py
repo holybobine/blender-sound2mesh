@@ -285,20 +285,47 @@ def apply_spectrogram_preset_proper(stm_obj, preset_fpath):
     
     for i in modifier.node_group.interface.items_tree:
         if type(i).__name__ != 'NodeTreeInterfaceSocketGeometry':
-            if  i.name not in exclude_preset_inputs:            
-                if i.name in preset_values and i.name:
+            if  i.name not in exclude_preset_inputs:
+                if not i.name:
+                    pass
+                elif i.name in preset_values:
                     value = preset_values[i.name]
                     set_geonode_value_proper(modifier, i.name, value)
                 else:
                     reset_geonode_value(modifier, i.name)
 
 
+
+
     
+    stm_modifier = stm_obj.modifiers['STM_spectrogram']
+    curve_node = stm_modifier.node_group.nodes['MACURVE']
+    preset_points_array = [
+        [0.00, 0.5],
+        [0.25, 0.5],
+        [0.50, 0.5],
+        [0.75, 0.5],
+        [1.00, 0.5]
+    ]
+    
+    for value_name in preset_values:
+        if value_name == 'EQCurve_points':
+            preset_points = preset_values['EQCurve_points']
+            preset_points_array = [preset_points[value] for value in preset_points]
 
-    # eq_curve_presets = get_enum_items_from_enum_prop(stm_obj, 'presets_eq_curve')
-    # geonode_eqcurve_value = get_geonode_value_proper(modifier, 'EQCurve_type')
+    
+    set_points_on_eq_curve(curve_node, preset_points_array)
 
-    # stm_obj.presets_eq_curve = eq_curve_presets[geonode_eqcurve_value]
+    
+    # for value_name in preset_values:
+    #     if value_name == 'EQCurve_points':
+    #         stm_modifier = stm_obj.modifiers['STM_spectrogram']
+    #         curve_node = stm_modifier.node_group.nodes['MACURVE']
+    #         preset_points = preset_values['EQCurve_points']
+    #         preset_points_array = [preset_points[value] for value in preset_points]
+
+    
+    #         set_points_on_eq_curve(curve_node, preset_points_array)
 
 
 
@@ -955,6 +982,51 @@ def apply_eq_curve_preset(self, context):
     redraw_all_viewports()
 
 
+def apply_eq_curve_preset_proper(stm_obj, preset_name):
+    # print('-INF- apply eq curve preset proper')
+
+    with open(r'%s'%bpy.context.scene.stm_settings.eq_curve_presets_json_file,'r') as f:
+        presets=json.load(f)
+
+    # preset_name = stm_obj.presets_eq_curve.replace('.png', '')
+    # preset_name = preset_name.split('-')[1]
+    preset = presets[preset_name]
+
+    
+    # stm_obj = context.object
+    stm_modifier = stm_obj.modifiers['STM_spectrogram']
+    curve_node = stm_modifier.node_group.nodes['MACURVE']
+    preset_points = [preset[value] for value in preset]
+
+    set_points_on_eq_curve(curve_node, preset_points)
+
+    
+
+    
+def set_points_on_eq_curve(curve_node, preset_points):
+    
+    # print(preset_points)
+
+    points = curve_node.mapping.curves[0].points
+
+    # Keep only 2
+    while len(points) > 2:
+        points.remove(points[1]) #Can't remove at 0 (don't know why)
+
+    # create as many points as needed
+    while len(points) < len(preset_points):
+        points.new(0,0)
+
+    # set location for each point
+    for i, p in enumerate(preset_points):
+        points[i].location = (p[0], p[1])
+        points[i].handle_type = 'AUTO_CLAMPED'
+
+    curve_node.mapping.update()
+    curve_node.update()
+
+
+    
 
 def is_stm_object_selected():
 
@@ -970,7 +1042,9 @@ def is_stm_object_selected():
 
 def update_stm_material(self, context):
 
-    obj = context.object
+    obj = self.id_data
+
+    
     audioName = ''
     geonode_name = ''
     geonode_slot = ''
@@ -1225,6 +1299,7 @@ def stm_03_build_spectrogram(self, context):
     duration_frames = soundstrip.frame_final_duration
     duration_seconds = duration_frames/fps
 
+    scn.frame_start = 1
     scn.frame_end = duration_frames + fps
 
     
@@ -1259,7 +1334,7 @@ def stm_04_cleanup(self, context):
     set_playback_to_audioSync(context)
     frame_clip_in_sequencer(context)
     # update_stm_objects(context)
-    # frame_all_timeline()
+    frame_all_timeline()
 
 def stm_05_sleep(self, context):
     time.sleep(0.5)
@@ -1274,25 +1349,26 @@ def add_spectrogram_object(context):
     assetFile = scn.stm_settings.assetFilePath
 
     # obj = append_from_blend_file(assetFile, 'Object', 'STM_spectrogram', forceImport=True)
-    append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram')
+    append_from_blend_file(assetFile, 'NodeTree', 'STM_spectrogram', forceImport=False)
 
-    
+    # print(len(context.scene.objects))
 
     me = bpy.data.meshes.new('Spectrogram')
     obj = bpy.data.objects.new('Spectrogram', me)
-    
-
     obj.stm_spectro.stm_status = 'generating'
-    obj.stm_spectro.stm_type = 'spectrogram'
+
+    
 
     stm_coll = create_collection('Spectrogram')
     stm_coll.objects.link(obj)
+    
+    # print(len(context.scene.objects))
 
 
     mod = obj.modifiers.new("STM_spectrogram", 'NODES')
-    mod.node_group = bpy.data.node_groups['STM_spectrogram']
+    mod.node_group = bpy.data.node_groups['STM_spectrogram'].copy()
     
-    obj.stm_spectro.material_type = 'raw'
+    
     
 
     
@@ -1311,7 +1387,10 @@ def add_spectrogram_object(context):
         obj.data.materials.append(mat)
 
 
+    obj.stm_spectro.stm_type = 'spectrogram'
+    obj.stm_spectro.material_type = 'raw'
     obj.stm_spectro.stm_status = 'done'
+    
 
     print('-INF- added spectrogram object <%s>'%obj.name)
 

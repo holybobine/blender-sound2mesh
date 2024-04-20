@@ -95,8 +95,11 @@ class STM_UL_draw_items(UIList):
                 row.prop(obj, "hide_viewport", text="", emboss=False)
                 
             elif obj.stm_spectro.stm_type == 'waveform':
+                side_values = ['A', 'B', 'AB']
+                side = side_values[int(funcs.get_geonode_value_proper(obj.modifiers['STM_waveform'], 'Side'))]
+                custom_icon_name = obj.presets_waveform_style.replace('.png', f'_{side}.png')
 
-                custom_icon = preview_collections['presets_waveform_style'][obj.presets_waveform_style].icon_id
+                custom_icon = preview_collections['presets_waveform_style_AB'][custom_icon_name].icon_id
                 select_icon = 'LAYER_ACTIVE' if obj in context.selected_objects else 'LAYER_USED'
                 parent_icon = 'LINKED' if obj.stm_spectro.is_parented_to_spectrogram else 'UNLINKED'
 
@@ -702,10 +705,10 @@ class STM_PT_geometry_nodes_spectrogram(STM_Object_Panel, bpy.types.Panel):
         layout = self.layout
         scn = context.scene
 
-        obj = context.object
-        modifier = obj.modifiers['STM_spectrogram']
+        stm_obj = context.object
+        modifier = stm_obj.modifiers['STM_spectrogram']
 
-        layout.enabled = obj.modifiers["STM_spectrogram"]["Input_2"] != None and scn.stm_settings.progress == 0
+        layout.enabled = stm_obj.modifiers["STM_spectrogram"]["Input_2"] != None and scn.stm_settings.progress == 0
 
 
 
@@ -718,18 +721,20 @@ class STM_PT_geometry_nodes_spectrogram(STM_Object_Panel, bpy.types.Panel):
 
         col1.label(text='Shape')
         row = col2.row(align=True)
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Plane', toggle=1, invert_checkbox=True)
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Cylinder', toggle=1)
+        prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Plane', toggle=1, invert_checkbox=True)
+        prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Cylinder', toggle=1)
 
         col1.separator()
         col2.separator()   
 
         col1.label(text='Preset')
-        col2.popover('STM_PT_spectrogram_menu', text=obj.stm_spectro.presets_geonodes_proper, icon='NONE')
+        col2.popover('STM_PT_spectrogram_menu', text=stm_obj.stm_spectro.presets_geonodes_proper, icon='NONE')
 
 
-        
-
+        if modifier.node_group.users > 1:
+            row = layout.row()
+            row.alert = True
+            row.operator('stm.fix_multiple_users', text='Multiple users (click to fix)', icon='ERROR')
 
 
 
@@ -1049,7 +1054,7 @@ class STM_PT_spectrogram_eqcurve_settings(STM_Modifier_Panel, bpy.types.Panel):
 
         layout.enabled = context.object.modifiers['STM_spectrogram']['Socket_19']
 
-        layout.prop(obj, "presets_eq_curve", text='')   
+        # layout.prop(obj, "presets_eq_curve", text='')
 
         split_fac = 0.4
 
@@ -1060,6 +1065,49 @@ class STM_PT_spectrogram_eqcurve_settings(STM_Modifier_Panel, bpy.types.Panel):
 
         col1.label(text='Factor')
         prop_geonode(col2, obj.modifiers['STM_spectrogram'], 'EQ Curve Factor', label=False)
+
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Preset')
+        row = col2.row(align=True)
+        row.scale_x=5
+        row.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='',
+            icon_value=preview_collections['presets_eq_curve']['0-reset.png'].icon_id
+        ).preset_name='reset'
+        row.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='',
+            icon_value=preview_collections['presets_eq_curve']['3-flatten_edges.png'].icon_id
+        ).preset_name='flatten_edges'
+        row.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='',
+            icon_value=preview_collections['presets_eq_curve']['1-lowpass.png'].icon_id
+        ).preset_name='lowpass'
+        row.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='',
+            icon_value=preview_collections['presets_eq_curve']['2-hipass.png'].icon_id
+        ).preset_name='hipass'
+        
+
+        box = layout.box()
+
+        curve = bpy.data.node_groups['STM_spectrogram'].nodes['MACURVE']
+        box.template_curve_mapping(
+            data=curve,
+            property="mapping",
+            type='NONE',
+            levels=False,
+            brush=False,
+            show_tone=False,
+        )
+
+
+        
 
 class STM_PT_spectrogram_curve_settings(STM_Modifier_Panel, bpy.types.Panel):
     bl_label = ""

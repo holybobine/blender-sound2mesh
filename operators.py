@@ -50,6 +50,8 @@ class STM_OT_select_audio_file(Operator, ImportHelper):
         stm_obj.stm_spectro.audio_filename = os.path.basename(self.filepath)
 
         funcs.update_metadata(self, context)
+        funcs.use_audio_in_scene(context)
+        funcs.frame_clip_in_sequencer(context)
 
         return {'FINISHED'}
 
@@ -689,7 +691,11 @@ class STM_OT_import_spectrogram_setup(Operator):
         stm_obj = funcs.add_spectrogram_object(context)
         stm_wave = funcs.add_waveform_object(context, stm_obj)
 
+        
+
         funcs.select_object_solo(context, stm_obj)
+
+        funcs.update_stm_list(context)
 
         return {'FINISHED'}
 
@@ -988,6 +994,31 @@ class STM_OT_reset_spectrogram_geometry_values(Operator):
 
         return {'FINISHED'}
 
+
+class STM_OT_apply_eq_curve_preset(Operator):
+    """Reset EQ curve Settings"""
+    bl_idname = 'stm.apply_eq_curve_preset'
+    bl_label=''
+
+    bl_options = {'UNDO'}
+
+    preset_name: EnumProperty(
+        items=[
+            ('reset', 'Reset', ''),
+            ('lowpass', 'Lowpass', ''),
+            ('hipass', 'Hipass', ''),
+            ('flatten_edges', 'Flatten Edges', ''),
+        ]
+    ) # type: ignore
+
+
+    def execute(self, context):
+
+        stm_obj = context.object
+        funcs.apply_eq_curve_preset_proper(stm_obj, self.preset_name)
+
+        return {'FINISHED'}
+
 class STM_OT_reset_eq_curve(Operator):
     """Reset EQ curve Settings"""
     bl_idname = 'stm.reset_stm_curve'
@@ -1008,6 +1039,24 @@ class STM_OT_reset_eq_curve(Operator):
         # funcs.apply_eq_curve_preset(self, context)
 
         return {'FINISHED'}
+
+
+class STM_OT_fix_multiple_users(Operator):
+    """Geometry nodes group seems to have multiple users.
+Click to make single-user."""
+    bl_idname = 'stm.fix_multiple_users'
+    bl_label=''
+
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        stm_obj = context.object
+        modifier = stm_obj.modifiers['STM_spectrogram']
+
+        modifier.node_group = modifier.node_group.copy()
+
+        return {'FINISHED'}
+
 
 class STM_OT_reset_gradient(Operator):
     """Reset gradient"""
@@ -1343,6 +1392,7 @@ classes = [
     STM_OT_reset_spectrogram_full,
     STM_OT_reset_spectrogram_main_settings,
     STM_OT_reset_spectrogram_geometry_values,
+    STM_OT_apply_eq_curve_preset,
     STM_OT_reset_eq_curve,
     STM_OT_reset_gradient,
     STM_OT_refresh_stm_objects,
@@ -1360,6 +1410,8 @@ classes = [
     STM_OT_detect_key_pressed,
 
     STM_OT_view_spectrogram_settings,
+
+    STM_OT_fix_multiple_users,
 
 
 
