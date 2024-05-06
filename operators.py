@@ -1369,7 +1369,8 @@ class STM_OT_view_spectrogram_settings(Operator):
 
 
         return {'FINISHED'}
-        
+
+
 
 
 classes = [

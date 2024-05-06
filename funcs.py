@@ -328,6 +328,9 @@ def apply_spectrogram_preset_proper(stm_obj, preset_fpath):
     #         set_points_on_eq_curve(curve_node, preset_points_array)
 
 
+    refresh_all_areas()
+
+
 
 
 def next_power_of_2(x):  

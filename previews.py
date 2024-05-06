@@ -97,6 +97,9 @@ def register():
     setup_new_preview_collection(name="presets_eq_curve", dir=r'.\icons\icons_eq_presets')
     setup_new_preview_collection(name="presets_waveform_style", dir=r'.\icons\icons_waveform_style')
     setup_new_preview_collection(name="presets_waveform_style_AB", dir=r'.\icons\icons_waveform_style_AB')
+    
+    setup_new_preview_collection(name="stm_logo", dir=r'.\icons')
+    generate_previews('stm_logo')
 
     preview_collections["preview_image_enum"] = bpy.utils.previews.new()
 

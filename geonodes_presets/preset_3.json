@@ -5,7 +5,6 @@
         "Freq Max (Hz)": 3.5,
         "Audio Sample (s)": 0.1,
         "doLogScale": true,
-        "doContrast": true,
         "doModifiers": true,
         "doSmooth": true,
         "doEQCurve": true,
