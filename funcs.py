@@ -1550,7 +1550,7 @@ def select_item_in_list_from_handler(context):
     elif idx > 0 and context.object == stm_items[idx].object:
         pass
     
-    elif len(stm_items) > 0:
+    elif len(stm_items) > 0 and context.object != stm_items[idx].object:
         new_idx = next(i for i, item in enumerate(stm_items) if context.object == item.object)
 
         stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
