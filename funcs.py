@@ -1536,10 +1536,11 @@ def select_item_in_list_from_handler(context):
     if stm_obj.stm_spectro.stm_status == 'selecting_from_list':
         pass
 
-    elif  context.object.stm_spectro.stm_type =='spectrogram':
-        stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
-        stm_obj.stm_spectro.stm_items_active_index = -1
-        stm_obj.stm_spectro.stm_status = 'done'
+    elif context.object.stm_spectro.stm_type =='spectrogram':
+        if stm_obj.stm_spectro.stm_items_active_index != -1:
+            stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
+            stm_obj.stm_spectro.stm_items_active_index = -1
+            stm_obj.stm_spectro.stm_status = 'done'
 
     elif idx >= len(stm_items):     # update idx in case of deleted objects
         stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
@@ -1549,7 +1550,7 @@ def select_item_in_list_from_handler(context):
     elif idx > 0 and context.object == stm_items[idx].object:
         pass
     
-    else:
+    elif len(stm_items) > 0:
         new_idx = next(i for i, item in enumerate(stm_items) if context.object == item.object)
 
         stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
