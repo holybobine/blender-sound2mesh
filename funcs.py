@@ -747,14 +747,14 @@ def update_metadata(self, context):
         redraw_all_viewports()
 
 def update_curve_object(self, context):
-    obj = context.object
+    stm_obj = get_stm_object(context.object)
 
-    obj.modifiers['STM_spectrogram']['Socket_3'] = obj.stm_spectro.curve_object
+    stm_obj.modifiers['STM_spectrogram']['Socket_3'] = stm_obj.stm_spectro.curve_object
 
 def update_curve_deform_axis(self, context):
-    obj = context.object
+    stm_obj = get_stm_object(context.object)
 
-    obj.modifiers['STM_spectrogram']['Socket_22'] = int(obj.stm_spectro.curve_deform_axis)
+    stm_obj.modifiers['STM_spectrogram']['Socket_22'] = int(stm_obj.stm_spectro.curve_deform_axis)
 
 def use_audio_in_scene(context, offset=0):
 
@@ -1189,7 +1189,7 @@ def get_stm_material(stm_obj, mat_name):
 
 def get_wave_offset(context):
     stm_obj = get_stm_object(context.object)
-    idx = len(stm_obj.stm_spectro.stm_items) - 1
+    idx = len(stm_obj.stm_spectro.stm_items)
     return float(idx/20)
 
 def stm_00_ffmetadata(self, context):
@@ -1507,13 +1507,14 @@ def add_obj_to_stm_items(stm_items, obj):
 
 def update_stm_list(context):
     
+    # print('update_stm_list()')
 
     stm_obj = get_stm_object(context.object)
     stm_items = stm_obj.stm_spectro.stm_items
 
     stm_items.clear()
 
-    add_obj_to_stm_items(stm_items, stm_obj)
+    # add_obj_to_stm_items(stm_items, stm_obj)
 
     for o in context.scene.objects:
         if o.stm_spectro.spectrogram_object == stm_obj:
@@ -1522,19 +1523,30 @@ def update_stm_list(context):
     
 
 def select_item_in_list_from_handler(context):
+
+    # print('select_item_in_list_from_handler()')
+    # print(context.object)
+
     stm_obj = get_stm_object(context.object)
     stm_items = stm_obj.stm_spectro.stm_items
     idx = stm_obj.stm_spectro.stm_items_active_index
 
+    
+
     if stm_obj.stm_spectro.stm_status == 'selecting_from_list':
         pass
+
+    elif  context.object.stm_spectro.stm_type =='spectrogram':
+        stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
+        stm_obj.stm_spectro.stm_items_active_index = -1
+        stm_obj.stm_spectro.stm_status = 'done'
 
     elif idx >= len(stm_items):     # update idx in case of deleted objects
         stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
         stm_obj.stm_spectro.stm_items_active_index = len(stm_items) - 1
         stm_obj.stm_spectro.stm_status = 'done'
 
-    elif context.object == stm_items[idx].object:
+    elif idx > 0 and context.object == stm_items[idx].object:
         pass
     
     else:
@@ -1576,7 +1588,7 @@ def select_obj_from_stm_list(self, context):
     else:
         bpy.ops.stm.detect_key_pressed('INVOKE_DEFAULT', key='SHIFT')
 
-        if not context.scene.stm_settings.is_shift_pressed:
+        if not context.scene.stm_settings.is_shift_pressed and len(stm_obj.stm_spectro.stm_items)>0:
 
             obj_to_select = stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object
 

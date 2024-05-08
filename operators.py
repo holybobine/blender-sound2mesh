@@ -732,7 +732,7 @@ class STM_OT_delete_waveform(Operator):
     @classmethod
     def poll(cls, context):
         stm_obj = funcs.get_stm_object(context.object)
-        return bool(stm_obj.stm_spectro.stm_items_active_index > 0)
+        return bool(len(stm_obj.stm_spectro.stm_items) > 0)
 
     def execute(self, context):
 
@@ -751,6 +751,10 @@ class STM_OT_delete_waveform(Operator):
         stm_obj.stm_spectro.stm_status = 'done'
 
         bpy.data.objects.remove(obj)
+
+        if len(stm_obj.stm_spectro.stm_items) == 0:
+            funcs.select_object_solo(context, stm_obj)
+            stm_obj.stm_spectro.stm_items_active_index = 0
 
         
 
@@ -1014,7 +1018,7 @@ class STM_OT_apply_eq_curve_preset(Operator):
 
     def execute(self, context):
 
-        stm_obj = context.object
+        stm_obj = funcs.get_stm_object(context.object)
         funcs.apply_eq_curve_preset_proper(stm_obj, self.preset_name)
 
         return {'FINISHED'}
