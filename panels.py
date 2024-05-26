@@ -613,24 +613,27 @@ class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
 
         if stm_obj.stm_spectro.material_type == 'gradient':
             
-            col = layout.column(align=True)
+            # col = layout.column(align=True)
             # layout.prop(stm_obj.stm_spectro, 'gradient_custom', text='Customize Gradient', icon='OPTIONS' if not obj.stm_spectro.gradient_custom else 'X', toggle=1)
-            row = col.row(align=True)
-            row.prop(stm_obj.stm_spectro, 'gradient_type', text='Customize Gradient', expand=True)
+            # row = col.row(align=True)
+            # row.prop(stm_obj.stm_spectro, 'gradient_type', text='Customize Gradient', expand=True)
 
-            box = col.box()
+            # box = col.box()
             
-            # if not stm_obj.stm_spectro.gradient_custom:
-            if stm_obj.stm_spectro.gradient_type == 'preset':
-                box.template_icon_view(stm_obj, "presets_gradient", show_labels=True, scale=6.0, scale_popup=6.0)
-            else:
-                # layout.prop(stm_obj, 'presets_gradient', text='')
+            # if stm_obj.stm_spectro.gradient_type == 'preset':
+            #     box.template_icon_view(stm_obj, "presets_gradient", show_labels=True, scale=6.0, scale_popup=6.0)
+            # else:
+            #     mat = stm_obj.data.materials[0]
+            #     cr_node = mat.node_tree.nodes['STM_gradient']
+            #     box.template_color_ramp(cr_node, "color_ramp", expand=False)
 
-                
 
-                mat = stm_obj.data.materials[0]
-                cr_node = mat.node_tree.nodes['STM_gradient']
-                box.template_color_ramp(cr_node, "color_ramp", expand=False)
+            layout.prop(stm_obj, "presets_gradient", text='', icon='OPTIONS')
+
+            mat = stm_obj.data.materials[0]
+            cr_node = mat.node_tree.nodes['STM_gradient']
+            layout.template_color_ramp(cr_node, "color_ramp", expand=False)
+
 
                 
 
