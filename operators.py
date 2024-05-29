@@ -718,7 +718,9 @@ class STM_OT_add_waveform(Operator):
 
         wave_offset = funcs.get_wave_offset(context)
         wave_obj = funcs.add_waveform_object(context, stm_obj, wave_offset)
+
         funcs.select_object_solo(context, wave_obj)
+        funcs.select_item_in_list_from_handler(context)
 
         return {'FINISHED'}
 

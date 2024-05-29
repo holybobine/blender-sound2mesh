@@ -111,7 +111,7 @@ class STM_UL_draw_items(UIList):
                 
                 # row.label(text='', icon=select_icon)
                 row.prop(obj, "name", icon_value=custom_icon, emboss=False, text="")
-                row.prop(obj.stm_spectro, 'is_parented_to_spectrogram', text='', icon=parent_icon, emboss=False)
+                # row.prop(obj.stm_spectro, 'is_parented_to_spectrogram', text='', icon=parent_icon, emboss=False)
                 row.prop(obj, "hide_viewport", text="", emboss=False)
                 # row.prop(obj, "hide_render", text="", emboss=False)
 
@@ -766,19 +766,19 @@ class STM_PT_geometry_nodes_spectrogram(STM_Object_Panel, bpy.types.Panel):
         col1.separator()
         col2.separator()
 
-        if modifier['Socket_15'] == True:
-            col1.label(text='Radius')
-            prop_geonode(col2, modifier, 'Cylinder Radius', label=False)
+        # if modifier['Socket_15'] == True:
+        #     col1.label(text='Radius')
+        #     prop_geonode(col2, modifier, 'Cylinder Radius', label=False)
 
-        else:
-            col1.label(text='Extrude')
+        # else:
+        col1.label(text='Extrude')
 
-            row = col2.row(align=True)
-            prop_geonode(row, modifier, 'doExtrude', label=False)
+        row = col2.row(align=True)
+        prop_geonode(row, modifier, 'doExtrude', label=False)
 
-            ccol = row.column(align=True)
-            ccol.enabled = stm_obj.modifiers["STM_spectrogram"]["Input_52"]
-            prop_geonode(ccol, modifier, 'extrudeHeight', label=False)
+        ccol = row.column(align=True)
+        ccol.enabled = stm_obj.modifiers["STM_spectrogram"]["Input_52"]
+        prop_geonode(ccol, modifier, 'extrudeHeight', label=False)
 
         col1.separator()
         col2.separator()

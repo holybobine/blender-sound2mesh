@@ -1526,12 +1526,12 @@ def select_item_in_list_from_handler(context):
 
     # print('select_item_in_list_from_handler()')
     # print(context.object)
+    # print(context.object.stm_spectro.stm_status)
 
     stm_obj = get_stm_object(context.object)
     stm_items = stm_obj.stm_spectro.stm_items
-    idx = stm_obj.stm_spectro.stm_items_active_index
+    idx = stm_obj.stm_spectro.stm_items_active_index   
 
-    
 
     if stm_obj.stm_spectro.stm_status == 'selecting_from_list':
         pass
@@ -1550,12 +1550,13 @@ def select_item_in_list_from_handler(context):
     elif idx > 0 and context.object == stm_items[idx].object:
         pass
     
-    elif len(stm_items) > 0 and context.object != stm_items[idx].object:
-        new_idx = next(i for i, item in enumerate(stm_items) if context.object == item.object)
+    elif len(stm_items) > 0:
+        if context.object != stm_items[idx].object or idx == -1:
+            new_idx = next(i for i, item in enumerate(stm_items) if context.object == item.object)
 
-        stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
-        stm_obj.stm_spectro.stm_items_active_index = new_idx
-        stm_obj.stm_spectro.stm_status = 'done'
+            stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
+            stm_obj.stm_spectro.stm_items_active_index = new_idx
+            stm_obj.stm_spectro.stm_status = 'done'
 
 
 # def select_item_in_list_from_handler(context):
