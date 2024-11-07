@@ -57,12 +57,30 @@ def poll_draw_spectrogram_tab(context):
 
     return True
 
+def poll_draw_spectrogram_main_settings(context):
+    if not context.object:
+        return
+    
+    
+
+    # if context.object.stm_spectro.stm_type != 'spectrogram':
+    #     return
+    if context.scene.stm_settings.stm_settings_tab != 'spectrogram':
+        return
+
+    return True
+
 def poll_draw_spectrogram_settings(context):
     if not context.object:
         return
-    if context.object.stm_spectro.stm_type != 'spectrogram':
-        return
-    if context.object.stm_spectro.image_file == None:
+    # if context.object.stm_spectro.stm_type != 'spectrogram':
+    #     return
+
+    stm_obj = funcs.get_stm_object(context.object) 
+
+    # if stm_obj.stm_spectro.image_file == None:
+    #     return
+    if context.scene.stm_settings.stm_settings_tab != 'spectrogram':
         return
 
     return True
@@ -72,14 +90,43 @@ def poll_draw_waveform_settings(context):
         return
     if context.object.stm_spectro.stm_type != 'waveform':
         return
-    if funcs.get_stm_object(context.object).stm_spectro.image_file == None:
+    # if funcs.get_stm_object(context.object).stm_spectro.image_file == None:
+    #     return
+    if context.scene.stm_settings.stm_settings_tab != 'waveform':
         return
     
     return True
 
 
 
+class STM_UL_draw_spectro_list(UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        obj = item.object
+    
+        row = layout.row(align=True)
+        row.prop(obj, "name", icon='SEQ_HISTOGRAM', emboss=False, text="")
+        if obj.stm_spectro.audio_file:
+            is_audio_active = False
 
+            seq = context.scene.sequence_editor
+            if seq:
+                for s in seq.sequences:
+                    if s.sound.filepath == obj.stm_spectro.audio_file.filepath:
+                        is_audio_active = True
+
+            row.operator(
+                'stm.use_audio_in_scene', 
+                text='', 
+                icon='OUTLINER_OB_SPEAKER' if is_audio_active else 'OUTLINER_DATA_SPEAKER', 
+                emboss=False
+            ).target_object_name=obj.name
+
+        row.prop(obj, "hide_viewport", text="", emboss=False)
+        # row.prop(obj, "hide_render", text="", emboss=False)
+                
+
+    def invoke(self, context, event):
+        pass
 
 class STM_UL_draw_items(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -146,6 +193,90 @@ class STM_MT_image_menu(bpy.types.Menu):
         layout.separator()
         layout.operator('stm.open_image', text='Open Image', icon='IMAGE_DATA')
         layout.operator('stm.open_image_folder', text='Open Image Folder', icon='FILEBROWSER')
+
+
+class STM_MT_eq_curve_menu(bpy.types.Menu):
+    bl_idname = "STM_MT_eq_curve_menu"
+    bl_label = "Select"
+
+    def draw(self, context):
+        layout = self.layout
+
+
+        layout.label(text='EQ Curve Preset')
+        layout.separator()
+        
+        layout.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='Flat',
+            icon_value=preview_collections['presets_eq_curve']['0-reset.png'].icon_id
+        ).preset_name='reset'
+        layout.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='Flatten edges',
+            icon_value=preview_collections['presets_eq_curve']['3-flatten_edges.png'].icon_id
+        ).preset_name='flatten_edges'
+        layout.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='Lowpass',
+            icon_value=preview_collections['presets_eq_curve']['1-lowpass.png'].icon_id
+        ).preset_name='lowpass'
+        layout.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='Hipass',
+            icon_value=preview_collections['presets_eq_curve']['2-hipass.png'].icon_id
+        ).preset_name='hipass'
+
+class STM_PT_eq_curve_popover(bpy.types.Panel):
+    bl_idname = "STM_PT_eq_curve_popover"
+    bl_description = "Select preset"
+    bl_label = "Select"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'WINDOW'
+    # bl_options = {'INSTANCED'}
+    bl_ui_units_x = 5
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=100)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.emboss='PULLDOWN_MENU'
+
+        layout.label(text='Preset')
+        layout.separator()
+
+        row = layout.row()
+        row.alignment = 'LEFT'
+        row.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='Flat',
+            icon_value=preview_collections['presets_eq_curve']['0-reset.png'].icon_id
+        ).preset_name='reset'
+
+        row = layout.row()
+        row.alignment = 'LEFT'
+        row.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='Flatten Edges',
+            icon_value=preview_collections['presets_eq_curve']['3-flatten_edges.png'].icon_id
+        ).preset_name='flatten_edges'
+
+        row = layout.row()
+        row.alignment = 'LEFT'
+        row.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='Lowpass',
+            icon_value=preview_collections['presets_eq_curve']['1-lowpass.png'].icon_id
+        ).preset_name='lowpass'
+
+        row = layout.row()
+        row.alignment = 'LEFT'
+        row.operator(
+            operator='stm.apply_eq_curve_preset',
+            text='Hipass',
+            icon_value=preview_collections['presets_eq_curve']['2-hipass.png'].icon_id
+        ).preset_name='hipass'
 
 
 class STM_PT_spectrogram_menu(bpy.types.Panel):
@@ -215,13 +346,15 @@ class STM_Modifier_Panel:
 
 
 
-class STM_PT_spectrogram(STM_Panel, bpy.types.Panel):
+class STM_PT_add_new_panel(STM_Panel, bpy.types.Panel):
     bl_label = "Sound To Mesh"
-    bl_idname = "STM_PT_spectrogram"
+    bl_idname = "STM_PT_add_new_panel"
 
-    @classmethod
-    def poll(self, context):
-        return not bool(poll_draw_spectrogram_tab(context))
+    # @classmethod
+    # def poll(self, context):
+    #     return not bool(poll_draw_spectrogram_tab(context))
+
+    
 
     def draw(self, context):
         layout = self.layout
@@ -231,12 +364,24 @@ class STM_PT_spectrogram(STM_Panel, bpy.types.Panel):
         # stm_logo = preview_collections['stm_logo']['6-stm_logo.png'].icon_id
         # layout.template_icon(stm_logo, scale=6.0)
 
-        layout.operator('stm.import_spectrogram_setup', text='New', icon='ADD')
+        
+
         # layout.operator('stm.refresh_stm_objects', text='Refresh STM objects', icon='FILE_REFRESH')
+
+        row = layout.row()
+        row.enabled = scn.stm_settings.progress == 0
+        row.template_list("STM_UL_draw_spectro_list", "", scn.stm_settings, "stm_objects_list", scn.stm_settings, "stm_objects_list_active_index", rows=3, sort_lock=True)
+        
+        # col = row.column(align=True)
+        # col.operator("stm.add_spectrogram", icon='ADD', text="")
+        # col.operator("stm.delete_spectrogram", icon='REMOVE', text="")
+
+        # layout.operator('stm.import_spectrogram_setup', text='Import Spectrogram', icon='ADD')
+        layout.operator('stm.add_spectrogram', text='New Spectrogram', icon='ADD')
        
-class STM_PT_spectrogram_settings(STM_Panel, bpy.types.Panel):
-    bl_label = ""
-    bl_idname = "STM_PT_spectrogram_settings"
+class STM_PT_main_panel(STM_Panel, bpy.types.Panel):
+    bl_label = "Spectrogram Settings"
+    bl_idname = "STM_PT_main_panel"
     # bl_parent_id = 'STM_PT_spectrogram'
 
     updater = True
@@ -245,11 +390,6 @@ class STM_PT_spectrogram_settings(STM_Panel, bpy.types.Panel):
     def poll(self, context):
         return poll_draw_spectrogram_tab(context)
 
-    def draw_header(self, context):
-        layout = self.layout
-        # layout.label(text='Spectrogram Settings', icon='SEQ_HISTOGRAM')
-        layout.label(text='Spectrogram Settings', icon='NONE')
-
     def draw(self, context):
         
 
@@ -257,7 +397,235 @@ class STM_PT_spectrogram_settings(STM_Panel, bpy.types.Panel):
         scn = context.scene
         obj = context.object
 
-        stm_obj = funcs.get_stm_object(context.object)
+        stm_obj = funcs.get_stm_object(context.object)        
+
+
+        
+
+        
+
+        row = layout.row()
+        row.prop(scn.stm_settings, 'stm_settings_tab', expand=True)
+
+
+
+
+        
+        if scn.stm_settings.stm_settings_tab == 'spectrogram':
+
+            stm_obj = funcs.get_stm_object(context.object)
+            modifier = stm_obj.modifiers['STM_spectrogram']
+
+
+            box = layout.box()
+
+            ccol = box.column()
+
+            # row = layout.row()
+            # row.emboss = 'NORMAL'
+            ccol.template_icon_view(stm_obj, "preview_image_enum", show_labels=True, scale=6.0, scale_popup=17.0)
+
+            row = ccol.row()
+            row.scale_y=0.9
+            # row = ccol.row()
+            row.enabled = False
+            rowL = row.row()
+            rowL.alignment = 'LEFT'
+            rowR = row.row()
+            rowR.alignment = 'RIGHT'
+            
+            if stm_obj.stm_spectro.image_file == None:
+                rowL.label(text='---')
+                rowR.label(text='---')
+            else:
+                rowL.label(text=f"{stm_obj.stm_spectro.image_file.size[0]}x{stm_obj.stm_spectro.image_file.size[1]}")
+                rowR.label(text=funcs.convert_size(os.path.getsize(stm_obj.stm_spectro.image_file.filepath)))
+
+            
+            
+
+            
+
+            if stm_obj.stm_spectro.audio_file == None:
+                # row = layout.row(align=True)
+                # row.prop(stm_obj.stm_spectro, 'audio_file', text='', icon='FILE_SOUND', icon_only=True)
+                # row.operator('stm.select_audio_file', text='Select audio file', icon='NONE')
+
+                row = layout.row(align=True)
+                row.template_ID(stm_obj.stm_spectro, 'audio_file', text='', text_ctxt='', open="stm.select_audio_file")
+                # row.operator('stm.select_audio_file', text='Select audio file', icon='NONE')
+            else:
+                row_audio = layout.row()
+
+                col = row_audio.column(align=True)
+                col.enabled = scn.stm_settings.progress == 0
+                
+                row = col.row(align=True)
+                # row.scale_y = 1.5
+
+                ccol1 = row.column(align=True)
+                ccol1.enabled = False
+                ccol2 = row.column(align=True)
+
+                ccol1.prop(stm_obj.stm_spectro, 'audio_filename_display', text='', icon='FILE_SOUND')
+
+                row = ccol2.row(align=True)
+                # if not funcs.is_audio_in_sequencer(context, stm_obj.stm_spectro.audio_file):
+                #     rrow = row.row(align=True)
+                #     rrow.alert = True
+                #     rrow.operator('stm.use_audio_in_scene', text='Re-import', icon='IMPORT')
+                row.operator('stm.select_audio_file', text='', icon='FILEBROWSER')
+                row.operator('stm.reset_audio_file', text='', icon='PANEL_CLOSE')
+
+
+            # box = layout.box()
+            # col = box.column(align=True)
+
+            # split_fac = 0.4
+
+            # split = col.split(factor=split_fac)
+            # split.enabled = False
+            # col1 = split.column(align=True)
+            # col1.alignment = 'RIGHT'
+            
+            # col2 = split.column(align=True)
+
+            # col1.label(text='Title')
+            # col2.label(text=stm_obj.stm_spectro.meta_title)
+
+            # col1.label(text='Duration')
+            # col2.label(text=stm_obj.stm_spectro.meta_duration_format)
+
+            # if not funcs.is_audio_in_sequencer(context, stm_obj.stm_spectro.audio_file):
+            #     row = col.row()
+            #     row.alert = True
+            #     row.operator('stm.use_audio_in_scene', text='Audio not in scene (click to fix)', icon='ERROR')
+            
+            
+            
+            
+
+            row_image = layout.row()
+
+            col = row_image.column(align=True)
+
+
+            row = col.row(align=True)
+            # row.scale_y = 1.5
+            rrow1 = row.row(align=True)
+            rrow1.enabled = stm_obj.stm_spectro.audio_file != None
+            rrow2 = row.row(align=True)
+            
+            if scn.stm_settings.progress != 0:
+                label = scn.stm_settings.progress_label
+                rrow1.prop(scn.stm_settings,"progress", text=label)
+            elif stm_obj.stm_spectro.image_file == None:
+                # row.template_ID(stm_obj.stm_spectro, 'image_file', text='')
+                rrow1.operator('stm.prompt_spectrogram_popup', text='Bake from audio', icon='IMAGE_DATA', depress=False)
+            else:
+                rrow1.prop(stm_obj.stm_spectro, 'image_filename', text='', icon='IMAGE_DATA')
+                rrow1.enabled = False
+
+                
+                
+                
+                if stm_obj.stm_spectro.audio_file == None:
+                    row = rrow2.row(align=True)
+                    row.enabled = False
+                    row.operator('stm.prompt_spectrogram_popup', text='', icon='FILE_REFRESH', depress=False)
+                elif os.path.basename(stm_obj.stm_spectro.audio_file.filepath) != stm_obj.stm_spectro.audio_filename:
+                    row = rrow2.row(align=True)
+                    row.alert = True
+                    row.operator('stm.prompt_spectrogram_popup', text='Rebake', icon='FILE_REFRESH', depress=False)
+                    # row.operator('stm.alert_audio_change', icon='ERROR')
+                else:
+                    rrow2.operator('stm.prompt_spectrogram_popup', text='', icon='FILE_REFRESH', depress=False)
+                
+                
+                rrow2.operator('stm.reset_image_file', text='', icon='PANEL_CLOSE')
+            
+            # layout.operator('stm.prompt_spectrogram_popup', text='Re-bake Texture', icon='FILE_REFRESH', depress=False)
+
+            # row = layout.row()
+            # row.operator('stm.open_image', text='Open Image', icon='IMAGE_DATA')
+            # row.operator('stm.open_image_folder', text='Open Folder', icon='FILEBROWSER')
+
+
+            # prop_geonode(layout, modifier, 'Image', icon='NONE', label=False)
+
+
+            # col = layout.column(align=True)
+            # col.operator('stm.prompt_spectrogram_popup', text='Re-bake Texture', icon='FILE_REFRESH', depress=False)
+
+            
+            
+
+
+
+
+            
+        
+
+        if scn.stm_settings.stm_settings_tab == 'waveform':
+
+            row = layout.row()
+            row.enabled = scn.stm_settings.progress == 0
+            row.template_list("STM_UL_draw_items", "", stm_obj.stm_spectro, "stm_items", stm_obj.stm_spectro, "stm_items_active_index", rows=4, sort_lock=True)
+
+            col = row.column(align=True)
+            col.operator("stm.add_waveform", icon='ADD', text="")
+            col.operator("stm.delete_waveform", icon='REMOVE', text="")
+
+            col.separator()
+
+            col.operator("stm.move_waveform_up", icon='TRIA_UP', text="")
+            col.operator("stm.move_waveform_down", icon='TRIA_DOWN', text="")
+
+            if stm_obj.stm_spectro.stm_items_active_index < len(stm_obj.stm_spectro.stm_items):
+
+                stm_obj = funcs.get_stm_object(context.object)
+                obj = stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object
+                
+
+                modifier = obj.modifiers['STM_waveform']
+
+                # row = layout.row()
+                # row.enabled = False
+                # row.prop(obj, 'name', text='', icon='OBJECT_DATA')
+
+                # layout.separator()
+
+                split_fac = 0.4
+
+
+                split = layout.split(factor=split_fac)
+                col1 = split.column(align=True)
+                col1.alignment = 'RIGHT'
+                col2 = split.column(align=True)
+
+                
+
+                
+
+
+                col1.label(text='Side')
+                row = col2.row(align=True)
+                row.prop_enum(obj.stm_spectro, "waveform_side_options", 'a')
+                row.prop_enum(obj.stm_spectro, "waveform_side_options", 'b')
+                row.prop_enum(obj.stm_spectro, "waveform_side_options", 'ab')
+
+                col1.separator()
+                col2.separator()
+
+                col1.label(text='Shape')
+                row =col2.row(align=True)
+                row.scale_x = 5
+                row.prop(obj, "presets_waveform_style", text='', expand=False)
+        
+
+        # row = layout.row(align=True)
+        # row.prop_enum(obj.stm_spectro, 'material_type', 'emission')
+        # row.prop_enum(obj.stm_spectro, 'material_type', 'custom')
 
         # row = layout.row()
         # row.enabled = scn.stm_settings.progress == 0
@@ -288,167 +656,68 @@ class STM_PT_spectrogram_settings(STM_Panel, bpy.types.Panel):
 
 
 
-        box = layout.box()
-        box.enabled = scn.stm_settings.progress == 0
-        col = box.column()
-        # col.enabled = False
-        # box.emboss = 'PULLDOWN_MENU'
-
-        audio_label = '- no audio -' if stm_obj.stm_spectro.audio_file == None else stm_obj.stm_spectro.meta_duration_format
-        audio_icon = 'ERROR' if stm_obj.stm_spectro.audio_file == None else 'FILE_SOUND'
-        image_label = '- no image -' if stm_obj.stm_spectro.image_file == None else f"{stm_obj.stm_spectro.image_file.size[0]}x{stm_obj.stm_spectro.image_file.size[1]}"
-        image_icon = 'ERROR' if stm_obj.stm_spectro.image_file == None else 'IMAGE_DATA'
 
 
 
-        audio_icon = 'NONE'
-        image_icon = 'NONE'
 
-        split_fac = 0.4
+        # box = layout.box()
+        # box.enabled = scn.stm_settings.progress == 0
+        # col = box.column()
 
-        split = col.split(factor=split_fac)
-        col1 = split.column(align=True)
-        col1.alignment = 'RIGHT'
-        col1.enabled = False
+        # audio_label = '- no audio -' if stm_obj.stm_spectro.audio_file == None else stm_obj.stm_spectro.meta_duration_format
+        # audio_icon = 'ERROR' if stm_obj.stm_spectro.audio_file == None else 'FILE_SOUND'
+        # image_label = '- no image -' if stm_obj.stm_spectro.image_file == None else f"{stm_obj.stm_spectro.image_file.size[0]}x{stm_obj.stm_spectro.image_file.size[1]}"
+        # image_icon = 'ERROR' if stm_obj.stm_spectro.image_file == None else 'IMAGE_DATA'
+
+
+
+        # audio_icon = 'NONE'
+        # image_icon = 'NONE'
+
+        # split_fac = 0.4
+
+        # split = col.split(factor=split_fac)
+        # col1 = split.column(align=True)
+        # col1.alignment = 'RIGHT'
+        # col1.enabled = False
         
-        col2 = split.column(align=True)
+        # col2 = split.column(align=True)
         
-        col1.label(text='Audio File')
+        # col1.label(text='Audio File')
 
-        row = col2.row()
-        row.alert = bool(stm_obj.stm_spectro.audio_file == None)
-        row.enabled = bool(stm_obj.stm_spectro.audio_file == None)
+        # row = col2.row()
+        # row.alert = bool(stm_obj.stm_spectro.audio_file == None)
+        # row.enabled = bool(stm_obj.stm_spectro.audio_file == None)
 
-        row.label(text=audio_label, icon=audio_icon)
+        # row.label(text=audio_label, icon=audio_icon)
         
-        # if stm_obj.stm_spectro.audio_file != None:
-        #     col1.label(text='')
-        #     col2.label(text=stm_obj.stm_spectro.meta_duration_format)
+        # # if stm_obj.stm_spectro.audio_file != None:
+        # #     col1.label(text='')
+        # #     col2.label(text=stm_obj.stm_spectro.meta_duration_format)
 
-        col1.label(text='Image Size')
+        # col1.label(text='Image Size')
 
-        row = col2.row()
-        row.alert = bool(stm_obj.stm_spectro.image_file == None)
-        row.enabled = bool(stm_obj.stm_spectro.image_file == None)
+        # row = col2.row()
+        # row.alert = bool(stm_obj.stm_spectro.image_file == None)
+        # row.enabled = bool(stm_obj.stm_spectro.image_file == None)
 
-        row.label(text=image_label, icon=image_icon)
+        # row.label(text=image_label, icon=image_icon)
 
 
         
-        if not stm_obj.stm_spectro.image_file:
-            pass
-        elif not funcs.is_audio_in_sequencer(context, stm_obj.stm_spectro.audio_file):
-            row = col.row()
-            row.alert = True
-            row.operator('stm.use_audio_in_scene', text='Audio not in scene (click to fix)', icon='ERROR')
-
-        #     box = layout.box()
-
-        #     split_fac = 0.7
-
-        #     split = box.split(factor=split_fac)
-        #     col1 = split.column(align=True)
-        #     col2 = split.column(align=True)
-        #     col2.operator('stm.use_audio_in_scene', text='Fix', icon='IMPORT')
-        #     col1.label(text='Audio not in scene', icon='ERROR')
-
-
+        # if not stm_obj.stm_spectro.image_file:
+        #     pass
+        # elif not funcs.is_audio_in_sequencer(context, stm_obj.stm_spectro.audio_file):
+        #     row = col.row()
+        #     row.alert = True
+        #     row.operator('stm.use_audio_in_scene', text='Audio not in scene (click to fix)', icon='ERROR')
 
 
 
             
 
 
-        row_audio = layout.row()
-
-        col = row_audio.column(align=True)
-        col.enabled = scn.stm_settings.progress == 0
         
-        row = col.row(align=True)
-        # row.scale_y = 1.5
-
-        if stm_obj.stm_spectro.audio_file == None:
-            row.operator('stm.select_audio_file', text='Select Audio', icon='FILE_SOUND')
-            
-        else:
-            ccol1 = row.column(align=True)
-            ccol1.enabled = False
-            ccol2 = row.column(align=True)
-
-            ccol1.prop(stm_obj.stm_spectro, 'audio_filename', text='', icon='FILE_SOUND')
-
-            row = ccol2.row(align=True)
-            # if not funcs.is_audio_in_sequencer(context, stm_obj.stm_spectro.audio_file):
-            #     rrow = row.row(align=True)
-            #     rrow.alert = True
-            #     rrow.operator('stm.use_audio_in_scene', text='Re-import', icon='IMPORT')
-            row.operator('stm.select_audio_file', text='', icon='FILEBROWSER')
-            row.operator('stm.reset_audio_file', text='', icon='PANEL_CLOSE')
-
-
-            # box = layout.box()
-            # col = box.column(align=True)
-
-            # split_fac = 0.4
-
-            # split = col.split(factor=split_fac)
-            # split.enabled = False
-            # col1 = split.column(align=True)
-            # col1.alignment = 'RIGHT'
-            
-            # col2 = split.column(align=True)
-
-            # col1.label(text='Title')
-            # col2.label(text=stm_obj.stm_spectro.meta_title)
-
-            # col1.label(text='Duration')
-            # col2.label(text=stm_obj.stm_spectro.meta_duration_format)
-
-            # if not funcs.is_audio_in_sequencer(context, stm_obj.stm_spectro.audio_file):
-            #     row = col.row()
-            #     row.alert = True
-            #     row.operator('stm.use_audio_in_scene', text='Audio not in scene (click to fix)', icon='ERROR')
-        
-        
-        
-
-        
-
-        row_image = layout.row()
-
-        col = row_image.column(align=True)
-
-
-        row = col.row(align=True)
-        # row.scale_y = 1.5
-        rrow1 = row.row(align=True)
-        rrow1.enabled = stm_obj.stm_spectro.audio_file != None
-        rrow2 = row.row(align=True)
-        
-        if scn.stm_settings.progress != 0:
-            label = scn.stm_settings.progress_label
-            rrow1.prop(scn.stm_settings,"progress", text=label)
-        elif stm_obj.stm_spectro.image_file == None:
-            # row.template_ID(stm_obj.stm_spectro, 'image_file', text='')
-            rrow1.operator('stm.prompt_spectrogram_popup', text='Bake Spectrogram Image', icon='IMAGE_DATA', depress=False)
-        
-
-        else:
-            rrow1.prop(stm_obj.stm_spectro, 'image_filename', text='', icon='IMAGE_DATA')
-            rrow1.enabled = False
-
-            if stm_obj.stm_spectro.audio_filename == stm_obj.modifiers['STM_spectrogram']['Input_60']:
-                rrow2.operator('stm.prompt_spectrogram_popup', text='', icon='FILE_REFRESH', depress=False)
-            else:
-                
-                row = rrow2.row(align=True)
-                row.alert = True
-                row.operator('stm.prompt_spectrogram_popup', text='Rebake', icon='FILE_REFRESH', depress=False)
-                # row.operator('stm.alert_audio_change', icon='ERROR')
-                
-
-            
-            rrow2.operator('stm.reset_image_file', text='', icon='PANEL_CLOSE')
 
 
 
@@ -487,42 +756,145 @@ class STM_PT_spectrogram_settings(STM_Panel, bpy.types.Panel):
 
 
 
-        if stm_obj.stm_spectro.audio_file:
-            row_audio.menu('STM_MT_audio_menu', text='', icon='DOWNARROW_HLT')
+        # if stm_obj.stm_spectro.audio_file:
+        #     row_audio.menu('STM_MT_audio_menu', text='', icon='DOWNARROW_HLT')
 
-        if stm_obj.stm_spectro.image_file:
-            row_image.menu('STM_MT_image_menu', text='', icon='DOWNARROW_HLT')
+        # if stm_obj.stm_spectro.image_file:
+        #     row_image.menu('STM_MT_image_menu', text='', icon='DOWNARROW_HLT')
 
-
-        # layout.operator('stm.view_spectrogram_settings', icon='PROPERTIES')
-
-        
-
-
-        
                   
-class STM_PT_spectrogram_overlay_settings(STM_Object_Panel, bpy.types.Panel):
+
+class STM_PT_spectrogram_main_settings(STM_Object_Panel, bpy.types.Panel):
     bl_label = ""
-    bl_idname = "STM_PT_spectrogram_overlay_settings"
-    bl_parent_id = 'STM_PT_spectrogram_settings'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "STM_PT_spectrogram_main_settings"
+    bl_parent_id = 'STM_PT_main_panel'
 
     @classmethod
     def poll(self, context):
-        return bool(poll_draw_spectrogram_settings(context) or poll_draw_waveform_settings(context))
-
+        return poll_draw_spectrogram_settings(context)
 
     def draw_header(self, context):
-        # prop_geonode(self.layout, context.object.modifiers['STM_spectrogram'], 'doOverlays', label=False)
-        self.layout.label(text='Overlays', icon='OVERLAY')
+        layout = self.layout
+        # layout.label(text='Geometry Nodes', icon='GEOMETRY_NODES')
+        layout.label(text='Settings', icon='NONE')
+        layout.enabled = bool(funcs.get_stm_object(context.object).stm_spectro.image_file != None)
+
+    def draw_header_preset(self, context):
+        layout = self.layout
+        # self.layout.operator('stm.reset_spectrogram_main_settings', text='', icon='LOOP_BACK')
+        layout.emboss = 'NONE'
+        layout.popover('STM_PT_spectrogram_menu', text='', icon='PRESET')
+        layout.enabled = bool(funcs.get_stm_object(context.object).stm_spectro.image_file != None)
+        
 
     def draw(self, context):
         layout = self.layout
         scn = context.scene
-        obj = funcs.get_stm_object(context.object)
 
-        layout.enabled = obj.modifiers['STM_spectrogram']['Socket_39']
- 
+        stm_obj = funcs.get_stm_object(context.object)
+        modifier = stm_obj.modifiers['STM_spectrogram']
+
+        layout.enabled = stm_obj.modifiers["STM_spectrogram"]["Input_2"] != None and scn.stm_settings.progress == 0
+
+        # row = layout.row()
+        # row.enabled = False
+        # row.prop(stm_obj, 'name', text='', icon='OBJECT_DATA')
+
+        # layout.separator()
+
+        # row = layout.row(align=True)
+        # prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Plane', toggle=1, invert_checkbox=True)
+        # prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Cylinder', toggle=1)
+
+
+        # layout.popover('STM_PT_spectrogram_menu', text=stm_obj.stm_spectro.presets_geonodes_proper, icon='OPTIONS')
+
+
+        # split_fac = 0.4
+
+        # split = layout.split(factor=split_fac)
+        # col1 = split.column(align=True)
+        # col1.alignment = 'RIGHT'
+        # col2 = split.column(align=True)   
+
+        # col1.label(text='Shape')
+        # row = col2.row(align=True)
+        # prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Plane', toggle=1, invert_checkbox=True)
+        # prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Cylinder', toggle=1)
+
+        # col1.separator()
+        # col2.separator()   
+
+        # col1.label(text='Preset')
+        # col2.popover('STM_PT_spectrogram_menu', text=stm_obj.stm_spectro.presets_geonodes_proper, icon='NONE')
+
+
+        if modifier.node_group.users > 1:
+            row = layout.row()
+            row.alert = True
+            row.operator('stm.fix_multiple_users', text='Multiple users (click to fix)', icon='ERROR')
+
+        seq = context.scene.sequence_editor
+
+        if seq:
+            if stm_obj.stm_spectro.audio_filename_display in [s.name for s in seq.sequences]:
+                if scn.frame_end != funcs.get_timeline_length_from_audio_duration(modifier['Input_45']):
+                    row = layout.row()
+                    row.alert = True
+                    row.operator('stm.adapt_timeline_length', text='Audio and Timeline length don\'t match', icon='ERROR')
+
+
+
+        split_fac = 0.4
+
+        split = layout.split(factor=split_fac)
+        col1 = split.column(align=True)
+        col1.alignment = 'RIGHT'
+        col2 = split.column(align=True)
+        
+
+        col1.label(text='Frequency')
+        row = col2.row(align=True)
+        prop_geonode(row, modifier, 'Freq Min (Hz)', label=False)
+        prop_geonode(row, modifier, 'Freq Max (Hz)', label=False)
+        col1.label(text='Time')
+        prop_geonode(col2, modifier, 'Audio Sample (s)', label=False)
+        col1.label(text='Gain')
+        row = col2.row(align=True)
+        prop_geonode(row, modifier, 'Gain', label=False)
+        prop_geonode(row, modifier, 'doClamp', label=False, icon='LOCKED' if modifier['Socket_38'] else 'UNLOCKED')
+
+        col1.separator()
+        col2.separator()
+
+
+        col1.label(text='Log Scale')
+
+        row = col2.row(align=True)
+        prop_geonode(row, modifier, 'doLogScale', label=False)
+
+        rrow = row.row()
+        rrow.enabled = stm_obj.modifiers["STM_spectrogram"]["Socket_9"]
+        prop_geonode(rrow, modifier, 'Lin To Log', label=False)
+
+        col1.separator()
+        col2.separator()
+
+        # if modifier['Socket_15'] == True:
+        #     col1.label(text='Radius')
+        #     prop_geonode(col2, modifier, 'Cylinder Radius', label=False)
+
+        # else:
+        
+
+        
+
+        button_text = 'Enable Modifiers' if not modifier['Socket_42'] else 'Disable Modifiers'
+        button_icon = 'MODIFIER' if not modifier['Socket_42'] else 'PANEL_CLOSE'
+        prop_geonode(self.layout, modifier, 'doModifiers', label_name=button_text, icon=button_icon, toggle=1)
+        
+
+        # box = layout.box()
 
         split_fac = 0.4
 
@@ -531,38 +903,190 @@ class STM_PT_spectrogram_overlay_settings(STM_Object_Panel, bpy.types.Panel):
         col1.alignment = 'RIGHT'
         col2 = split.column(align=True)
 
-        col1.label(text='Title')
+        # col1.label(text='Modifiers')
+        # row = col2.row(align=True)
+        # prop_geonode(row, modifier, 'doModifiers', label_name='OFF', icon='NONE', toggle=1, invert_checkbox=True)
+        # prop_geonode(row, modifier, 'doModifiers', label_name='ON', icon='NONE', toggle=1)
 
-        row = col2.row(align=True)
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showTitle', label=False)
 
-        ccol = row.column(align=True)
-        ccol.enabled = obj.modifiers["STM_spectrogram"]["Socket_16"]
-        prop_geonode(ccol, obj.modifiers['STM_spectrogram'], 'Title', label=False)
+        if modifier["Socket_42"]:
 
-        col1.separator()
-        col2.separator()
+            col1.separator()
+            col2.separator()
+            
+            col1.label(text='Contrast')
+            row = col2.row(align=True)
+            prop_geonode(row, modifier, 'doContrast', label=False)   
 
-        col1.label(text='Grid')
+            ccol = row.column(align=True)
+            ccol.enabled = modifier["Socket_12"]
+            prop_geonode(ccol, modifier, 'Contrast', label=False)
 
-        row = col2.row(align=True)
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridFull', label=False)
-        
-        row = row.row(align=True)
-        row.enabled = obj.modifiers["STM_spectrogram"]["Socket_18"]
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridX', label_name='X', toggle=1)
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridY', label_name='Y', toggle=1)
-        prop_geonode(row, obj.modifiers['STM_spectrogram'], 'showGridZ', label_name='Z', toggle=1)
 
-class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
+            col1.separator()
+            col2.separator()
+            
+
+            col1.label(text='Smooth')
+            row = col2.row(align=True)
+            prop_geonode(row, modifier, 'doSmooth', label=False)   
+
+            ccol = row.column(align=True)
+            ccol.enabled = modifier["Socket_10"]
+            prop_geonode(ccol, modifier, 'Smooth Factor', label=False)
+            if ccol.enabled:
+                col1.label(text='')
+                prop_geonode(ccol, modifier, 'Smooth Level', label=True, label_name='Level')
+
+
+            col1.separator()
+            col2.separator()
+
+
+            # col1.label(text='Noise')
+            # row = col2.row(align=True)
+            # prop_geonode(row, modifier, 'doNoise', label=False)   
+
+            # ccol = row.column(align=True)
+            # ccol.enabled = stm_obj.modifiers["STM_spectrogram"]["Socket_11"]
+            # prop_geonode(ccol, modifier, 'Noise Factor', label=True, label_name='Factor')
+            # if ccol.enabled:
+            #     prop_geonode(ccol, modifier, 'Noise Scale', label=True, label_name='Scale')
+
+
+            # col1.separator()
+            # col2.separator()
+
+            
+
+
+            col1.label(text='Follow Curve')
+            row = col2.row(align=True)
+            prop_geonode(row, modifier, 'doCurve', label=False)   
+
+            ccol = row.column(align=True)
+            ccol.enabled = modifier["Socket_17"]
+            prop_geonode(ccol, modifier, 'Curve Object', label=False)
+
+            if ccol.enabled:
+                col1.label(text='')
+                rrow = ccol.row(align=True)      
+                rrow.prop_enum(stm_obj.stm_spectro, 'curve_deform_axis', '1')
+                rrow.prop_enum(stm_obj.stm_spectro, 'curve_deform_axis', '2')
+
+            col1.separator()
+            col2.separator()
+
+
+            col1.label(text='EQ Curve')
+            row = col2.row(align=True)
+            prop_geonode(row, modifier, 'doEQCurve', label=False)   
+
+            ccol = row.column(align=True)
+            ccol.enabled = modifier["Socket_19"]
+            rrow = ccol.row(align=True)
+            prop_geonode(rrow, modifier, 'EQ Curve Factor', label=False)
+            rrow.menu('STM_MT_eq_curve_menu', text='', icon='DOWNARROW_HLT')
+            # rrow.popover('STM_PT_eq_curve_popover', text='', icon='DOWNARROW_HLT')
+
+            if ccol.enabled:          
+
+                bbox = layout.box()
+
+                curve = modifier.node_group.nodes['MACURVE']
+                bbox.template_curve_mapping(
+                    data=curve,
+                    property="mapping",
+                    type='NONE',
+                    levels=False,
+                    brush=False,
+                    show_tone=False,
+                )
+
+class STM_PT_spectrogram_geometry_settings(STM_Object_Panel, bpy.types.Panel):
     bl_label = ""
-    bl_idname = "STM_PT_material_spectrogram"
-    bl_parent_id = 'STM_PT_spectrogram_settings'
+    bl_idname = "STM_PT_spectrogram_geometry_settings"
+    bl_parent_id = 'STM_PT_main_panel'
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(self, context):
-        return bool(poll_draw_spectrogram_settings(context) or poll_draw_waveform_settings(context))
+        return poll_draw_spectrogram_settings(context)
+
+    def draw_header(self, context):
+        self.layout.label(text='Geometry', icon='MESH_DATA')
+        # self.layout.operator('stm.reset_spectrogram_main_settings', text='', icon='LOOP_BACK')
+
+    # def draw_header_preset(self, context):
+    #     self.layout.operator('stm.reset_spectrogram_main_settings', text='', icon='LOOP_BACK')
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        stm_obj = funcs.get_stm_object(context.object)
+
+        layout.enabled = scn.stm_settings.progress == 0
+
+        modifier = stm_obj.modifiers['STM_spectrogram']
+
+        split_fac = 0.4
+
+        split = layout.split(factor=split_fac)
+        split.enabled = bool(stm_obj.stm_spectro.image_file != None)
+
+        col1 = split.column(align=True)
+        col1.alignment = 'RIGHT'
+        col2 = split.column(align=True)
+
+
+        col1.label(text='Shape')
+        row = col2.row(align=True)
+        prop_geonode(row, modifier, 'doCylinder', icon='NONE', label_name='Plane', toggle=1, invert_checkbox=True)
+        prop_geonode(row, modifier, 'doCylinder', icon='NONE', label_name='Cylinder', toggle=1)
+
+        col1.separator()
+        col2.separator()
+        
+        col1.label(text='Extrude')
+
+        row = col2.row(align=True)
+        prop_geonode(row, modifier, 'doExtrude', label=False)
+
+        ccol = row.column(align=True)
+        ccol.enabled = stm_obj.modifiers["STM_spectrogram"]["Input_52"]
+        prop_geonode(ccol, modifier, 'extrudeHeight', label=False)
+        
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Resolution X')
+        col1.label(text='Y')                   
+        prop_geonode(col2, modifier, 'Resolution X', label=False)
+        prop_geonode(col2, modifier, 'Resolution Y', label=False)
+        
+
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Flip')
+        row = col2.row(align=True)
+        
+        prop_geonode(row, modifier, 'flip_X', label_name='X', toggle=1)
+        prop_geonode(row, modifier, 'flip_Y', label_name='Y', toggle=1)
+        prop_geonode(row, modifier, 'flip_Z', label_name='Z', toggle=1)
+
+        
+
+          
+class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
+    bl_label = ""
+    bl_idname = "STM_PT_material_spectrogram"
+    bl_parent_id = 'STM_PT_main_panel'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(self, context):
+        return poll_draw_spectrogram_settings(context)
 
     def draw_header(self, context):
         layout = self.layout
@@ -607,8 +1131,18 @@ class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
             rowR = row.row()
             rowR.alignment = 'RIGHT'
             
-            rowL.label(text=f"{stm_obj.stm_spectro.image_file.size[0]}x{stm_obj.stm_spectro.image_file.size[1]}")
-            rowR.label(text=funcs.convert_size(os.path.getsize(stm_obj.stm_spectro.image_file.filepath)))
+            if stm_obj.stm_spectro.image_file == None:
+                rowL.label(text='---')
+                rowR.label(text='---')
+            else:
+                rowL.label(text=f"{stm_obj.stm_spectro.image_file.size[0]}x{stm_obj.stm_spectro.image_file.size[1]}")
+                rowR.label(text=funcs.convert_size(os.path.getsize(stm_obj.stm_spectro.image_file.filepath)))
+
+            
+            row = layout.row()
+            row.operator('stm.open_image', text='Open Image', icon='IMAGE_DATA')
+            row.operator('stm.open_image_folder', text='Open Folder', icon='FILEBROWSER')
+            layout.operator('stm.prompt_spectrogram_popup', text='Re-bake Texture', icon='FILE_REFRESH', depress=False)
 
 
         if stm_obj.stm_spectro.material_type == 'gradient':
@@ -665,69 +1199,27 @@ class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
                 # row.scale_y = 1.5
                 # row.prop(stm_obj.stm_spectro, 'material_custom', text='')
 
-class STM_PT_geometry_nodes_spectrogram(STM_Object_Panel, bpy.types.Panel):
+class STM_PT_overlays_spectrogram(STM_Panel, bpy.types.Panel):
     bl_label = ""
-    bl_idname = "STM_PT_geometry_nodes_spectrogram"
-    bl_parent_id = 'STM_PT_spectrogram_settings'
+    bl_idname = "STM_PT_overlays_spectrogram"
+    bl_parent_id = 'STM_PT_main_panel'
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(self, context):
-        return bool(poll_draw_spectrogram_settings(context) or poll_draw_waveform_settings(context))
+        return poll_draw_spectrogram_settings(context)
 
     def draw_header(self, context):
         layout = self.layout
-        layout.label(text='Geometry Nodes', icon='GEOMETRY_NODES')
-        
+        layout.label(text='Overlays', icon='OVERLAY')
 
     def draw(self, context):
         layout = self.layout
         scn = context.scene
 
+        layout.enabled = scn.stm_settings.progress == 0
+
         stm_obj = funcs.get_stm_object(context.object)
-        modifier = stm_obj.modifiers['STM_spectrogram']
-
-        layout.enabled = stm_obj.modifiers["STM_spectrogram"]["Input_2"] != None and scn.stm_settings.progress == 0
-
-        # row = layout.row()
-        # row.enabled = False
-        # row.prop(stm_obj, 'name', text='', icon='OBJECT_DATA')
-
-        # layout.separator()
-
-        row = layout.row(align=True)
-        prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Plane', toggle=1, invert_checkbox=True)
-        prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Cylinder', toggle=1)
-        layout.popover('STM_PT_spectrogram_menu', text=stm_obj.stm_spectro.presets_geonodes_proper, icon='OPTIONS')
-
-
-        # split_fac = 0.4
-
-        # split = layout.split(factor=split_fac)
-        # col1 = split.column(align=True)
-        # col1.alignment = 'RIGHT'
-        # col2 = split.column(align=True)   
-
-        # col1.label(text='Shape')
-        # row = col2.row(align=True)
-        # prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Plane', toggle=1, invert_checkbox=True)
-        # prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'doCylinder', icon='NONE', label_name='Cylinder', toggle=1)
-
-        # col1.separator()
-        # col2.separator()   
-
-        # col1.label(text='Preset')
-        # col2.popover('STM_PT_spectrogram_menu', text=stm_obj.stm_spectro.presets_geonodes_proper, icon='NONE')
-
-
-        if modifier.node_group.users > 1:
-            row = layout.row()
-            row.alert = True
-            row.operator('stm.fix_multiple_users', text='Multiple users (click to fix)', icon='ERROR')
-
-
-
-
-        modifier = stm_obj.modifiers['STM_spectrogram']
 
         split_fac = 0.4
 
@@ -736,69 +1228,29 @@ class STM_PT_geometry_nodes_spectrogram(STM_Object_Panel, bpy.types.Panel):
         col1.alignment = 'RIGHT'
         col2 = split.column(align=True)
 
-        
-
-        col1.label(text='Log Scale')
+        col1.label(text='Title')
 
         row = col2.row(align=True)
-        prop_geonode(row, modifier, 'doLogScale', label=False)
-
-        rrow = row.row()
-        rrow.enabled = stm_obj.modifiers["STM_spectrogram"]["Socket_9"]
-        prop_geonode(rrow, modifier, 'Lin To Log', label=False)
-
-        col1.separator()
-        col2.separator()
-
-        col1.label(text='(Frequency) X')
-        row = col2.row(align=True)
-        prop_geonode(row, modifier, 'Freq Min (Hz)', label=False)
-        prop_geonode(row, modifier, 'Freq Max (Hz)', label=False)
-        col1.label(text='(Time) Y')
-        prop_geonode(col2, modifier, 'Audio Sample (s)', label=False)
-        col1.label(text='(Gain) Z')
-        row = col2.row(align=True)
-        prop_geonode(row, modifier, 'Gain', label=False)
-        prop_geonode(row, modifier, 'doClamp', label=False, icon='LOCKED' if modifier['Socket_38'] else 'UNLOCKED')
-
-        col1.separator()
-        col2.separator()
-        col1.separator()
-        col2.separator()
-
-        # if modifier['Socket_15'] == True:
-        #     col1.label(text='Radius')
-        #     prop_geonode(col2, modifier, 'Cylinder Radius', label=False)
-
-        # else:
-        col1.label(text='Extrude')
-
-        row = col2.row(align=True)
-        prop_geonode(row, modifier, 'doExtrude', label=False)
+        prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'showTitle', label=False)
 
         ccol = row.column(align=True)
-        ccol.enabled = stm_obj.modifiers["STM_spectrogram"]["Input_52"]
-        prop_geonode(ccol, modifier, 'extrudeHeight', label=False)
+        ccol.enabled = stm_obj.modifiers["STM_spectrogram"]["Socket_16"]
+        prop_geonode(ccol, stm_obj.modifiers['STM_spectrogram'], 'Title', label=False)
 
         col1.separator()
         col2.separator()
 
-        col1.label(text='Resolution X')
-        col1.label(text='Y')                   
-        prop_geonode(col2, modifier, 'Resolution X', label=False)
-        prop_geonode(col2, modifier, 'Resolution Y', label=False)
+        col1.label(text='Grid')
 
-        
-
-        col1.separator()
-        col2.separator()
-
-        col1.label(text='Flip')
         row = col2.row(align=True)
+        prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'showGridFull', label=False)
         
-        prop_geonode(row, modifier, 'flip_X', label_name='X', toggle=1)
-        prop_geonode(row, modifier, 'flip_Y', label_name='Y', toggle=1)
-        prop_geonode(row, modifier, 'flip_Z', label_name='Z', toggle=1)
+        row = row.row(align=True)
+        row.enabled = stm_obj.modifiers["STM_spectrogram"]["Socket_18"]
+        prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'showGridX', label_name='X', toggle=1)
+        prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'showGridY', label_name='Y', toggle=1)
+        prop_geonode(row, stm_obj.modifiers['STM_spectrogram'], 'showGridZ', label_name='Z', toggle=1)
+  
 
 
 
@@ -807,7 +1259,7 @@ class STM_PT_geometry_nodes_spectrogram(STM_Object_Panel, bpy.types.Panel):
 class STM_PT_spectrogram_audio_settings(STM_Object_Panel, bpy.types.Panel):
     bl_label = ""
     bl_idname = "STM_PT_spectrogram_audio_settings"
-    bl_parent_id = 'STM_PT_geometry_nodes_spectrogram'
+    bl_parent_id = 'STM_PT_spectrogram_main_settings'
     # bl_options = {'DEFAULT_CLOSED'}
 
     def draw_header(self, context):
@@ -858,76 +1310,13 @@ class STM_PT_spectrogram_audio_settings(STM_Object_Panel, bpy.types.Panel):
         prop_geonode(row, modifier, 'Gain', label=False)
         prop_geonode(row, modifier, 'doClamp', label=False, icon='LOCKED' if modifier['Socket_38'] else 'UNLOCKED')
 
-class STM_PT_spectrogram_geometry_settings(STM_Object_Panel, bpy.types.Panel):
-    bl_label = ""
-    bl_idname = "STM_PT_spectrogram_geometry_settings"
-    bl_parent_id = 'STM_PT_geometry_nodes_spectrogram'
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw_header(self, context):
-        self.layout.label(text='Geometry', icon='NONE')
-        # self.layout.operator('stm.reset_spectrogram_main_settings', text='', icon='LOOP_BACK')
-
-    # def draw_header_preset(self, context):
-    #     self.layout.operator('stm.reset_spectrogram_main_settings', text='', icon='LOOP_BACK')
-
-    def draw(self, context):
-        layout = self.layout
-        scn = context.scene
-        stm_obj = funcs.get_stm_object(context.object)
-
-        layout.enabled = scn.stm_settings.progress == 0
-
-        modifier = stm_obj.modifiers['STM_spectrogram']
-
-        split_fac = 0.4
-
-        split = layout.split(factor=split_fac)
-        col1 = split.column(align=True)
-        col1.alignment = 'RIGHT'
-        col2 = split.column(align=True)
-
-
-        if modifier['Socket_15'] == True:
-            col1.label(text='Radius')
-            prop_geonode(col2, modifier, 'Cylinder Radius', label=False)
-
-        else:
-            col1.label(text='Extrude')
-
-            row = col2.row(align=True)
-            prop_geonode(row, modifier, 'doExtrude', label=False)
-
-            ccol = row.column(align=True)
-            ccol.enabled = stm_obj.modifiers["STM_spectrogram"]["Input_52"]
-            prop_geonode(ccol, modifier, 'extrudeHeight', label=False)
-
-        col1.separator()
-        col2.separator()
-
-        col1.label(text='Resolution X')
-        col1.label(text='Y')                   
-        prop_geonode(col2, modifier, 'Resolution X', label=False)
-        prop_geonode(col2, modifier, 'Resolution Y', label=False)
-
-        
-
-        col1.separator()
-        col2.separator()
-
-        col1.label(text='Flip')
-        row = col2.row(align=True)
-        
-        prop_geonode(row, modifier, 'flip_X', label_name='X', toggle=1)
-        prop_geonode(row, modifier, 'flip_Y', label_name='Y', toggle=1)
-        prop_geonode(row, modifier, 'flip_Z', label_name='Z', toggle=1)
 
 
 class STM_PT_spectrogram_modifiers_settings(STM_Object_Panel, bpy.types.Panel):
     bl_label = ""
     bl_idname = "STM_PT_spectrogram_modifiers_settings"
-    # bl_parent_id = 'STM_PT_geometry_nodes_spectrogram'
-    bl_parent_id = 'STM_PT_spectrogram_settings'
+    bl_parent_id = 'STM_PT_spectrogram_main_settings'
+    # bl_parent_id = 'STM_PT_spectrogram_settings'
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw_header(self, context):
@@ -939,7 +1328,7 @@ class STM_PT_spectrogram_modifiers_settings(STM_Object_Panel, bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scn = context.scene
-        # layout.enabled = cont<ext.object.modifiers['STM_spectrogram']['Socket_42']
+        # layout.enabled = context.object.modifiers['STM_spectrogram']['Socket_42']
 
         layout.enabled = scn.stm_settings.progress == 0
 
@@ -1213,12 +1602,32 @@ class STM_PT_waveform_settings(STM_Panel, bpy.types.Panel):
         # row.prop_enum(obj.stm_spectro, 'material_type', 'emission')
         # row.prop_enum(obj.stm_spectro, 'material_type', 'custom')
 
+class STM_PT_geometry_nodes_waveform(STM_Object_Panel, bpy.types.Panel):
+    bl_label = ""
+    bl_idname = "STM_PT_geometry_nodes_waveform"
+    bl_parent_id = 'STM_PT_main_panel'
+
+    @classmethod
+    def poll(self, context):
+        # return bool(len(funcs.get_stm_object(context.object).stm_spectro.stm_items) > 0)
+        return poll_draw_waveform_settings(context)
+    
+    def draw_header(self, context):
+        layout = self.layout
+        layout.label(text='Waveform Settings', icon='RNDCURVE')
+        # layout.label(text='Geometry Nodes', icon='GEOMETRY_NODES')
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        
+
 
 class STM_PT_material_waveform(STM_Panel, bpy.types.Panel):
     bl_label = ""
     bl_idname = "STM_PT_material_waveform"
-    bl_parent_id = 'STM_PT_waveform_settings'
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = 'STM_PT_main_panel'
+    # bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(self, context):
@@ -1273,68 +1682,16 @@ class STM_PT_material_waveform(STM_Panel, bpy.types.Panel):
             else:
                 layout.template_ID(obj.stm_spectro, "material_custom", new="material.new")
 
-class STM_PT_geometry_nodes_waveform(STM_Object_Panel, bpy.types.Panel):
-    bl_label = ""
-    bl_idname = "STM_PT_geometry_nodes_waveform"
-    bl_parent_id = 'STM_PT_waveform_settings'
-
-    @classmethod
-    def poll(self, context):
-        # return bool(len(funcs.get_stm_object(context.object).stm_spectro.stm_items) > 0)
-        return poll_draw_waveform_settings(context)
-    
-    def draw_header(self, context):
-        layout = self.layout
-        # layout.label(text='Waveform Settings', icon='RNDCURVE')
-        layout.label(text='Geometry Nodes', icon='GEOMETRY_NODES')
-
-    def draw(self, context):
-        layout = self.layout
-        scn = context.scene
-        stm_obj = funcs.get_stm_object(context.object)
-        obj = stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object
-        
-
-        modifier = obj.modifiers['STM_waveform']
-
-        # row = layout.row()
-        # row.enabled = False
-        # row.prop(obj, 'name', text='', icon='OBJECT_DATA')
-
-        # layout.separator()
-
-        split_fac = 0.4
-
-
-        split = layout.split(factor=split_fac)
-        col1 = split.column(align=True)
-        col1.alignment = 'RIGHT'
-        col2 = split.column(align=True)
-
-        
-
-        
-
-
-        col1.label(text='Side')
-        row = col2.row(align=True)
-        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'a')
-        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'b')
-        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'ab')
-
-        col1.separator()
-        col2.separator()
-
-        col1.label(text='Shape')
-        row =col2.row(align=True)
-        row.scale_x = 5
-        row.prop(obj, "presets_waveform_style", text='', expand=False)
 
 class STM_PT_waveform_main_settings(STM_Object_Panel, bpy.types.Panel):
     bl_label = ""
     bl_idname = "STM_PT_waveform_main_settings"
-    bl_parent_id = 'STM_PT_geometry_nodes_waveform'
-    # bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = 'STM_PT_main_panel'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(self, context):
+        return poll_draw_waveform_settings(context)
 
     def draw_header(self, context):
 
@@ -1345,91 +1702,101 @@ class STM_PT_waveform_main_settings(STM_Object_Panel, bpy.types.Panel):
         layout = self.layout
         scn = context.scene
         stm_obj = funcs.get_stm_object(context.object)
-        obj = stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object
-        
 
-        modifier = obj.modifiers['STM_waveform']
+        if stm_obj.stm_spectro.stm_items_active_index < len(stm_obj.stm_spectro.stm_items):
+
+            obj = stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object
+            
+
+            modifier = obj.modifiers['STM_waveform']
 
 
-        split_fac = 0.4
+            split_fac = 0.4
 
 
-        split = layout.split(factor=split_fac)
-        col1 = split.column(align=True)
-        col1.alignment = 'RIGHT'
-        col2 = split.column(align=True)
+            split = layout.split(factor=split_fac)
+            col1 = split.column(align=True)
+            col1.alignment = 'RIGHT'
+            col2 = split.column(align=True)
 
-        col1.label(text='Resample')
+            
 
-        row = col2.row(align=True)
-        prop_geonode(row, modifier, 'doResample', label=False)
+            col1.label(text='Offset')
+            prop_geonode(col2, modifier, 'Offset', label=False)
 
-        ccol = row.column(align=True)
-        ccol.enabled = modifier["Input_17"]
-        prop_geonode(ccol, modifier, 'Resample Resolution', label=False)
 
-        col1.separator()
-        col2.separator()
+            col1.separator()
+            col2.separator()
 
-        col1.label(text='Offset')
-        prop_geonode(col2, modifier, 'Offset', label=False)
+            col1.label(text='Thickness')
+            prop_geonode(col2, modifier, 'Thickness', label=False)
 
-        col1.separator()
-        col2.separator()
+            
 
-        if funcs.get_geonode_value_proper(modifier, 'waveform_style') == 0:
+            col1.separator()
+            col2.separator()
 
-            col1.label(text='Handle Type')
+            col1.label(text='Resample')
+
             row = col2.row(align=True)
-            prop_geonode(row, modifier, 'doHandleAuto', icon='HANDLE_VECTOR', label_name='Vector', toggle=1, invert_checkbox=True)
-            prop_geonode(row, modifier, 'doHandleAuto', icon='HANDLE_AUTO', label_name='Auto', toggle=1)
+            prop_geonode(row, modifier, 'doResample', label=False)
+
+            ccol = row.column(align=True)
+            ccol.enabled = modifier["Input_17"]
+            prop_geonode(ccol, modifier, 'Resample Resolution', label=False)
 
             col1.separator()
             col2.separator()
 
-        if funcs.get_geonode_value_proper(modifier, 'waveform_style') == 2:
 
-            col1.label(text='Ends')
+            
+
+            col1.label(text='Smooth')
+            
             row = col2.row(align=True)
-            prop_geonode(row, modifier, 'doRoundBars', icon='GP_CAPS_FLAT', label_name='Flat', toggle=1, invert_checkbox=True)
-            prop_geonode(row, modifier, 'doRoundBars', icon='GP_CAPS_ROUND', label_name='Round', toggle=1)
+            prop_geonode(row, modifier, 'doSmooth', label=False)
+            ccol = row.column(align=True)
+            ccol.enabled = modifier["Socket_8"]
+            prop_geonode(ccol, modifier, 'Smooth Factor', label=False)
+
+            if modifier["Socket_8"]:
+                col1.label(text='')
+                prop_geonode(ccol, modifier, 'Smooth Level', label_name='Level')
 
             col1.separator()
             col2.separator()
 
+            if funcs.get_geonode_value_proper(modifier, 'waveform_style') == 0:
+
+                col1.label(text='Handle Type')
+                row = col2.row(align=True)
+                prop_geonode(row, modifier, 'doHandleAuto', icon='HANDLE_VECTOR', label_name='Vector', toggle=1, invert_checkbox=True)
+                prop_geonode(row, modifier, 'doHandleAuto', icon='HANDLE_AUTO', label_name='Auto', toggle=1)
+
+                col1.separator()
+                col2.separator()
+
+            if funcs.get_geonode_value_proper(modifier, 'waveform_style') == 2:
+
+                col1.label(text='Ends')
+                row = col2.row(align=True)
+                prop_geonode(row, modifier, 'doRoundBars', icon='GP_CAPS_FLAT', label_name='Flat', toggle=1, invert_checkbox=True)
+                prop_geonode(row, modifier, 'doRoundBars', icon='GP_CAPS_ROUND', label_name='Round', toggle=1)
+
+                col1.separator()
+                col2.separator()
+
+            
+
+
+            
+
+            if funcs.get_geonode_value_proper(modifier, 'waveform_style') == 2:
+
+                col1.label(text='Width')
+                prop_geonode(col2, modifier, 'Width', label=False)
+
         
-
-
-        
-
-        if funcs.get_geonode_value_proper(modifier, 'waveform_style') == 2:
-
-            col1.label(text='Width')
-            prop_geonode(col2, modifier, 'Width', label=False)
-
-            col1.separator()
-            col2.separator()
-
-        col1.label(text='Thickness')
-        prop_geonode(col2, modifier, 'Thickness', label=False)
-
-        
-
-        col1.separator()
-        col2.separator()
-
-
-        
-
-        col1.label(text='Smooth')
-        col1.label(text='')
-        row = col2.row(align=True)
-        prop_geonode(row, modifier, 'doSmooth', label=False)
-
-        ccol = row.column(align=True)
-        ccol.enabled = modifier["Socket_8"]
-        prop_geonode(ccol, modifier, 'Smooth Factor', label=False)
-        prop_geonode(ccol, modifier, 'Smooth Level', label_name='Level')
 
         
         # row = col1.row()
@@ -1452,34 +1819,42 @@ classes = [
     STM_MT_audio_menu,
     STM_MT_image_menu,
 
-    STM_PT_spectrogram,
+    STM_MT_eq_curve_menu,
+    STM_PT_eq_curve_popover,
+
+    STM_PT_add_new_panel,
+    STM_UL_draw_spectro_list,
     STM_UL_draw_items,
 
 
-    STM_PT_spectrogram_settings,
-    
-    STM_PT_spectrogram_overlay_settings,
-    STM_PT_material_spectrogram,
-    STM_PT_geometry_nodes_spectrogram,
+    STM_PT_main_panel,
+
+    STM_PT_spectrogram_main_settings,
 
     # STM_PT_spectrogram_audio_settings,
-    # STM_PT_spectrogram_geometry_settings,
+    STM_PT_spectrogram_geometry_settings,
 
-    STM_PT_spectrogram_modifiers_settings,
+    # STM_PT_spectrogram_modifiers_settings,
     
-    STM_PT_spectrogram_contrast_settings,
-    STM_PT_spectrogram_smooth_settings,
-    STM_PT_spectrogram_noise_settings,
-    STM_PT_spectrogram_eqcurve_settings,
-    STM_PT_spectrogram_curve_settings,
+    # STM_PT_spectrogram_contrast_settings,
+    # STM_PT_spectrogram_smooth_settings,
+    # STM_PT_spectrogram_noise_settings,
+    # STM_PT_spectrogram_eqcurve_settings,
+    # STM_PT_spectrogram_curve_settings,
+
+    
+    STM_PT_material_spectrogram,
+    STM_PT_overlays_spectrogram,
 
 
     
-    STM_PT_waveform_settings,
+    # STM_PT_waveform_settings,
 
-    STM_PT_material_waveform,    
-    STM_PT_geometry_nodes_waveform,
+     
+    # STM_PT_geometry_nodes_waveform,
     STM_PT_waveform_main_settings,
+
+    STM_PT_material_waveform,   
     
 
     

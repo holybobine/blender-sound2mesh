@@ -28,13 +28,14 @@ class STM_OT_reload_previews(bpy.types.Operator):
 
 class STM_OT_select_audio_file(Operator, ImportHelper):
     """Select an audio file to import"""
-    bl_idname = "stm.select_audio_file"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_idname = "stm.select_audio_file"
     bl_label = "Select audio file"
+    bl_options = {'UNDO'}
 
     # ImportHelper mixin class uses this
     filename_ext = ".txt"
 
-    filter_glob: StringProperty(
+    filter_glob: StringProperty( # type: ignore
         default="*" + ";*".join(bpy.path.extensions_audio),
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
@@ -48,10 +49,11 @@ class STM_OT_select_audio_file(Operator, ImportHelper):
 
         stm_obj.stm_spectro.audio_file = sound
         stm_obj.stm_spectro.audio_filename = os.path.basename(self.filepath)
+        stm_obj.stm_spectro.audio_filename_display = os.path.basename(self.filepath)
 
         funcs.update_metadata(self, context)
-        funcs.use_audio_in_scene(context)
-        funcs.frame_clip_in_sequencer(context)
+        funcs.use_audio_in_scene(context, sound)
+        # funcs.frame_clip_in_sequencer(context)
 
         return {'FINISHED'}
 
@@ -64,6 +66,8 @@ class STM_OT_reset_audio_file(Operator):
 
 
     def execute(self, context):
+
+        print('Reset audio file')
 
         stm_obj = funcs.get_stm_object(context.object)
 
@@ -135,13 +139,17 @@ class STM_OT_use_audio_in_scene(Operator):
     bl_label = "Use audio in scene"
     bl_options = {'UNDO'}
 
+    target_object_name: StringProperty() # type: ignore
+
     def execute(self, context):
 
         print('-INF- add audio to scene')
 
-        funcs.use_audio_in_scene(context)
+        obj = context.scene.objects[self.target_object_name]
+        audio_file = obj.stm_spectro.audio_file
 
-        funcs.frame_clip_in_sequencer(context)
+        funcs.use_audio_in_scene(context, audio_file)
+        # funcs.frame_clip_in_sequencer(context)
 
         return {'FINISHED'}
 
@@ -277,6 +285,8 @@ class STM_OT_prompt_spectrogram_popup(Operator):
     bl_label = "Generate spectrogram"
     bl_options = {'UNDO'}
 
+    
+
 
     def draw(self, context):
 
@@ -285,7 +295,13 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         obj = funcs.get_stm_object(context.object)
 
         layout.separator()
-
+        
+        # if obj.stm_spectro.audio_file == None:
+        #     row = layout.row()
+        #     row.alert = True
+        #     row.label(text='No audio file selected !')
+        #     return
+        # else:
         split_fac = 0.35
 
         split = layout.split(factor=split_fac)
@@ -468,7 +484,6 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         return context.window_manager.invoke_props_dialog(self, width=300)
 
     def execute(self, context):
-
         bpy.ops.stm.generate_spectrogram_modal('INVOKE_DEFAULT')
 
         return {'FINISHED'}
@@ -574,6 +589,7 @@ class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
     """Select audio file to be used"""
     bl_idname = 'wm.new_spectrogram'
     bl_label = 'Select Audio File'
+    
 
     #queue = bpy.props.StringProperty(None)
 
@@ -684,7 +700,7 @@ class STM_OT_import_spectrogram_setup(Operator):
     """Import selected setup"""
     bl_idname = "stm.import_spectrogram_setup"
     bl_label = ''
-    bl_options = {'UNDO'}
+    # bl_options = {'UNDO'}
 
     def execute(self, context):
 
@@ -696,6 +712,77 @@ class STM_OT_import_spectrogram_setup(Operator):
         funcs.select_object_solo(context, stm_obj)
 
         funcs.update_stm_list(context)
+
+        return {'FINISHED'}
+
+
+class STM_OT_add_spectrogram(Operator, ImportHelper):
+    """Add spectrogram"""
+    bl_idname = "stm.add_spectrogram"
+    bl_label = 'Create Spectrogram'
+    bl_options = {'UNDO'}
+
+    # ImportHelper mixin class uses this
+    filename_ext = ".txt"
+
+    filter_glob: StringProperty( # type: ignore
+        default="*" + ";*".join(bpy.path.extensions_audio),
+        options={'HIDDEN'},
+        maxlen=255,  # Max internal buffer length, longer would be clamped.
+    ) # type: ignore
+
+    def execute(self, context):
+
+        print('ADD SPECTROGRAM')
+
+        file_extension = os.path.splitext(self.filepath)[1]        
+
+        if file_extension not in bpy.path.extensions_audio:
+            print('No audio file detected')
+            funcs.alert(
+                    text='No audio file detected',
+                    title='ERROR',
+                    icon='ERROR'
+                )
+
+        else:
+            
+            sound = bpy.data.sounds.load(self.filepath, check_existing=True)
+
+            bpy.ops.stm.import_spectrogram_setup('INVOKE_DEFAULT')
+
+            stm_obj = funcs.get_stm_object(context.object)
+
+            stm_obj.stm_spectro.audio_file = sound
+            stm_obj.stm_spectro.audio_filename = os.path.basename(self.filepath)
+            stm_obj.stm_spectro.audio_filename_display = os.path.basename(self.filepath)
+
+            funcs.update_metadata(self, context)
+            funcs.use_audio_in_scene(context, sound)
+            # funcs.frame_clip_in_sequencer(context)
+            
+            
+            bpy.ops.stm.generate_spectrogram_modal('INVOKE_DEFAULT')
+
+        return {'FINISHED'}
+    
+    
+
+class STM_OT_delete_spectrogram(Operator):
+    """Remove spectrogram"""
+    bl_idname = "stm.delete_spectrogram"
+    bl_label = 'Remove ?'
+    bl_options = {'UNDO'}
+
+
+    @classmethod
+    def poll(cls, context):
+        stm_obj = funcs.get_stm_object(context.object)
+        return bool(len(stm_obj.stm_spectro.stm_items) > 0)
+
+    def execute(self, context):
+
+        print('REMOVE SPECTROGRAM')
 
         return {'FINISHED'}
 
@@ -720,7 +807,8 @@ class STM_OT_add_waveform(Operator):
         wave_obj = funcs.add_waveform_object(context, stm_obj, wave_offset)
 
         funcs.select_object_solo(context, wave_obj)
-        funcs.select_item_in_list_from_handler(context)
+        # funcs.select_item_in_list_from_handler(context)
+        funcs.select_in_waveform_list_from_viewport(context)
 
         return {'FINISHED'}
 
@@ -761,6 +849,32 @@ class STM_OT_delete_waveform(Operator):
         
 
 
+
+        return {'FINISHED'}
+
+
+class STM_OT_move_waveform_up(Operator):
+    """Add spectrogram"""
+    bl_idname = "stm.move_waveform_up"
+    bl_label = ''
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+
+        print('MOVE WAVEFORM UP')
+
+        return {'FINISHED'}
+    
+
+class STM_OT_move_waveform_down(Operator):
+    """Add spectrogram"""
+    bl_idname = "stm.move_waveform_down"
+    bl_label = ''
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+
+        print('MOVE WAVEFORM DOWN')
 
         return {'FINISHED'}
 
@@ -1008,7 +1122,7 @@ class STM_OT_apply_eq_curve_preset(Operator):
 
     bl_options = {'UNDO'}
 
-    preset_name: EnumProperty(
+    preset_name: EnumProperty( # type: ignore
         items=[
             ('reset', 'Reset', ''),
             ('lowpass', 'Lowpass', ''),
@@ -1376,7 +1490,24 @@ class STM_OT_view_spectrogram_settings(Operator):
 
         return {'FINISHED'}
 
+class STM_OT_adapt_timeline_length(Operator):
+    """"""
+    bl_idname = "stm.adapt_timeline_length"
+    bl_label = 'Adapt timeline length'
+    bl_options = {'UNDO'}
 
+    def execute(self, context):
+
+        print('ADAPT TIMELINE LENGTH')
+        stm_obj = funcs.get_stm_object(context.object)
+        duration_seconds = funcs.get_geonode_value_proper(stm_obj.modifiers['STM_spectrogram'], 'Audio Duration')
+        timeline_end = funcs.get_timeline_length_from_audio_duration(duration_seconds)
+
+        context.scene.frame_start = 1
+        context.scene.frame_end = timeline_end
+
+
+        return {'FINISHED'}
 
 
 classes = [
@@ -1392,8 +1523,16 @@ classes = [
     STM_OT_generate_spectrogram_modal,
     STM_OT_select_stm_in_viewport,
     STM_OT_import_spectrogram_setup,
+
+    STM_OT_add_spectrogram,
+    STM_OT_delete_spectrogram,
+
     STM_OT_add_waveform,
     STM_OT_delete_waveform,
+    STM_OT_move_waveform_up,
+    STM_OT_move_waveform_down,
+
+    
     STM_OT_spectrogram_preset_popup,
     STM_OT_apply_spectrogram_preset,
     STM_OT_reset_spectrogram_full,
@@ -1434,6 +1573,8 @@ classes = [
     THUMB_OT_previous_spectrogram_style_cylinder,
     THUMB_OT_next_spectrogram_setup,
     THUMB_OT_previous_spectrogram_setup,
+
+    STM_OT_adapt_timeline_length,
 ]
 
 def register():

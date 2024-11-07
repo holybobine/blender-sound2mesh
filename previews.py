@@ -36,27 +36,25 @@ def generate_previews(pcoll_name):
 def get_spectrogram_preview(self, context):
     pcoll = preview_collections["preview_image_enum"]
 
-    obj = context.object
-    stm_obj = obj
+    stm_obj = funcs.get_stm_object(context.object)
 
-    if obj.stm_spectro.stm_type == 'waveform':
-            if obj.stm_spectro.spectrogram_object != None:
-                stm_obj = obj.stm_spectro.spectrogram_object
+    
 
-    current_image = stm_obj.stm_spectro.image_file
-    enum_items = []
+    if stm_obj.stm_spectro.image_file == None:
+        item_name = 'no image'
+        filepath = os.path.join(addon_path, './icons/misc/no_image.png')
+    else:
+        item_name = stm_obj.stm_spectro.image_file.name
+        filepath = stm_obj.stm_spectro.image_file.filepath
 
-    if current_image != None:
+    enum_items = []        
 
-        item_name = current_image.name
-        filepath = current_image.filepath
+    if filepath in pcoll:
+        thumb = pcoll[filepath]
+    else:
+        thumb = pcoll.load(filepath, filepath, 'IMAGE', force_reload=True)
 
-        if filepath in pcoll:
-            thumb = pcoll[filepath]
-        else:
-            thumb = pcoll.load(filepath, filepath, 'IMAGE', force_reload=True)
-
-        enum_items.append((item_name, item_name, "", thumb.icon_id, 0))
+    enum_items.append((item_name, item_name, "", thumb.icon_id, 0))
 
     return enum_items
 
@@ -98,8 +96,8 @@ def register():
     setup_new_preview_collection(name="presets_waveform_style", dir=r'.\icons\icons_waveform_style')
     setup_new_preview_collection(name="presets_waveform_style_AB", dir=r'.\icons\icons_waveform_style_AB')
     
-    setup_new_preview_collection(name="stm_logo", dir=r'.\icons')
-    generate_previews('stm_logo')
+    setup_new_preview_collection(name="icons", dir=r'.\icons')
+    generate_previews('icons')
 
     preview_collections["preview_image_enum"] = bpy.utils.previews.new()
 

@@ -10,7 +10,8 @@
       "Lin To Log" : 90,
       "doSmooth" : true,
       "Smooth" : 100,
-      "Smooth Level" : 1
+      "Smooth Level" : 1,
+      "EQCurve_type" : 2
     }
   },
   "preset1":{

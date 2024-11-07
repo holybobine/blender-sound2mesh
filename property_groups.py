@@ -37,7 +37,7 @@ def populate_geonodes_presets(self, context):
 
     return enum_items
 
-class STM_UL_list_item(PropertyGroup):
+class STM_WAVEFORM_list_item(PropertyGroup):
     #name: StringProperty() -> Instantiated by default
     id: bpy.props.IntProperty() # type: ignore
     stm_type: bpy.props.StringProperty() # type: ignore
@@ -48,8 +48,8 @@ class STM_spectrogram_props(PropertyGroup):
     stm_type : StringProperty() # type: ignore
     stm_status : StringProperty(default='init') # type: ignore
 
-    stm_items : CollectionProperty(type=STM_UL_list_item) # type: ignore
-    stm_items_active_index : IntProperty(update=funcs.select_obj_from_stm_list) # type: ignore
+    stm_items : CollectionProperty(type=STM_WAVEFORM_list_item) # type: ignore
+    stm_items_active_index : IntProperty(update=funcs.select_in_viewport_from_waveform_list) # type: ignore
 
     presets_geonodes_proper : bpy.props.EnumProperty( # type: ignore
             name='Geonodes Presets',
@@ -65,7 +65,11 @@ class STM_spectrogram_props(PropertyGroup):
 
     audio_file_path : StringProperty() # type: ignore # type: ignore
     audio_filename : StringProperty() # type: ignore
-    audio_file : PointerProperty(type=bpy.types.Sound) # type: ignore
+    audio_filename_display : StringProperty() # type: ignore
+    audio_file : PointerProperty( # type: ignore
+            type=bpy.types.Sound,
+            update=funcs.update_audio_filename_display
+        ) 
 
     meta_title : StringProperty() # type: ignore
     meta_album : StringProperty() # type: ignore
@@ -161,7 +165,31 @@ class STM_spectrogram_props(PropertyGroup):
 
 addon_path = os.path.dirname(__file__)
 
+
+class STM_SPECTROGRAM_list_item(PropertyGroup):
+    #name: StringProperty() -> Instantiated by default
+    id: bpy.props.IntProperty() # type: ignore
+    stm_type: bpy.props.StringProperty() # type: ignore
+    waveform_type: bpy.props.IntProperty() # type: ignore
+    object: bpy.props.PointerProperty(type=bpy.types.Object) # type: ignore
+
 class STM_scene_props(PropertyGroup):
+
+    doHandler = bpy.props.BoolProperty(default=True)
+
+    active_object_tmp : StringProperty() # type: ignore
+    
+    stm_objects_list : CollectionProperty(type=STM_SPECTROGRAM_list_item) # type: ignore
+    stm_objects_list_active_index : IntProperty(update=funcs.select_in_viewport_from_spectro_list) # type: ignore
+    
+    stm_settings_tab : EnumProperty( # type: ignore
+            items= (
+                        ('spectrogram', "Spectrogram", ""),
+                        ('waveform', "Waveform", "")
+                    ),
+            name = "Settings tab",
+            default='spectrogram'
+        )
 
     ffmpegPath : StringProperty() # type: ignore
 
@@ -338,7 +366,8 @@ class STM_scene_props(PropertyGroup):
 
 
 classes = [
-    STM_UL_list_item,
+    STM_WAVEFORM_list_item,
+    STM_SPECTROGRAM_list_item,
     STM_spectrogram_props,
     STM_scene_props,
 ]
@@ -349,8 +378,8 @@ def register():
         bpy.utils.register_class(c)
 
 
-    bpy.types.Scene.stm_settings = PointerProperty(type=STM_scene_props)
-    bpy.types.Object.stm_spectro = PointerProperty(type=STM_spectrogram_props)
+    bpy.types.Scene.stm_settings = PointerProperty(type=STM_scene_props) # type: ignore
+    bpy.types.Object.stm_spectro = PointerProperty(type=STM_spectrogram_props) # type: ignore
     # bpy.types.Screen.areas.is_stm_sequencer = BoolProperty(default=False)
     # bpy.types.Object.stm_waveform = PointerProperty(type=STM_waveform_props)
 
