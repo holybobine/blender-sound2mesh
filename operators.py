@@ -690,13 +690,15 @@ class STM_OT_add_spectrogram(Operator, ImportHelper):
             
 
             funcs.select_object_solo(context, stm_obj)
-            funcs.update_spectrogram_list(context)
+            # funcs.update_spectrogram_list(context)
 
             # stm_obj = funcs.get_stm_object(context.object)
 
             stm_obj.stm_spectro.audio_file = sound
             stm_obj.stm_spectro.audio_filename = os.path.basename(self.filepath)
             stm_obj.stm_spectro.audio_filename_display = os.path.basename(self.filepath)
+            # stm_obj.name = funcs.sanitize_filename(os.path.basename(self.filepath))
+            stm_obj.name = os.path.basename(self.filepath)
 
             funcs.update_metadata(self, context)
             # funcs.use_audio_in_scene(context, sound)
@@ -761,7 +763,7 @@ class STM_OT_add_waveform(Operator):
 
         funcs.select_object_solo(context, wave_obj)
         # funcs.select_item_in_list_from_handler(context)
-        funcs.select_in_waveform_list_from_viewport(context)
+        # funcs.select_in_waveform_list_from_viewport(context)
 
         return {'FINISHED'}
 
@@ -784,22 +786,15 @@ class STM_OT_delete_waveform(Operator):
         idx = stm_obj.stm_spectro.stm_items_active_index
         obj = stm_obj.stm_spectro.stm_items[idx].object
         
-        
         new_index = stm_obj.stm_spectro.stm_items_active_index - 1
-        
-        # stm_obj.stm_spectro.stm_items_active_index = new_index
-        stm_obj.stm_spectro.stm_status = 'deleting_from_list'
-        stm_obj.stm_spectro.stm_items.remove(idx)
-        stm_obj.stm_spectro.stm_items_active_index = new_index
-        stm_obj.stm_spectro.stm_status = 'done'
 
-        bpy.data.objects.remove(obj)
-
-        if len(stm_obj.stm_spectro.stm_items) == 0:
+        if new_index < 0:
             funcs.select_object_solo(context, stm_obj)
             stm_obj.stm_spectro.stm_items_active_index = 0
+        else:
+            stm_obj.stm_spectro.stm_items_active_index = new_index
 
-        
+        bpy.data.objects.remove(obj)
 
 
 

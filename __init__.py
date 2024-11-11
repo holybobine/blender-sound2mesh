@@ -57,8 +57,8 @@ def register():
     operators.register()
     panels.register()
 
-    bpy.app.handlers.depsgraph_update_post.append(funcs.find_spectrogram_objects)
-    bpy.app.handlers.depsgraph_update_post.append(funcs.find_waveform_objects)
+    bpy.app.handlers.depsgraph_update_post.append(funcs.stm_handler_functions)
+    bpy.app.handlers.frame_change_post.append(funcs.stm_handler_functions)
 
     # bpy.app.handlers.depsgraph_update_post.append(stm_handler_depsgraph_update)
     # bpy.app.handlers.frame_change_post.append(stm_handler_playback)

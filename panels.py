@@ -580,6 +580,12 @@ class STM_PT_main_panel(STM_Panel, bpy.types.Panel):
                 row.scale_x = 5
                 row.prop(obj, "presets_waveform_style", text='', expand=False)
 
+
+            if stm_obj.stm_spectro.stm_items_active_index >= len(stm_obj.stm_spectro.stm_items):
+                box = layout.box()
+                # box.enabled = False
+                box.label(text='No waveform object selected')
+
                   
 
 class STM_PT_spectrogram_main_settings(STM_Object_Panel, bpy.types.Panel):
@@ -990,6 +996,11 @@ class STM_PT_material_waveform(STM_Panel, bpy.types.Panel):
         layout = self.layout
         scn = context.scene
         stm_obj = funcs.get_stm_object(context.object)
+
+
+        # if stm_obj.stm_spectro.stm_items_active_index >= len(stm_obj.stm_spectro.stm_items):
+        #     return
+
         obj = stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object
 
         modifier = obj.modifiers['STM_waveform']
