@@ -33,67 +33,12 @@ from . import panels
 from . import funcs
 from bpy.app.handlers import persistent
 
-# @persistent
-# def stm_handler_depsgraph_update(scene):
-
-#     # print('depsgraph_update') 
-
-    
-#     if len(scene.objects) != scene.stm_settings.object_count_tmp:
-#         funcs.update_stm_objects_list(bpy.context)
-#         scene.stm_settings.object_count_tmp = len(scene.objects)
-
-#     if bpy.context.screen.is_animation_playing:
-#         pass
-#     elif not bpy.context.object:
-#         pass
-#     elif bpy.context.object.stm_spectro.stm_status == 'generating':
-#         pass
-#     elif bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
-
-#         funcs.update_audio_in_scene(bpy.context)
-#         funcs.update_stm_objects_list_index(bpy.context)
-        
-#         if len(scene.objects) != scene.stm_settings.object_count_tmp:
-#             # print('update_stm_list()')
-#             funcs.update_stm_list(bpy.context)
-#             funcs.update_stm_objects_list(bpy.context)
-#             scene.stm_settings.object_count_tmp = len(scene.objects)
-
-#         funcs.select_item_in_list_from_handler(bpy.context)
-#         # print('select_item_in_list_from_handler()')
-#         # pass
-
 
 def stm_handler_depsgraph_update(scene):
     # print('depsgraph_update')
     if scene.stm_settings.doHandler:
         context = bpy.context
         funcs.handler_function(context)
-    
-
-# @persistent
-# def stm_handler_playback(scene):    
-
-#     if bpy.context.object:
-
-#         if bpy.context.object.name != bpy.context.scene.stm_settings.active_object_tmp:
-#             funcs.update_audio_in_scene(bpy.context)
-#             funcs.update_stm_objects_list_index(bpy.context)
-#             bpy.context.scene.stm_settings.active_object_tmp = bpy.context.object.name
-
-#         if bpy.context.object.stm_spectro.stm_status == 'generating':
-#             pass
-#         elif bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
-
-            
-
-#             if len(scene.objects) != scene.stm_settings.object_count_tmp:
-#                 funcs.update_stm_list(bpy.context)
-#                 scene.stm_settings.object_count_tmp = len(scene.objects)
-
-#             funcs.select_item_in_list_from_handler(bpy.context)
-#             pass
 
 
 @persistent
@@ -103,19 +48,6 @@ def stm_handler_playback(scene):
         context = bpy.context
         funcs.handler_function(context)
 
-        
-
-# def stm_handler_playback_pre(scene):
-#     scene.stm_settings.is_scene_playing = True
-#     funcs.redraw_all_viewports()
-
-# def stm_handler_playback_post(scene):
-#     scene.stm_settings.is_scene_playing = False
-
-#     if bpy.context.object:
-#         if bpy.context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']:
-#             funcs.update_obj_in_list(bpy.context.object)
-#             pass
 
 
 def register():
@@ -125,10 +57,11 @@ def register():
     operators.register()
     panels.register()
 
-    bpy.app.handlers.depsgraph_update_post.append(stm_handler_depsgraph_update)
-    # bpy.app.handlers.animation_playback_pre.append(stm_handler_playback_pre)
-    # bpy.app.handlers.animation_playback_post.append(stm_handler_playback_post)
-    bpy.app.handlers.frame_change_post.append(stm_handler_playback)
+    bpy.app.handlers.depsgraph_update_post.append(funcs.find_spectrogram_objects)
+    bpy.app.handlers.depsgraph_update_post.append(funcs.find_waveform_objects)
+
+    # bpy.app.handlers.depsgraph_update_post.append(stm_handler_depsgraph_update)
+    # bpy.app.handlers.frame_change_post.append(stm_handler_playback)
 
 
 
@@ -139,9 +72,10 @@ def unregister():
     operators.unregister()
     panels.unregister()
 
+    # bpy.app.handlers.depsgraph_update_post.remove(funcs.find_spectrogram_objects)
+    # bpy.app.handlers.depsgraph_update_post.remove(funcs.find_waveform_objects)
+
     bpy.app.handlers.depsgraph_update_post.clear()
-    bpy.app.handlers.animation_playback_pre.clear()
-    bpy.app.handlers.animation_playback_post.clear()
     bpy.app.handlers.frame_change_post.clear()
 
 

@@ -153,6 +153,23 @@ class STM_OT_use_audio_in_scene(Operator):
 
         return {'FINISHED'}
 
+class STM_OT_toggle_audio_in_scene(Operator):
+    """Mute/Unmute"""
+    bl_idname = "stm.toggle_audio_in_scene"
+    bl_label = ""
+    bl_options = {'UNDO'}
+
+    target_object_name: StringProperty() # type: ignore
+
+    def execute(self, context):
+        obj = context.scene.objects[self.target_object_name]
+        # audio_file = obj.stm_spectro.audio_file
+
+        funcs.toggle_audio_in_scene(obj, context)
+        # funcs.frame_clip_in_sequencer(context)
+
+        return {'FINISHED'}
+
 class STM_OT_open_image_folder(Operator):
     """Open image folder"""
     bl_idname = "stm.open_image_folder"
@@ -364,23 +381,8 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         rrow.operator('stm.bake_resolution_down', text='', icon='TRIA_DOWN').prop_name = 'userWidth'
         rrow.operator('stm.bake_resolution_up', text='', icon='TRIA_UP').prop_name = 'userWidth'
 
-        # col1.separator()
-        # col2.separator()
-
-        # row = col2.row()
-        # op = row.operator('stm.adjust_resolution', text='', icon='REMOVE')
-        # op.prop_name = 'userWidth'
-        # op.operation = 'SUBSTRACT'
-        # row.prop(scn.stm_settings, 'userWidth', text='')
-        # op = row.operator('stm.adjust_resolution', text='', icon='ADD')
-        # op.prop_name = 'userWidth'
-        # op.operation = 'ADD'
-
-        # col1.separator()
-        # col2.separator()
 
         col1.label(text='')
-        # col2.prop(scn.stm_settings, 'bake_image_height', text='')
         row = col.row()
         row.prop(scn.stm_settings, 'userHeight', text='')
         rrow = row.row(align=True)
@@ -388,50 +390,6 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         
         rrow.operator('stm.bake_resolution_down', text='', icon='TRIA_DOWN').prop_name = 'userHeight'
         rrow.operator('stm.bake_resolution_up', text='', icon='TRIA_UP').prop_name = 'userHeight'
-
-        
-
-        # row = col2.row()
-        # op = row.operator('stm.adjust_resolution', text='', icon='REMOVE')
-        # op.prop_name = 'userHeight'
-        # op.operation = 'SUBSTRACT'
-        # row.prop(scn.stm_settings, 'userHeight', text='')
-        # op = row.operator('stm.adjust_resolution', text='', icon='ADD')
-        # op.prop_name = 'userHeight'
-        # op.operation = 'ADD'
-
-        # col_R.separator()
-
-        # box = col_R.box()
-        # row = box.row()
-        # row.prop(scn.stm_settings, 'bool_advanced_spectrogram_settings', text='Advanced Settings', icon='TRIA_DOWN' if scn.stm_settings.bool_advanced_spectrogram_settings else 'TRIA_RIGHT', emboss=False)
-        # row.operator('stm.reset_spectrogram_settings', text='', icon='FILE_REFRESH')
-        # if scn.stm_settings.bool_advanced_spectrogram_settings:
-        #     split = box.split(factor=0.5)
-        #     col1 = split.column()
-        #     col2 = split.column()
-        #     col1.label(text='Intensity Scale :')
-        #     col2.prop(scn.stm_settings, 'spectro_scale', text='')
-            
-        #     col1.label(text='Frequency Scale :')
-        #     row = col2.row(align=True)
-        #     row.prop_enum(scn.stm_settings, 'spectro_fscale', 'lin')
-        #     row.prop_enum(scn.stm_settings, 'spectro_fscale', 'log')
-
-        #     col1.label(text='Color Mode :')
-        #     col2.prop(scn.stm_settings, 'spectro_colorMode', text='')
-        #     col1.label(text='Dynamic Range :')
-        #     col2.prop(scn.stm_settings, 'spectro_drange', text='')
-
-        #     col1.enabled = False
-
-
-        # layout.separator()
-
-        # col = layout.column()
-
-        # col1.separator()
-        # col2.separator()
 
 
 
@@ -459,27 +417,6 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         layout.separator()
 
 
-        # box = layout.box()
-        # row = box.row()
-        # row.prop(scn.stm_settings, 'bool_spectrogram_scene_settings', text='Scene Settings', icon='TRIA_DOWN' if scn.stm_settings.bool_spectrogram_scene_settings else 'TRIA_RIGHT', emboss=False)
-        # # row.operator('stm.reset_spectrogram_settings', text='', icon='FILE_REFRESH')
-        # if scn.stm_settings.bool_spectrogram_scene_settings:
-            
-        #     split = box.split(factor=split_fac)
-        #     col1 = split.column()
-        #     col1.alignment = 'RIGHT'
-        #     col1.enabled = False
-        #     col2 = split.column()
-
-        #     col1.label(text='EEVEE settings')
-
-            
-        #     col2.prop(scn.stm_settings, 'force_eevee_AO')
-        #     col2.prop(scn.stm_settings, 'force_eevee_BLOOM')
-        #     col2.prop(scn.stm_settings, 'disable_eevee_viewport_denoising')
-        #     col2.prop(scn.stm_settings, 'force_standard_view_transform')
-
-
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=300)
 
@@ -503,7 +440,7 @@ class STM_OT_generate_spectrogram_modal(Operator):
     bl_idname = "stm.generate_spectrogram_modal"
     bl_label = "Generate spectrogram (modal)"
     # bl_options = {'REGISTER', 'UNDO'}
-    bl_options = {'UNDO'}
+    # bl_options = {'UNDO'}
 
     def __init__(self):
         self.step = 0
@@ -525,18 +462,18 @@ class STM_OT_generate_spectrogram_modal(Operator):
 
             progress_value = [10,20,35,75,95, 100]
 
-            # context.object.progress = ((self.step+1)/(self.max_step))*100           #update progess bar
-            scn.stm_settings.progress = progress_value[self.step]                     #update progess bar
-            scn.stm_settings.progress_label = list(Operations.keys())[self.step]      #update label
-            context.area.tag_redraw()                                               #send update signal
+            # context.object.progress = ((self.step+1)/(self.max_step))*100           # update progess bar
+            scn.stm_settings.progress = progress_value[self.step]                     # update progess bar
+            scn.stm_settings.progress_label = list(Operations.keys())[self.step]      # update label
+            context.area.tag_redraw()                                                 # send update signal
 
 
-        #by running a timer at the same time of our modal operator
-        #we are guaranteed that update is done correctly in the interface
+        # by running a timer at the same time of our modal operator
+        # we are guaranteed that update is done correctly in the interface
 
         if event.type == 'TIMER':
 
-            #but wee need a little time off between timers to ensure that blender have time to breath, so we have updated inteface
+            # but wee need a little time off between timers to ensure that blender have time to breath, so we have updated inteface
             self.timer_count +=1
             if self.timer_count==10:
                 self.timer_count=0
@@ -705,13 +642,10 @@ class STM_OT_import_spectrogram_setup(Operator):
     def execute(self, context):
 
         stm_obj = funcs.add_spectrogram_object(context)
-        stm_wave = funcs.add_waveform_object(context, stm_obj)
-
-        
+        # stm_wave = funcs.add_waveform_object(context, stm_obj)
 
         funcs.select_object_solo(context, stm_obj)
-
-        funcs.update_stm_list(context)
+        funcs.update_spectrogram_list(context)
 
         return {'FINISHED'}
 
@@ -749,16 +683,23 @@ class STM_OT_add_spectrogram(Operator, ImportHelper):
             
             sound = bpy.data.sounds.load(self.filepath, check_existing=True)
 
-            bpy.ops.stm.import_spectrogram_setup('INVOKE_DEFAULT')
+            # bpy.ops.stm.import_spectrogram_setup('INVOKE_DEFAULT')
 
-            stm_obj = funcs.get_stm_object(context.object)
+            stm_obj = funcs.add_spectrogram_object(context)
+            stm_wave = funcs.add_waveform_object(context, stm_obj)
+            
+
+            funcs.select_object_solo(context, stm_obj)
+            funcs.update_spectrogram_list(context)
+
+            # stm_obj = funcs.get_stm_object(context.object)
 
             stm_obj.stm_spectro.audio_file = sound
             stm_obj.stm_spectro.audio_filename = os.path.basename(self.filepath)
             stm_obj.stm_spectro.audio_filename_display = os.path.basename(self.filepath)
 
             funcs.update_metadata(self, context)
-            funcs.use_audio_in_scene(context, sound)
+            # funcs.use_audio_in_scene(context, sound)
             # funcs.frame_clip_in_sequencer(context)
             
             
@@ -777,12 +718,24 @@ class STM_OT_delete_spectrogram(Operator):
 
     @classmethod
     def poll(cls, context):
+        if not context.object:
+            return False
         stm_obj = funcs.get_stm_object(context.object)
-        return bool(len(stm_obj.stm_spectro.stm_items) > 0)
+        return bool(len(stm_obj.stm_spectro.stm_items) > 0 and context.scene.stm_settings.stm_objects_list_active_index < len(context.scene.stm_settings.stm_objects_list))
 
     def execute(self, context):
 
-        print('REMOVE SPECTROGRAM')
+        scn = context.scene
+        list = scn.stm_settings.stm_objects_list
+        id = scn.stm_settings.stm_objects_list_active_index
+
+        stm_obj = list[id].object
+
+        waveforms = [o for o in scn.objects if o.stm_spectro.spectrogram_object == stm_obj]
+
+        print(stm_obj)
+        print('found %i waveforms using %s'%(len(waveforms), stm_obj.name))
+                
 
         return {'FINISHED'}
 
@@ -1517,12 +1470,13 @@ classes = [
     STM_OT_reset_spectrogram_settings,
     STM_OT_set_resolution_preset,
     STM_OT_use_audio_in_scene,
+    STM_OT_toggle_audio_in_scene,
     STM_OT_open_image_folder,
     STM_OT_open_image,
     STM_OT_prompt_spectrogram_popup,
     STM_OT_generate_spectrogram_modal,
     STM_OT_select_stm_in_viewport,
-    STM_OT_import_spectrogram_setup,
+    # STM_OT_import_spectrogram_setup,
 
     STM_OT_add_spectrogram,
     STM_OT_delete_spectrogram,

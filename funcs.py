@@ -71,36 +71,6 @@ def seconds_to_timestring(seconds):
             return '{:.2f}s'.format(s)
     return
 
-# def enum_members_from_type(rna_type, prop_str):
-#     prop = rna_type.bl_rna.properties[prop_str]
-#     return [e.identifier for e in prop.enum_items]
-
-# def select_obj_from_list(self, context):
-#     scn = context.scene
-#     idx = scn.stm_obj_list_index
-
-#     name = scn.objects[idx].name
-#     obj = scn.objects.get(name, None)
-#     try:
-#         bpy.ops.object.select_all(action='DESELECT')
-
-#         obj.select_set(True)
-#         bpy.context.view_layer.objects.active = obj
-#     except:
-#         pass
-
-# def match_list_to_active_object():
-#     scn = bpy.context.scene
-
-#     objs = [o for o in scn.objects]
-#     idx = objs.index(bpy.context.active_object)
-
-
-#     scn.stm_obj_list_index = idx
-
-# def _create_prop_from_list(context, data, list, name, icon='NONE', emboss=True):
-#     context.prop(data, list[name][1], text=list[name][0], icon=icon, emboss=emboss)
-
 def refresh_all_areas():
     for wm in bpy.data.window_managers:
         for w in wm.windows:
@@ -181,7 +151,6 @@ def apply_spectrogram_preset(preset_name):
 
     
     stm_modifier.show_viewport = True
-
 
 
 exclude_preset_inputs = [
@@ -759,6 +728,22 @@ def update_audio_filename_display(self, context):
         audio_filename = os.path.basename(stm_obj.stm_spectro.audio_file.filepath)
         stm_obj.stm_spectro.audio_filename_display = audio_filename
 
+
+def get_first_empty_channel(seq):
+    sequences = seq.sequences
+    channels = seq.channels
+
+    used_channels = [s.channel for s in sequences]
+    channel_id = 0
+
+    for c in channels:
+        id = channels.keys().index(c.name)
+        if id > 0 and  id not in used_channels:
+            channel_id= id
+            break
+
+    return channel_id
+
 def use_audio_in_scene(context, audio_file, offset=0):
     
     scn = context.scene
@@ -780,8 +765,8 @@ def use_audio_in_scene(context, audio_file, offset=0):
         if not seq:                                     # create new sequence if there is none
             scn.sequence_editor_create()
 
-        for strip in seq.sequences:                     # clear out the sequence
-            seq.sequences.remove(strip)
+        # for strip in seq.sequences:                     # clear out the sequence
+        #     seq.sequences.remove(strip)
         
         # To add a new soundstrip, we're using the command new_sound()
         # From what I understand, I have to give a valid filepath to the command.
@@ -795,7 +780,7 @@ def use_audio_in_scene(context, audio_file, offset=0):
         soundstrip = seq.sequences.new_sound(                       # create the soundstrip
                 name=audio_filename,
                 filepath=audio_filepath,
-                channel=1, 
+                channel=get_first_empty_channel(seq), 
                 frame_start=offset
             )
         
@@ -810,8 +795,30 @@ def use_audio_in_scene(context, audio_file, offset=0):
 
         soundstrip.sound = audio_file        # assign the proper sound to the soundstrip
         soundstrip.show_waveform = True
+        soundstrip.stm_settings.spectrogram_object = stm_obj
 
     return soundstrip
+
+def toggle_audio_in_scene(self, context):
+
+    obj = self.id_data
+    seq = context.scene.sequence_editor   
+
+    for s in seq.sequences:
+        if s.stm_settings.spectrogram_object == obj:
+            s.mute = not s.mute
+
+def set_spectrogram_audio_solo(stm_obj):
+
+    if stm_obj.stm_spectro.stm_type in ['spectrogram', 'waveform']:
+
+        seq = bpy.context.scene.sequence_editor
+
+        for s in seq.sequences:
+            if s.stm_settings.spectrogram_object != stm_obj:
+                s.mute = True
+            else:
+                s.mute = False
 
 def set_playback_to_audioSync(context):
     if context.scene.sync_mode != 'AUDIO_SYNC':
@@ -858,13 +865,6 @@ def frame_clip_in_sequencer(context):
                         bpy.ops.view2d.pan(deltax=0, deltay=-99999999)
                         bpy.ops.view2d.pan(deltax=0, deltay=125)
                         bpy.ops.view2d.zoom(deltax=0.0, deltay=-0.5, use_cursor_init=False)
-
-# def create_new_object(name, coll=bpy.context.scene.collection):
-#     mesh = bpy.data.meshes.new(name)
-#     obj = bpy.data.objects.new(name, mesh)
-#     coll.objects.link( obj )
-
-#     return obj
 
 def is_audio_in_sequencer(context, audio_file):
     if not context.scene.sequence_editor:
@@ -1263,8 +1263,6 @@ def stm_01_volume_data(self, context):
     obj.stm_spectro.max_volume_dB = max_volume_dB
     print(f'{max_volume_dB = }')
 
-
-
     # get peak volume using ffastats() (more accurate but longer)
 
     # astats = ffastats(scn.stm_settings.ffmpegPath, obj.stm_spectro.audio_file.filepath)
@@ -1310,6 +1308,15 @@ def get_timeline_length_from_audio_duration(duration_seconds):
 
     return int(duration_frames + fps)
 
+def add_new_speaker(name, audio_file):
+    speaker_data = bpy.data.speakers.new(name)
+    speaker_data.sound = audio_file
+    speaker_obj = bpy.data.objects.new(name, speaker_data)
+    bpy.context.scene.collection.objects.link(speaker_obj)
+
+    return speaker_obj
+
+
 def stm_03_build_spectrogram(self, context):
 
     scn = bpy.context.scene
@@ -1328,6 +1335,10 @@ def stm_03_build_spectrogram(self, context):
     # generate soundstrip
     soundstrip = use_audio_in_scene(context, obj.stm_spectro.audio_file)
     duration_seconds = soundstrip.frame_final_duration/bpy.context.scene.render.fps
+
+    # audio_file = obj.stm_spectro.audio_file
+    # audio_filename = os.path.basename(audio_file.filepath)
+    # speaker = add_new_speaker(audio_filename, audio_file)
 
     timeline_end = get_timeline_length_from_audio_duration(duration_seconds)
 
@@ -1393,18 +1404,16 @@ def add_spectrogram_object(context):
 
     
 
-    stm_coll = create_collection('Spectrogram')
-    stm_coll.objects.link(obj)
+    # stm_coll = create_collection('Spectrogram')
+    # stm_coll.objects.link(obj)
+
+    scn.collection.objects.link(obj)
     
     # print(len(context.scene.objects))
 
 
     mod = obj.modifiers.new("STM_spectrogram", 'NODES')
     mod.node_group = bpy.data.node_groups['STM_spectrogram'].copy()
-    
-    
-    
-
     
 
     # mat_gradient = get_stm_material(obj, 'STM_gradient')
@@ -1440,8 +1449,10 @@ def add_waveform_object(context, stm_obj, wave_offset=0.0):
     append_from_blend_file(assetFile, 'NodeTree', 'STM_waveform')
     
 
-    mesh = bpy.data.meshes.new('Waveform')
-    obj = bpy.data.objects.new("Waveform", mesh)
+    # mesh = bpy.data.meshes.new('Waveform')
+    # obj = bpy.data.objects.new("Waveform", mesh)
+    curve = bpy.data.curves.new('Waveform', type='CURVE')
+    obj = bpy.data.objects.new("Waveform", curve)
     mod = obj.modifiers.new("STM_waveform", 'NODES')
     mod.node_group = bpy.data.node_groups['STM_waveform']
 
@@ -1453,7 +1464,7 @@ def add_waveform_object(context, stm_obj, wave_offset=0.0):
 
 
     obj.stm_spectro.material_type = 'emission'
-    # obj.parent = stm_obj
+    obj.parent = stm_obj
     
     
 
@@ -1528,117 +1539,160 @@ def stm_curve_object_poll(self, object):
 
 # ----------------------------------------------------------------------------------------------------------------
 
-# def update_stm_objects_list(context):
 
-#     print('update_stm_objects_list')
+def find_spectrogram_objects(dummy):
+    # print('OUPDATÉ')
 
-#     stm_objects_list = context.scene.stm_settings.stm_objects_list
-#     stm_objects_list.clear()
+    context = bpy.context
+    settings = context.scene.stm_settings
 
-#     for o in context.scene.objects:
-#         if o.stm_spectro.stm_type == 'spectrogram':
-#             item = stm_objects_list.add()
-#             item.object = o
+    len_prev = len(settings.stm_objects_list)
+    name_prev = settings.stm_objects_list[settings.stm_objects_list_active_index].name if len_prev else ''
+    idx = settings.stm_objects_list_active_index
 
-#     # print(stm_objects_list)
+    # identify context spectrogram objects
+    for el in range (len(settings.stm_objects_list)):
+        settings.stm_objects_list.remove(0)    
 
-# def update_stm_objects_list_index(context):
-#     stm_objects_list = [o.object.name for o in context.scene.stm_settings.stm_objects_list]
+    for o in context.scene.objects:
+        if o.stm_spectro.stm_type != 'spectrogram':
+            continue
+
+        item = settings.stm_objects_list.add()
+        item.name = o.name
+        item.object = o
+
+        if name_prev == o.name:
+            idx = len(settings.stm_objects_list)-1
+
+    if context.object:
+        stm_obj = get_stm_object(context.object)
+        for i, item in enumerate(settings.stm_objects_list):
+            if item.name == stm_obj.name:
+                settings.doHandler = False
+                settings.stm_objects_list_active_index = i
+                settings.doHandler = True
+
+    # elif len_prev == len(settings.stm_objects_list):
+    #     settings.doHandler = False
+    #     settings.stm_objects_list_active_index = idx
+    #     settings.doHandler = True
+
+def get_active_spectrogram_list_index(self):
+    if not self.get('stm_objects_list_active_index'):
+        return 0
+    return self["stm_objects_list_active_index"]
+
+def set_active_spectrogram_list_index(self, value):
+    context = bpy.context
+    settings = context.scene.stm_settings
+
+    prev = self.get('stm_objects_list_active_index')
+
+    if prev == abs(value):
+        return
     
-#     stm_obj = get_stm_object(context.object)
+    self['stm_objects_list_active_index'] = abs(value)
 
-#     if stm_obj.name in stm_objects_list:
-#         index = stm_objects_list.index(stm_obj.name)
-
-#         stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
-#         context.scene.stm_settings.stm_objects_list_active_index = index
-#         stm_obj.stm_spectro.stm_status = 'init'
-            
-# def add_obj_to_stm_items(stm_items, obj):
-#     item = stm_items.add()
-#     item.object = obj
-
-# def update_stm_list(context):
+    if not settings.doHandler:
+        return
+    if not context.object:
+        return
     
-#     # print('update_stm_list()')
+    stm_obj = context.scene.objects.get(settings.stm_objects_list[value].name)
 
-#     stm_obj = get_stm_object(context.object)
-#     stm_items = stm_obj.stm_spectro.stm_items
-
-#     stm_items.clear()
-
-#     # add_obj_to_stm_items(stm_items, stm_obj)
-
-#     for o in context.scene.objects:
-#         if o.stm_spectro.spectrogram_object == stm_obj:
-#             add_obj_to_stm_items(stm_items, o)
-
-# def select_item_in_list_from_handler(context):
-
-#     # print('select_item_in_list_from_handler()')
-#     # print(context.object)
-#     # print(context.object.stm_spectro.stm_status)
-
-#     stm_obj = get_stm_object(context.object)
-#     stm_items = stm_obj.stm_spectro.stm_items
-#     idx = stm_obj.stm_spectro.stm_items_active_index   
+    for o in context.scene.objects:
+        o.select_set(False)
+        
+    stm_obj.select_set(True)
+    context.view_layer.objects.active = stm_obj
 
 
-#     if stm_obj.stm_spectro.stm_status == 'selecting_from_list':
-#         pass
 
-#     elif context.object.stm_spectro.stm_type =='spectrogram':
-#         if stm_obj.stm_spectro.stm_items_active_index != -1:
-#             stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
-#             stm_obj.stm_spectro.stm_items_active_index = -1
-#             stm_obj.stm_spectro.stm_status = 'done'
 
-#     elif idx >= len(stm_items):     # update idx in case of deleted objects
-#         stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
-#         stm_obj.stm_spectro.stm_items_active_index = len(stm_items) - 1
-#         stm_obj.stm_spectro.stm_status = 'done'
+def find_waveform_objects(dummy):
+    # print('OUPDATÉ')
 
-#     elif idx > 0 and context.object == stm_items[idx].object:
-#         pass
+    context = bpy.context
     
-#     elif len(stm_items) > 0:
-#         if context.object != stm_items[idx].object or idx == -1:
-#             new_idx = next(i for i, item in enumerate(stm_items) if context.object == item.object)
+    if not context.object:
+        return
 
-#             stm_obj.stm_spectro.stm_status = 'selecting_from_handler'
-#             stm_obj.stm_spectro.stm_items_active_index = new_idx
-#             stm_obj.stm_spectro.stm_status = 'done'
+    stm_obj = get_stm_object(context.object)
+    settings = stm_obj.stm_spectro
 
-# def select_obj_from_stm_list(self, context):
+    len_prev = len(settings.stm_items)
+    name_prev = settings.stm_items[settings.stm_items_active_index].name if len_prev else ''
+    idx = settings.stm_items_active_index
 
-#     stm_obj = get_stm_object(context.object)
+    # identify context spectrogram objects
+    for el in range (len(settings.stm_items)):
+        settings.stm_items.remove(0)    
+
+    for o in context.scene.objects:
+        if o.stm_spectro.stm_type != 'waveform':
+            continue
+        if o.stm_spectro.spectrogram_object != stm_obj:
+            continue
+
+        item = settings.stm_items.add()
+        item.name = o.name
+        item.object = o
+
+        if name_prev == o.name:
+            idx = len(settings.stm_items)-1
+
+        
+    for i, item in enumerate(settings.stm_items):
+        if item.name == stm_obj.name:
+            settings.doHandler = False
+            settings.stm_items_active_index = i
+            settings.doHandler = True
+
+    # elif len_prev == len(settings.stm_objects_list):
+    #     settings.doHandler = False
+    #     settings.stm_objects_list_active_index = idx
+    #     settings.doHandler = True
+
+
+def get_active_waveform_list_index(self):
+    if not self.get('stm_items_active_index'):
+        return 0
+    return self["stm_items_active_index"]
+
+def set_active_waveform_list_index(self, value):
+    context = bpy.context
+    stm_obj = get_stm_object(context.object)
+    settings = stm_obj.stm_spectro
+
+    prev = self.get('stm_items_active_index')
+
+    if prev == abs(value):
+        return
     
-#     if stm_obj.stm_spectro.stm_status == 'selecting_from_handler':
-#         pass
-#     else:
-#         bpy.ops.stm.detect_key_pressed('INVOKE_DEFAULT', key='SHIFT')
+    self['stm_items_active_index'] = abs(value)
 
-#         if not context.scene.stm_settings.is_shift_pressed and len(stm_obj.stm_spectro.stm_items)>0:
-
-#             obj_to_select = stm_obj.stm_spectro.stm_items[stm_obj.stm_spectro.stm_items_active_index].object
-
-#             # print(obj_to_select)
-#             stm_obj.stm_spectro.stm_status = 'selecting_from_list'
-#             select_object_solo(context, obj_to_select)
-#             stm_obj.stm_spectro.stm_status = 'done'
+    if not context.scene.stm_settings.doHandler:
+        return
+    if not context.object:
+        return
     
+    wave_obj = context.scene.objects.get(settings.stm_items[value].name)
 
-#             # print(stm_obj.stm_spectro.stm_items_active_index)
+    for o in context.scene.objects:
+        o.select_set(False)
+        
+    wave_obj.select_set(True)
+    context.view_layer.objects.active = wave_obj
 
 
-# ----------------------------------------------------------------------------------------------------------------
+
 
 
 def update_spectrogram_list(context):
     # print('update spectro list')
 
     scn = context.scene
-    
     
     list = scn.stm_settings.stm_objects_list
     id = scn.stm_settings.stm_objects_list_active_index
@@ -1654,7 +1708,7 @@ def update_spectrogram_list(context):
 
         obj_stm_settings = context.object.stm_spectro
 
-        if context.object.stm_spectro.stm_type not in ['spectrogram', 'waveform']:
+        if obj_stm_settings.stm_type not in ['spectrogram', 'waveform']:
             deselect_all_from_spectrogram_list(context)
         elif obj_stm_settings.stm_type == 'waveform':
             if id < len(list):
@@ -1662,8 +1716,6 @@ def update_spectrogram_list(context):
                     pass
                 else:
                     deselect_all_from_spectrogram_list(context)
-        else:
-            deselect_all_from_spectrogram_list(context)
 
             
 
@@ -1789,6 +1841,9 @@ def handler_function(context):
             select_in_spectrogram_list_from_viewport(context) 
             select_in_waveform_list_from_viewport(context)
             scn.stm_settings.active_object_tmp = obj.name
+
+        if scn.stm_settings.doLiveSyncAudio:
+            set_spectrogram_audio_solo(get_stm_object(obj))
 
     if len(scn.objects) != scn.stm_settings.object_count_tmp:
         update_spectrogram_list(context)

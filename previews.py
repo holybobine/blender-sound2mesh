@@ -38,8 +38,6 @@ def get_spectrogram_preview(self, context):
 
     stm_obj = funcs.get_stm_object(context.object)
 
-    
-
     if stm_obj.stm_spectro.image_file == None:
         item_name = 'no image'
         filepath = os.path.join(addon_path, './icons/misc/no_image.png')
@@ -53,6 +51,7 @@ def get_spectrogram_preview(self, context):
         thumb = pcoll[filepath]
     else:
         thumb = pcoll.load(filepath, filepath, 'IMAGE', force_reload=True)
+        # print(filepath)
 
     enum_items.append((item_name, item_name, "", thumb.icon_id, 0))
 
