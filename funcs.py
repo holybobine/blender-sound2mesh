@@ -1065,17 +1065,13 @@ def set_points_on_eq_curve(curve_node, preset_points):
     curve_node.mapping.update()
     curve_node.update()
 
-def is_stm_object_selected():
+def is_stm_object_selected(context):
 
-    is_stm = False
-
-    if bpy.context.selected_objects != []:
-        if bpy.context.object.type == 'MESH':
-            # if bpy.context.object.modifiers.get('STM_spectrogram'):
-            if any([m.name.startswith('STM_spectrogram') for m in bpy.context.object.modifiers]):
-                is_stm = True
-
-    return is_stm
+    if not context.object:
+        return False
+    
+    else:
+        return context.object.stm_spectro.stm_type in ['spectrogram', 'waveform']
 
 def update_stm_material(self, context):
 
@@ -1220,8 +1216,14 @@ def get_stm_material(stm_obj, mat_name):
 
 def get_wave_offset(context):
     stm_obj = get_stm_object(context.object)
-    idx = len(stm_obj.stm_spectro.stm_items)
-    return float(idx/20)
+    stm_objects_list = context.scene.stm_settings.stm_objects_list
+    nb_waveforms = 0
+
+    for item in stm_objects_list:
+        if item.object.stm_spectro.stm_type == 'waveform' and item.object.stm_spectro.spectrogram_object == stm_obj:
+            nb_waveforms += 1
+
+    return float(nb_waveforms/20) if nb_waveforms > 0 else 0
 
 
 
@@ -1324,10 +1326,22 @@ def add_new_speaker(name, audio_file):
     return speaker_obj
 
 
+def adapt_timeline_length(context):
+    print('ADAPT TIMELINE LENGTH')
+    stm_obj = get_stm_object(context.object)
+    duration_seconds = get_geonode_value_proper(stm_obj.modifiers['STM_spectrogram'], 'Audio Duration')
+    timeline_end = get_timeline_length_from_audio_duration(duration_seconds)
+
+    context.scene.frame_start = 1
+    context.scene.frame_end = timeline_end
+
 def stm_03_build_spectrogram(self, context):
 
     scn = bpy.context.scene
     obj = get_stm_object(context.object)
+
+    if scn.stm_settings.bool_rename_stm_object:
+        obj.name = obj.stm_spectro.audio_filename
 
     ffmpegPath = scn.stm_settings.ffmpegPath
     outputPath = scn.stm_settings.outputPath
@@ -1388,7 +1402,8 @@ def stm_04_cleanup(self, context):
     set_playback_to_audioSync(context)
     # frame_clip_in_sequencer(context)
     # update_stm_objects(context)
-    # frame_all_timeline()
+    adapt_timeline_length(context)
+    frame_all_timeline()
 
 def stm_05_sleep(self, context):
     time.sleep(0.5)
@@ -1562,12 +1577,27 @@ def find_spectrogram_objects():
         settings.stm_objects_list.remove(0)    
 
     for o in context.scene.objects:
-        if o.stm_spectro.stm_type != 'spectrogram':
+        if o.stm_spectro.stm_type not in ['spectrogram', 'waveform']:
             continue
 
-        item = settings.stm_objects_list.add()
-        item.name = o.name
-        item.object = o
+        # if o.stm_spectro.stm_type == 'waveform' and not o.stm_spectro.spectrogram_object.stm_spectro.panel_expand:
+        #     continue
+
+        if o.stm_spectro.stm_type == 'spectrogram':
+
+            item = settings.stm_objects_list.add()
+            item.name = o.name
+            item.object = o
+
+            if o.stm_spectro.panel_expand:
+                for stm_wave in context.scene.objects:
+                    if stm_wave.stm_spectro.stm_type == 'waveform':
+                        if stm_wave.stm_spectro.spectrogram_object == o:
+                            if stm_wave.name not in settings.stm_objects_list:
+
+                                item = settings.stm_objects_list.add()
+                                item.name = stm_wave.name
+                                item.object = stm_wave
 
         if name_prev == o.name:
             idx = len(settings.stm_objects_list)-1
@@ -1578,7 +1608,8 @@ def find_spectrogram_objects():
             settings.stm_objects_list_active_index = 9999
             settings.doHandler = True
 
-        stm_obj = get_stm_object(context.object)
+        # stm_obj = get_stm_object(context.object)
+        stm_obj = context.object
         for i, item in enumerate(settings.stm_objects_list):
             if item.name == stm_obj.name:
                 settings.doHandler = False
@@ -1594,6 +1625,7 @@ def get_active_spectrogram_list_index(self):
     if not self.get('stm_objects_list_active_index'):
         return 0
     return self["stm_objects_list_active_index"]
+    
 
 def set_active_spectrogram_list_index(self, value):
     context = bpy.context
@@ -1708,7 +1740,11 @@ def set_active_waveform_list_index(self, value):
 def remove_orphan_sounds():
     seq = bpy.context.scene.sequence_editor
     for s in seq.sequences:
+
         if s.stm_settings.spectrogram_object.name not in bpy.context.scene.objects:
+            seq.sequences.remove(s)
+
+        elif s.stm_settings.spectrogram_object.stm_spectro.audio_file.filepath != s.sound.filepath:
             seq.sequences.remove(s)
 
 def update_active_audio_in_scene():
@@ -1732,7 +1768,7 @@ def update_active_audio_in_scene():
 def stm_handler_functions(context):
 
     find_spectrogram_objects()
-    find_waveform_objects()
+    # find_waveform_objects()
     remove_orphan_sounds()
     update_active_audio_in_scene()
 

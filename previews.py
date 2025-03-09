@@ -23,6 +23,25 @@ def generate_previews(pcoll_name):
     for i, image in enumerate(os.listdir(image_location)):
         if image.endswith(VALID_EXTENSIONS):
             
+            item_name = image
+
+            filepath = os.path.join(image_location, image)
+            thumb = pcoll.load(image, filepath, 'IMAGE')
+            enum_items.append((image, item_name.capitalize(), item_name.capitalize(), thumb.icon_id, i))
+
+    return enum_items
+
+def generate_numbered_previews(pcoll_name):
+
+    pcoll = preview_collections[pcoll_name]
+    image_location = pcoll.images_location
+    VALID_EXTENSIONS = ('.png', '.jpg', '.jpeg')
+
+    enum_items = []
+
+    for i, image in enumerate(os.listdir(image_location)):
+        if image.endswith(VALID_EXTENSIONS):
+            
             item_name = image.replace('.png', '')
             item_name = item_name.split('-')[1]
             item_name = item_name.replace('_', ' ')
@@ -94,9 +113,10 @@ def register():
     setup_new_preview_collection(name="presets_eq_curve", dir=r'.\icons\icons_eq_presets')
     setup_new_preview_collection(name="presets_waveform_style", dir=r'.\icons\icons_waveform_style')
     setup_new_preview_collection(name="presets_waveform_style_AB", dir=r'.\icons\icons_waveform_style_AB')
+    setup_new_preview_collection(name="icons_ui", dir=r'.\icons\icons_ui')
     
     setup_new_preview_collection(name="icons", dir=r'.\icons')
-    generate_previews('icons')
+    generate_numbered_previews('icons')
 
     preview_collections["preview_image_enum"] = bpy.utils.previews.new()
 
@@ -104,7 +124,7 @@ def register():
 
     bpy.types.Scene.presets_setup = bpy.props.EnumProperty( # type: ignore
             name='Choose a preset',
-            items=generate_previews('presets_setup'),
+            items=generate_numbered_previews('presets_setup'),
             # update=apply_spectrogram_preset
         )
 
@@ -115,7 +135,7 @@ def register():
 
     bpy.types.Object.presets_geonodes = bpy.props.EnumProperty( # type: ignore
             name='presets_geonodes',
-            # items=generate_previews('presets_geonodes'),
+            # items=generate_numbered_previews('presets_geonodes'),
             items=generate_items_from_presets,
             # update=funcs.apply_spectrogram_preset,
         )
@@ -124,27 +144,32 @@ def register():
 
     bpy.types.Object.presets_eq_curve = bpy.props.EnumProperty( # type: ignore
             name='presets_eq_curve',
-            items=generate_previews('presets_eq_curve'),
+            items=generate_numbered_previews('presets_eq_curve'),
             update=funcs.apply_eq_curve_preset_proper,
         )
 
     bpy.types.Object.presets_gradient = bpy.props.EnumProperty(
             name='presets_gradient',
-            items=generate_previews('presets_gradient'),
+            items=generate_numbered_previews('presets_gradient'),
             update=funcs.apply_gradient_preset,
             # default='1-FFmpeg_intensity.png'
         )
 
     bpy.types.Object.presets_waveform_style = bpy.props.EnumProperty( # type: ignore
             name='Waveform Shape',
-            items=generate_previews('presets_waveform_style'),
+            items=generate_numbered_previews('presets_waveform_style'),
             update=funcs.apply_waveform_style,
         )
     
     bpy.types.Scene.presets_waveform_style_AB = bpy.props.EnumProperty( # type: ignore
             name='Waveform Shape',
-            items=generate_previews('presets_waveform_style_AB'),
+            items=generate_numbered_previews('presets_waveform_style_AB'),
             update=funcs.apply_waveform_style,
+        )
+    
+    bpy.types.Scene.icons_ui = bpy.props.EnumProperty( # type: ignore
+            name='icons UI',
+            items=generate_previews('icons_ui'),
         )
     
 

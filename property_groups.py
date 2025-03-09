@@ -64,6 +64,8 @@ class STM_spectrogram_props(PropertyGroup):
 
     is_parented_to_spectrogram : BoolProperty(default = True, update=funcs.toggle_parent_spectrogram) # type: ignore
 
+    panel_expand : BoolProperty(default = True) # type: ignore
+
     audio_file_path : StringProperty() # type: ignore # type: ignore
     audio_filename : StringProperty() # type: ignore
     audio_filename_display : StringProperty() # type: ignore
@@ -245,6 +247,8 @@ class STM_scene_props(PropertyGroup):
     is_sequencer_open : bpy.props.BoolProperty(default=False) # type: ignore
 
     # Spectrogram settings
+
+    bool_rename_stm_object : bpy.props.BoolProperty(default=True) # type: ignore
 
 
     bool_output_path : bpy.props.EnumProperty( # type: ignore
