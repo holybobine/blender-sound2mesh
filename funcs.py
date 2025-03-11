@@ -771,16 +771,23 @@ def use_audio_in_scene(context, audio_file, offset=0):
 
     if not seq:                                     # create new sequence if there is none
         scn.sequence_editor_create()
-
-    # for strip in seq.sequences:                     # clear out the sequence
-    #     seq.sequences.remove(strip)
     
+    
+
+    for s in seq.sequences:                                     # check if the requested sound isn't already loaded
+        if s.stm_settings.spectrogram_object == stm_obj:        # and associated to our spectrogram
+            if s.sound.filepath == stm_obj.stm_spectro.audio_file.filepath:
+                print('-INF- sound already loaded, skipping import')
+                return s
+            
+
     # To add a new soundstrip, we're using the command new_sound()
     # From what I understand, I have to give a valid filepath to the command.
     # Sadly this creates a copy of our sound datablock.
 
     # What follows is a workaround to delete this new datablock 
     # and use our existing one instead.
+
 
     sounds_list = [s for s in bpy.data.sounds]                  # list all sounds in scene
     
@@ -796,7 +803,7 @@ def use_audio_in_scene(context, audio_file, offset=0):
     sounds_to_delete = list(set(sounds_list_new) - set(sounds_list))    # compare the two lists
     if len(sounds_to_delete) > 0:                                       # delete the new datablocks created
         for s in sounds_to_delete:
-            print('Deleting duplicate sound %s'%s.name)
+            print('-INF- Deleting duplicate sound %s'%s.name)
             bpy.data.sounds.remove(s)
 
 
@@ -1828,3 +1835,7 @@ def create_collection(coll_name):
     bpy.context.scene.collection.children.link(coll)
 
     return coll
+
+def toggle_hide_viewport_base(self, context):
+    obj = self.id_data
+    obj.hide_set(obj.stm_spectro.hide_viewport_base)

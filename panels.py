@@ -108,11 +108,11 @@ def draw_spectro_item(context, layout, obj):
             icon='OUTLINER_OB_SPEAKER' if is_audio_active else 'OUTLINER_DATA_SPEAKER', 
             emboss=False
         )
-        rrow.enabled = not context.scene.stm_settings.doLiveSyncAudio
+        # rrow.enabled = not context.scene.stm_settings.doLiveSyncAudio
 
-
+    row.prop(obj.stm_spectro, 'hide_viewport_base', icon_only=True, emboss=False, icon='HIDE_ON' if obj.stm_spectro.hide_viewport_base else 'HIDE_OFF')
     row.prop(obj, "hide_viewport", text="", emboss=False)
-    # row.prop(obj, "hide_render", text="", emboss=False)
+    row.prop(obj, "hide_render", text="", emboss=False)
 
 
 def draw_waveform_item(context, layout, obj):
@@ -132,8 +132,9 @@ def draw_waveform_item(context, layout, obj):
     row.label(text='', icon='BLANK1')
     row.prop(obj, "name", icon_value=custom_icon, emboss=False, text="")
     # row.prop(obj.stm_spectro, 'is_parented_to_spectrogram', text='', icon=parent_icon, emboss=False)
+    row.prop(obj.stm_spectro, 'hide_viewport_base', icon_only=True, emboss=False, icon='HIDE_ON' if obj.stm_spectro.hide_viewport_base else 'HIDE_OFF')
     row.prop(obj, "hide_viewport", text="", emboss=False)
-    # row.prop(obj, "hide_render", text="", emboss=False)
+    row.prop(obj, "hide_render", text="", emboss=False)
 
 class STM_UL_draw_spectro_list(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -188,20 +189,21 @@ class STM_UL_draw_items(UIList):
     def invoke(self, context, event):
         pass
 
-class STM_MT_add_menu(bpy.types.Menu):
-    bl_idname = "STM_MT_add_menu"
+class STM_MT_spectro_list_menu(bpy.types.Menu):
+    bl_idname = "STM_MT_spectro_list_menu"
     bl_label = "Add element"
 
     def draw(self, context):
         layout = self.layout
 
 
-        layout.label(text='Add Element')
+        
+        layout.operator('stm.open_image', text='Open image', icon='IMAGE_DATA')
+        layout.operator('stm.open_image_folder', text='Open image folder', icon='FILEBROWSER')
+
         layout.separator()
 
-        layout.operator('stm.add_spectrogram', text='Spectrogram', icon='SEQ_HISTOGRAM')
-        # layout.operator('stm.add_waveform', text='Waveform', icon_value=preview_collections['presets_waveform_style_AB']['0-line_A.png'].icon_id)
-        layout.operator('stm.add_waveform', text='Waveform', icon='RNDCURVE')
+        layout.prop(context.scene.stm_settings, 'doLiveSyncAudio', text='Live Sync Audio', icon='UV_SYNC_SELECT')
 
         # for i in preview_collections['presets_waveform_style_AB']:
         #     print(i)
@@ -403,53 +405,77 @@ class STM_PT_add_new_panel(STM_Panel, bpy.types.Panel):
         # row.operator('stm.add_spectrogram', text='Spectrogram', icon='SEQ_HISTOGRAM')
         # row.operator('stm.add_waveform', text='Waveform', icon='RNDCURVE')
 
+        # row = layout.row()
+        # row.emboss = 'NONE'
+        # row.template_icon_view(scn, "icons_ui", show_labels=True, scale=6.0, scale_popup=17.0)
+
+        
+
         row = layout.row()
         row.enabled = scn.stm_settings.progress == 0
-        row.template_list("STM_UL_draw_spectro_list", "", scn.stm_settings, "stm_objects_list", scn.stm_settings, "stm_objects_list_active_index", rows=3, sort_lock=True)
+        list_length = 5 if len(scn.stm_settings.stm_objects_list) < 5 else len(scn.stm_settings.stm_objects_list) + 1
+        row.template_list("STM_UL_draw_spectro_list", "", scn.stm_settings, "stm_objects_list", scn.stm_settings, "stm_objects_list_active_index", rows=list_length, sort_lock=True)
         
 
         col = row.column(align=True)
 
-        # col.menu("STM_MT_add_menu", icon='ADD', text="")
-        # col.operator('stm.add_spectrogram', text='', icon='SEQ_HISTOGRAM')
-        # col.operator('stm.add_waveform', text='', icon='RNDCURVE')
-        col.operator('stm.add_spectrogram', text='', icon_value=preview_collections['icons_ui']['add_spectrogram.png'].icon_id)
-        col.operator('stm.add_waveform', text='', icon_value=preview_collections['icons_ui']['add_waveform.png'].icon_id)
-        # col.operator('stm.add_waveform', text='', icon_value=preview_collections['icons_ui']['0-add_waveform.svg'].icon_id)
-        col.operator('stm.delete_element', text='', icon='TRASH')
+        # col.operator('stm.add_spectrogram', text='', icon_value=preview_collections['icons_ui']['add_spectrogram.png'].icon_id)
+        # col.operator('stm.add_waveform', text='', icon_value=preview_collections['icons_ui']['add_waveform.png'].icon_id)
+        col.operator('stm.add_waveform', text='', icon='ADD')
+        col.operator('stm.delete_element', text='', icon='REMOVE')
+        
 
         col.separator()
 
-        col.prop(scn.stm_settings, 'doLiveSyncAudio', text='', icon='UV_SYNC_SELECT')
+        col.menu('STM_MT_spectro_list_menu', text='', icon='DOWNARROW_HLT')
 
+        col.separator()
 
-
-
-        # layout.template_node_tree_interface(bpy.data.node_groups['.STM_panel_fake_UL_List'].interface)
-        # bpy.data.node_groups[".STM_panel_fake_UL_List"].name
-
-
-        # row = layout.row()
-        # row.scale_y = 2
-
-        # if scn.stm_settings.progress != 0:
-        #     label = scn.stm_settings.progress_label
-        #     row.prop(scn.stm_settings,"progress", text=label)
-
-        # else:
-        #     if funcs.is_stm_object_selected(context):
-        #         row.operator('stm.update_spectrogram', text='Update Spectrogram', icon='FILE_REFRESH')
-        #     else:
-        #         row.operator('stm.add_spectrogram', text='Create Spectrogram', icon='ADD')
-            
+        col.operator('stm.move_waveform_up', text='', icon='TRIA_UP')           
+        col.operator('stm.move_waveform_down', text='', icon='TRIA_DOWN')           
 
 
         # layout.progress(text='ouhlala', factor = 0.66, type = 'BAR')
+
+         # layout.operator('stm.mute_all_spectrogram', text='Mute All', icon='QUIT')
+
+        row = layout.row(align=True)
+        row.scale_y = 1.5
+
+        if scn.stm_settings.progress != 0:
+            row.prop(scn.stm_settings,"progress", text=scn.stm_settings.progress_label)
+            return
+
+        if bool(poll_draw_spectrogram_settings(context)):
+            row1 = row.row(align=True)
+            row2 = row.row(align=True)
+
+            row1.scale_x = 1.1
+
+            row1.operator('stm.add_spectrogram', text='', icon='ADD')
+            row2.operator('stm.update_spectrogram', text='Update Spectrogram', icon='FILE_REFRESH')
+            
+        else:
+            row.operator('stm.add_spectrogram', text='New Spectrogram', icon='ADD')
        
+    
+class STM_PT_viewport_settings(STM_Panel, bpy.types.Panel):
+    bl_label = "Viewport & Rendering"
+    bl_idname = "STM_PT_viewport_settings"
+    bl_parent_id = 'STM_PT_add_new_panel'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+
+        layout = self.layout
+
+        layout.label(text=('hello'))
+
+
 class STM_PT_spectrogram_panel(STM_Panel, bpy.types.Panel):
     bl_label = "Spectrogram Settings"
     bl_idname = "STM_PT_spectrogram_panel"
-    # bl_parent_id = 'STM_PT_spectrogram'
+    # bl_parent_id = 'STM_PT_add_new_panel'
 
     updater = True
 
@@ -462,21 +488,15 @@ class STM_PT_spectrogram_panel(STM_Panel, bpy.types.Panel):
 
         layout = self.layout
         scn = context.scene
-        obj = context.object
 
-        stm_obj = funcs.get_stm_object(context.object)                
+        layout.enabled = bool(scn.stm_settings.progress == 0)
         
 
         stm_obj = funcs.get_stm_object(context.object)
-        modifier = stm_obj.modifiers['STM_spectrogram']
 
         box = layout.box()
 
         ccol = box.column()
-
-        
-        # row = layout.row()
-        # row.emboss = 'NORMAL'
         ccol.template_icon_view(stm_obj, "preview_image_enum", show_labels=True, scale=6.0, scale_popup=17.0)
 
         row_title = ccol.row()
@@ -501,16 +521,17 @@ class STM_PT_spectrogram_panel(STM_Panel, bpy.types.Panel):
             if os.path.exists(stm_obj.stm_spectro.image_file.filepath):
                 rowR.label(text=funcs.convert_size(os.path.getsize(stm_obj.stm_spectro.image_file.filepath)))
 
-        row = layout.row()
-        row.operator('stm.update_spectrogram', text='Change Audio', icon='FILE_SOUND')
-        row.operator('stm.adapt_timeline_length', text='Fit Timeline', icon='TIME')
+        # row = layout.row()
+        # row.operator('stm.update_spectrogram', text='Change Audio', icon='FILE_SOUND')
+        # row.operator('stm.adapt_timeline_length', text='Fit Timeline', icon='TIME')
         # row.operator('stm.prompt_spectrogram_popup', text='Rebake Texture', icon='TEXTURE_DATA')
 
 
-        row = layout.row()
-        row.operator('stm.open_image', text='Open Image', icon='IMAGE_DATA')
-        row.operator('stm.open_image_folder', text='Open Folder', icon='FILEBROWSER')
-        layout.operator('stm.prompt_spectrogram_popup', text='Re-bake Texture', icon='FILE_REFRESH', depress=False)
+        # row = layout.row()
+        # row.operator('stm.open_image', text='Open Image', icon='IMAGE_DATA')
+        # row.operator('stm.open_image_folder', text='Open Folder', icon='FILEBROWSER')
+
+        # layout.operator('stm.prompt_spectrogram_popup', text='Re-bake Texture', icon='FILE_REFRESH', depress=False)
 
             
             
@@ -1239,7 +1260,7 @@ class STM_PT_material_waveform(STM_Panel, bpy.types.Panel):
 classes = [
 
     STM_PT_spectrogram_presets_menu,
-    STM_MT_add_menu,
+    STM_MT_spectro_list_menu,
     STM_MT_audio_menu,
     STM_MT_image_menu,
 
@@ -1247,6 +1268,7 @@ classes = [
     STM_PT_eq_curve_popover,
 
     STM_PT_add_new_panel,
+    # STM_PT_viewport_settings,
     STM_UL_draw_spectro_list,
     STM_UL_draw_items,
 

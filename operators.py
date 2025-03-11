@@ -176,6 +176,16 @@ class STM_OT_open_image_folder(Operator):
     bl_label = ""
     bl_options = {'UNDO'}
 
+    @classmethod
+    def poll(cls, context):
+        if not context.object:
+            return
+
+        if context.object.stm_spectro.stm_type not in ['spectrogram', 'waveform']:
+            return
+
+        return True
+
     def execute(self, context):
 
         stm_obj = funcs.get_stm_object(context.object)
@@ -196,6 +206,16 @@ class STM_OT_open_image(Operator):
     bl_idname = "stm.open_image"
     bl_label = ""
     bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if not context.object:
+            return
+
+        if context.object.stm_spectro.stm_type not in ['spectrogram', 'waveform']:
+            return
+
+        return True
 
     def execute(self, context):
 
@@ -319,41 +339,49 @@ class STM_OT_prompt_spectrogram_popup(Operator):
         #     row.label(text='No audio file selected !')
         #     return
         # else:
+
+
         split_fac = 0.35
 
+        
+
+        # split = layout.split(factor=split_fac)
+        # col1 = split.column()
+        # col1.alignment = 'RIGHT'
+        # col2 = split.column()
+
+
+        # col1.label(text='Audio')
+        # col2.prop(scn.stm_settings, 'bool_use_audio_in_scene', text='Use in Scene')
+
+        # col1.separator()
+        # col2.separator()
+
+        # col1.label(text='Image')
+        # col2.prop(scn.stm_settings, 'overwrite_image', text='Overwrite') 
+
+        
+        
         split = layout.split(factor=split_fac)
         col1 = split.column()
         col1.alignment = 'RIGHT'
         col2 = split.column()
 
 
-        col1.label(text='Audio')
-        col2.prop(scn.stm_settings, 'bool_use_audio_in_scene', text='Use in Scene')
+        col1.label(text='EEVEE Settings')
 
-        if obj.stm_spectro.meta_duration_seconds > 1200:
-            col1.separator()
-            col1.separator()
-            col1.separator()
-            col1.separator()
-            col1.separator()
-            box = col2.box()
-            row = box.row()
-            ccol1=row.column(align=True)
-            ccol2=row.column(align=True)
-            ccol1.label(text='', icon='ERROR')
-            ccol2.label(text='Long audio file.')
-
-        # col1.separator()
-        # col2.separator()
-
+        row = col2.row(align=True)
         
+        row.prop(scn.stm_settings, 'bool_eevee_settings', text='Auto', toggle=1, invert_checkbox=True)
+        row.prop(scn.stm_settings, 'bool_eevee_settings', text='Manual', toggle=1)
 
-        col1.label(text='Image')
-        col2.prop(scn.stm_settings, 'overwrite_image', text='Overwrite') 
+        if scn.stm_settings.bool_eevee_settings:
 
-        
-        
-
+            ccol = col2.column()
+            ccol.prop(scn.stm_settings, 'force_eevee_AO')
+            # ccol.prop(scn.stm_settings, 'force_eevee_BLOOM')
+            ccol.prop(scn.stm_settings, 'disable_eevee_viewport_denoising')
+            ccol.prop(scn.stm_settings, 'force_standard_view_transform')
         
 
         split = layout.split(factor=split_fac)
@@ -393,28 +421,18 @@ class STM_OT_prompt_spectrogram_popup(Operator):
 
 
 
-        split = layout.split(factor=split_fac)
-        col1 = split.column()
-        col1.alignment = 'RIGHT'
-        col2 = split.column()
-
-
-        col1.label(text='EEVEE Settings')
-
-        row = col2.row(align=True)
         
-        row.prop(scn.stm_settings, 'bool_eevee_settings', text='Auto', toggle=1, invert_checkbox=True)
-        row.prop(scn.stm_settings, 'bool_eevee_settings', text='Manual', toggle=1)
-
-        if scn.stm_settings.bool_eevee_settings:
-
-            ccol = col2.column()
-            ccol.prop(scn.stm_settings, 'force_eevee_AO')
-            # ccol.prop(scn.stm_settings, 'force_eevee_BLOOM')
-            ccol.prop(scn.stm_settings, 'disable_eevee_viewport_denoising')
-            ccol.prop(scn.stm_settings, 'force_standard_view_transform')
 
         layout.separator()
+
+        if obj.stm_spectro.meta_duration_seconds > 1200:
+            box = layout.box()
+            row = box.row()
+            # row.alert = True
+            col1=row.column(align=True)
+            col2=row.column(align=True)
+            col1.label(text='', icon='ERROR')
+            col2.label(text='Long audio file.')
 
 
     def invoke(self, context, event):
@@ -556,8 +574,6 @@ class STM_OT_generate_spectrogram_modal(Operator):
 
         return {'RUNNING_MODAL'}
 
-
-
 class WM_OT_newSpectrogram(bpy.types.Operator, ImportHelper):
     """Select audio file to be used"""
     bl_idname = 'wm.new_spectrogram'
@@ -687,9 +703,9 @@ class STM_OT_import_spectrogram_setup(Operator):
 
 
 class STM_OT_add_spectrogram(Operator, ImportHelper):
-    """Add spectrogram"""
+    """Create new spectrogram from audio"""
     bl_idname = "stm.add_spectrogram"
-    bl_label = ''
+    bl_label = 'New Spectrogram'
     bl_options = {'UNDO'}
 
     # ImportHelper mixin class uses this
@@ -733,12 +749,13 @@ class STM_OT_add_spectrogram(Operator, ImportHelper):
             # funcs.frame_clip_in_sequencer(context)
             
             
+            # bpy.ops.stm.generate_spectrogram_modal('INVOKE_DEFAULT')
             bpy.ops.stm.generate_spectrogram_modal('INVOKE_DEFAULT')
 
         return {'FINISHED'}
     
 class STM_OT_update_spectrogram(Operator, ImportHelper):
-    """"""
+    """Update active spectrogram"""
     bl_idname = "stm.update_spectrogram"
     bl_label = 'Update Spectrogram'
     bl_options = {'UNDO'}
@@ -819,9 +836,9 @@ class STM_OT_delete_spectrogram(Operator):
 
 
 class STM_OT_add_waveform(Operator):
-    """Add waveform"""
+    """Add a new waveform under selected spectrogram"""
     bl_idname = "stm.add_waveform"
-    bl_label = ''
+    bl_label = 'Add waveform'
     bl_options = {'UNDO'}
 
     @classmethod
@@ -926,6 +943,16 @@ class STM_OT_move_waveform_up(Operator):
     bl_label = ''
     bl_options = {'UNDO'}
 
+    @classmethod
+    def poll(cls, context):
+        if not context.object:
+            return
+
+        if context.object.stm_spectro.stm_type not in ['spectrogram', 'waveform']:
+            return
+
+        return True
+
     def execute(self, context):
 
         print('MOVE WAVEFORM UP')
@@ -938,6 +965,16 @@ class STM_OT_move_waveform_down(Operator):
     bl_idname = "stm.move_waveform_down"
     bl_label = ''
     bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if not context.object:
+            return
+
+        if context.object.stm_spectro.stm_type not in ['spectrogram', 'waveform']:
+            return
+
+        return True
 
     def execute(self, context):
 
@@ -1558,7 +1595,7 @@ class STM_OT_view_spectrogram_settings(Operator):
         return {'FINISHED'}
 
 class STM_OT_adapt_timeline_length(Operator):
-    """"""
+    """Fit timeline to audio length"""
     bl_idname = "stm.adapt_timeline_length"
     bl_label = 'Adapt timeline length'
     bl_options = {'UNDO'}
@@ -1567,6 +1604,20 @@ class STM_OT_adapt_timeline_length(Operator):
 
         funcs.adapt_timeline_length(context)
         funcs.frame_all_timeline()
+
+
+        return {'FINISHED'}
+    
+
+class STM_OT_mute_all_spectrogram(Operator):
+    """Mute all spectrograms in scene"""
+    bl_idname = "stm.mute_all_spectrogram"
+    bl_label = 'Mute all'
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+
+        print('mute all')
 
 
         return {'FINISHED'}
@@ -1642,6 +1693,8 @@ classes = [
     THUMB_OT_previous_spectrogram_setup,
 
     STM_OT_adapt_timeline_length,
+
+    STM_OT_mute_all_spectrogram,
 ]
 
 def register():

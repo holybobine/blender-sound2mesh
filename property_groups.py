@@ -52,6 +52,8 @@ class STM_spectrogram_props(PropertyGroup):
     # stm_items_active_index : IntProperty(update=funcs.select_in_viewport_from_waveform_list) # type: ignore
     stm_items_active_index : IntProperty(get=funcs.get_active_waveform_list_index, set=funcs.set_active_waveform_list_index) # type: ignore
 
+    hide_viewport_base : BoolProperty(default = False, update=funcs.toggle_hide_viewport_base) # type: ignore
+
     presets_geonodes_proper : EnumProperty( # type: ignore
             name='Geonodes Presets',
             # items=generate_previews('presets_geonodes'),
