@@ -702,6 +702,214 @@ class STM_OT_import_spectrogram_setup(Operator):
         return {'FINISHED'}
 
 
+
+class STM_PT_user_viewport_settings(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Viewport & Rendering"
+    bl_parent_id = "FILE_PT_operator"
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        return operator.bl_idname in ['STM_OT_add_spectrogram', 'STM_OT_update_spectrogram']
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+
+        split_fac = 0.35
+        
+
+        split = layout.split(factor=split_fac)
+        col1 = split.column()
+        col1.alignment = 'RIGHT'
+        col2 = split.column()
+
+        col1.label(text='EEVEE Settings')
+
+        row = col2.row(align=True)
+        
+        row.prop(scn.stm_settings, 'bool_eevee_settings', text='Auto', toggle=1, invert_checkbox=True)
+        row.prop(scn.stm_settings, 'bool_eevee_settings', text='Manual', toggle=1)
+
+        ccol = col2.column()
+        ccol.prop(scn.stm_settings, 'force_eevee_AO')
+        # ccol.prop(scn.stm_settings, 'force_eevee_BLOOM')
+        ccol.prop(scn.stm_settings, 'disable_eevee_viewport_denoising')
+        ccol.prop(scn.stm_settings, 'force_standard_view_transform')
+
+        ccol.enabled = scn.stm_settings.bool_eevee_settings
+
+
+class STM_PT_user_image_settings(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Image settings"
+    bl_parent_id = "FILE_PT_operator"
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        return operator.bl_idname in ['STM_OT_add_spectrogram', 'STM_OT_update_spectrogram']
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+
+        split_fac = 0.35
+
+        split = layout.split(factor=split_fac)
+        
+        col1 = split.column()
+        col1.alignment = 'RIGHT'
+        col2 = split.column(align=True)
+
+
+        # col1.label(text=' ')
+        # col2.prop(scn.stm_settings, 'overwrite_image', text='Overwrite image') 
+
+        # col1.separator()
+        # col2.separator()
+
+        col1.label(text='Resolution')
+
+        col1.separator()
+        col1.separator()
+
+
+        row = col2.row(align=True)
+        row.enabled = not scn.stm_settings.bool_custom_resolution
+        # row.scale_y=1.5
+        row.prop_enum(scn.stm_settings, 'resolutionPreset', '1024x512')
+        row.prop_enum(scn.stm_settings, 'resolutionPreset', '2048x1024')
+        row.prop_enum(scn.stm_settings, 'resolutionPreset', '4096x2048')
+        row.prop_enum(scn.stm_settings, 'resolutionPreset', '8192x2048')
+        row.prop_enum(scn.stm_settings, 'resolutionPreset', '16384x2048')
+
+        row = col2.row(align=True)
+        row.prop_enum(scn.stm_settings, 'resolutionPreset', 'custom', text='Custom')
+        
+        col1.separator()
+        col2.separator()
+
+        col1.label(text='Width')
+        col1.label(text='Height')
+
+        ccol = col2.column(align=True)
+        ccol.enabled = bool(scn.stm_settings.resolutionPreset == 'custom')
+        ccol.prop(scn.stm_settings, 'userWidth', text='')
+        ccol.prop(scn.stm_settings, 'userHeight', text='')
+
+        # box = layout.box()
+        # box.enabled = False
+
+        # col = box.column()
+
+        # col.label(text='Width = length of the song')
+        # col.label(text='Height = spectrogram quality')
+
+        # funcs._label_multiline(
+        #     context, 
+        #     'Width should reflect the length of the song.', 
+        #     box
+        # )
+
+
+        # col1.label(text='Resolution')
+        # row = col2.row(align=True)
+        # row.prop(scn.stm_settings, 'bool_resolution', text='Auto', toggle=1, invert_checkbox=True)
+        # row.prop(scn.stm_settings, 'bool_resolution', text='Manual', toggle=1)
+
+        # col1.separator()
+        # col2.separator()
+        
+        # col1.label(text='')
+        # # col2.prop(scn.stm_settings, 'bake_image_width', text='')
+        # col = col2.column()
+        # col.enabled = scn.stm_settings.bool_resolution
+        # row = col.row()
+        # row.prop(scn.stm_settings, 'userWidth', text='')
+        # rrow = row.row(align=True)
+
+        
+        # rrow.operator('stm.bake_resolution_down', text='', icon='TRIA_DOWN').prop_name = 'userWidth'
+        # rrow.operator('stm.bake_resolution_up', text='', icon='TRIA_UP').prop_name = 'userWidth'
+
+
+        # col1.label(text='')
+        # row = col.row()
+        # row.prop(scn.stm_settings, 'userHeight', text='')
+        # rrow = row.row(align=True)
+
+        
+        # rrow.operator('stm.bake_resolution_down', text='', icon='TRIA_DOWN').prop_name = 'userHeight'
+        # rrow.operator('stm.bake_resolution_up', text='', icon='TRIA_UP').prop_name = 'userHeight'
+
+
+        
+
+        
+
+        # col1.separator()
+        # col2.separator()
+        
+        # col1.label(text='Intensity Scale :')
+        # col2.prop(scn.stm_settings, 'spectro_scale', text='')
+        
+        # col1.separator()
+        # col2.separator()
+
+
+        # col1.label(text='Frequency Scale :')
+        # row = col2.row(align=True)
+        # row.prop_enum(scn.stm_settings, 'spectro_fscale', 'lin')
+        # row.prop_enum(scn.stm_settings, 'spectro_fscale', 'log')
+
+        # col1.separator()
+        # col2.separator()
+
+        # col1.label(text='Color Mode :')
+        # col2.prop(scn.stm_settings, 'spectro_colorMode', text='')
+
+        # col1.separator()
+        # col2.separator()
+
+        # col1.label(text='Dynamic Range :')
+        # col2.prop(scn.stm_settings, 'spectro_drange', text='')
+
+        # col1.separator()
+        # col2.separator()
+
+        
+
+
+
+class STM_PT_user_audio_settings(bpy.types.Panel):
+    bl_space_type = 'FILE_BROWSER'
+    bl_region_type = 'TOOL_PROPS'
+    bl_label = "Audio settings"
+    bl_parent_id = "FILE_PT_operator"
+
+    @classmethod
+    def poll(cls, context):
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        return operator.bl_idname in ['STM_OT_add_spectrogram', 'STM_OT_update_spectrogram']
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+
+        layout.label(text='mgnnnnnhello')
+
+        split_fac = 0.35
+
 class STM_OT_add_spectrogram(Operator, ImportHelper):
     """Create new spectrogram from audio"""
     bl_idname = "stm.add_spectrogram"
@@ -715,7 +923,7 @@ class STM_OT_add_spectrogram(Operator, ImportHelper):
         default="*" + ";*".join(bpy.path.extensions_audio),
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
-    ) # type: ignore
+    ) # type: ignore       
 
     def execute(self, context):
 
@@ -1717,6 +1925,10 @@ classes = [
     STM_OT_adapt_timeline_length,
 
     STM_OT_mute_all_spectrogram,
+
+    STM_PT_user_viewport_settings,
+    STM_PT_user_image_settings,
+    STM_PT_user_audio_settings,
 ]
 
 def register():

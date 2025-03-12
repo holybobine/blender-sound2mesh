@@ -5,6 +5,7 @@ import math
 import json
 import time
 import datetime
+import textwrap
 
 _start_time = time.time()
 
@@ -23,6 +24,23 @@ def alert(text = "", title = "Message Box", icon = 'INFO'):
         self.layout.label(text=text)
 
     bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
+
+def _label_multiline(context, text, parent, icon='NONE'):
+    chars = int(context.region.width / 6)   # 7 pix on 1 character
+    wrapper = textwrap.TextWrapper(width=chars)
+    text_lines = wrapper.wrap(text=text)
+
+    if icon != 'NONE':
+        row = parent.row()
+        row.label(text='', icon=icon)
+        col = row.column(align=True)
+    else:
+        col = parent.column(align=True)
+
+    for text_line in text_lines:
+        col.label(text=text_line)
+
+
 
 def sanitize_filename(input_str):
     
@@ -1806,8 +1824,10 @@ def update_user_resolution(self, context):
         width = preset.split('x')[0]
         height = preset.split('x')[1]
 
+        print(width, height)
+
         scn.stm_settings.userWidth = int(width)
-        scn.stm_settings.userheight = int(height)
+        scn.stm_settings.userHeight = int(height)
 
 
 def toggle_parent_spectrogram(self, context):

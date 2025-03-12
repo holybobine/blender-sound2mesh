@@ -2,7 +2,6 @@ import bpy
 import os
 from bpy.types import Panel
 from bpy.types import UIList, PropertyGroup
-import textwrap
 import json
 from . import funcs
 # from . funcs import *
@@ -31,22 +30,6 @@ def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, 
 
         row.enabled = enabled
 
-
- 
-def _label_multiline(context, text, parent, icon='NONE'):
-    chars = int(context.region.width / 8)   # 7 pix on 1 character
-    wrapper = textwrap.TextWrapper(width=chars)
-    text_lines = wrapper.wrap(text=text)
-
-    if icon != 'NONE':
-        row = parent.row()
-        row.label(text='', icon=icon)
-        col = row.column(align=True)
-    else:
-        col = parent.column(align=True)
-
-    for text_line in text_lines:
-        col.label(text=text_line)
 
 def poll_draw_spectrogram_tab(context):
     if not context.object:
