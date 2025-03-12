@@ -181,7 +181,7 @@ class STM_OT_open_image_folder(Operator):
         if not context.object:
             return
 
-        if context.object.stm_spectro.stm_type not in ['spectrogram', 'waveform']:
+        if context.object.stm_spectro.stm_type != 'spectrogram':
             return
 
         return True
@@ -212,7 +212,7 @@ class STM_OT_open_image(Operator):
         if not context.object:
             return
 
-        if context.object.stm_spectro.stm_type not in ['spectrogram', 'waveform']:
+        if context.object.stm_spectro.stm_type != 'spectrogram':
             return
 
         return True
@@ -936,11 +936,32 @@ class STM_OT_delete_element(Operator):
 
         return {'FINISHED'}
 
+class STM_OT_duplicate_waveform(Operator):
+    """Duplicate the active waveform """
+    bl_idname = "stm.duplicate_waveform"
+    bl_label = 'Duplicate waveform'
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if not context.object:
+            return
+
+        if context.object.stm_spectro.stm_type not in ['spectrogram', 'waveform']:
+            return
+
+        return True
+
+    def execute(self, context):
+
+        print('DUPLICATE WAVEFORM')
+
+        return {'FINISHED'}
 
 class STM_OT_move_waveform_up(Operator):
-    """Add spectrogram"""
+    """Move the active waveform up/down the list"""
     bl_idname = "stm.move_waveform_up"
-    bl_label = ''
+    bl_label = 'Move waveform'
     bl_options = {'UNDO'}
 
     @classmethod
@@ -961,9 +982,9 @@ class STM_OT_move_waveform_up(Operator):
     
 
 class STM_OT_move_waveform_down(Operator):
-    """Add spectrogram"""
+    """Move the active waveform up/down the list"""
     bl_idname = "stm.move_waveform_down"
-    bl_label = ''
+    bl_label = 'Move waveform'
     bl_options = {'UNDO'}
 
     @classmethod
@@ -1645,6 +1666,7 @@ classes = [
 
     STM_OT_add_waveform,
     STM_OT_delete_waveform,
+    STM_OT_duplicate_waveform,
     STM_OT_move_waveform_up,
     STM_OT_move_waveform_down,
 

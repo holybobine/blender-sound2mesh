@@ -196,7 +196,9 @@ class STM_MT_spectro_list_menu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
 
+        layout.operator('stm.duplicate_waveform', text='Duplicate Waveform', icon='DUPLICATE')
 
+        layout.separator()
         
         layout.operator('stm.open_image', text='Open image', icon='IMAGE_DATA')
         layout.operator('stm.open_image_folder', text='Open image folder', icon='FILEBROWSER')
@@ -494,6 +496,10 @@ class STM_PT_spectrogram_panel(STM_Panel, bpy.types.Panel):
 
         stm_obj = funcs.get_stm_object(context.object)
 
+        row = layout.row(align=True)
+        row.enabled = False
+        row.template_ID(context.view_layer.objects, 'active', text='')
+
         box = layout.box()
 
         ccol = box.column()
@@ -633,6 +639,8 @@ class STM_PT_waveform_panel(STM_Panel, bpy.types.Panel):
         scn = context.scene
         obj = context.object
 
+        
+
         stm_obj = funcs.get_stm_object(context.object)   
         
 
@@ -643,6 +651,11 @@ class STM_PT_waveform_panel(STM_Panel, bpy.types.Panel):
         # row.prop(obj, 'name', text='', icon='OBJECT_DATA')
 
         # layout.separator()
+
+
+        row = layout.row()
+        row.enabled = False
+        row.template_ID(context.view_layer.objects, 'active', text='')
 
         split_fac = 0.4
 
@@ -980,13 +993,10 @@ class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
 
             col = box.column()
 
-            # row = layout.row()
-            # row.emboss = 'NORMAL'
             col.template_icon_view(stm_obj, "preview_image_enum", show_labels=True, scale=6.0, scale_popup=17.0)
 
             row = col.row()
             row.scale_y=0.9
-            # row = col.row()
             row.enabled = False
             rowL = row.row()
             rowL.alignment = 'LEFT'
