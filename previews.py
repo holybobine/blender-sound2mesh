@@ -156,7 +156,7 @@ def register():
         )
 
     bpy.types.Object.presets_waveform_style = bpy.props.EnumProperty( # type: ignore
-            name='Waveform Shape',
+            name='',
             items=generate_numbered_previews('presets_waveform_style'),
             update=funcs.apply_waveform_style,
         )

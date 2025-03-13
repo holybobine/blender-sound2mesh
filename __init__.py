@@ -34,21 +34,13 @@ from . import funcs
 from bpy.app.handlers import persistent
 
 
-def stm_handler_depsgraph_update(scene):
-    # print('depsgraph_update')
-    if scene.stm_settings.doHandler:
-        context = bpy.context
-        funcs.handler_function(context)
-
-
 @persistent
-def stm_handler_playback(scene):
-    # print('handler_playback')
-    if scene.stm_settings.doHandler:
-        context = bpy.context
-        funcs.handler_function(context)
+def stm_handler_functions(dummy):
 
-
+    funcs.find_spectrogram_objects()
+    # funcs.find_waveform_objects()
+    funcs.remove_orphan_sounds()
+    funcs.update_active_audio_in_scene()
 
 def register():
     
@@ -57,8 +49,9 @@ def register():
     operators.register()
     panels.register()
 
-    bpy.app.handlers.depsgraph_update_post.append(funcs.stm_handler_functions)
-    bpy.app.handlers.frame_change_post.append(funcs.stm_handler_functions)
+    bpy.app.handlers.load_post.append(stm_handler_functions)
+    bpy.app.handlers.depsgraph_update_post.append(stm_handler_functions)
+    bpy.app.handlers.frame_change_post.append(stm_handler_functions)
 
     # bpy.app.handlers.depsgraph_update_post.append(stm_handler_depsgraph_update)
     # bpy.app.handlers.frame_change_post.append(stm_handler_playback)
@@ -75,8 +68,9 @@ def unregister():
     # bpy.app.handlers.depsgraph_update_post.remove(funcs.find_spectrogram_objects)
     # bpy.app.handlers.depsgraph_update_post.remove(funcs.find_waveform_objects)
 
-    bpy.app.handlers.depsgraph_update_post.clear()
-    bpy.app.handlers.frame_change_post.clear()
+    bpy.app.handlers.load_post.remove(stm_handler_functions)
+    bpy.app.handlers.depsgraph_update_post.remove(stm_handler_functions)
+    bpy.app.handlers.frame_change_post.remove(stm_handler_functions)
 
 
 if __name__ == "__main__":

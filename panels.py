@@ -648,21 +648,7 @@ class STM_PT_waveform_panel(STM_Panel, bpy.types.Panel):
         col1.alignment = 'RIGHT'
         col2 = split.column(align=True)
 
-        
-
-        
-
-
-        col1.label(text='Side')
-        row = col2.row(align=True)
-        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'a')
-        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'b')
-        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'ab')
-
-        col1.separator()
-        col2.separator()
-
-        col1.label(text='Shape')
+        col1.label(text='Type')
         row =col2.row(align=True)
         row.scale_x = 5
         row.prop(obj, "presets_waveform_style", text='', expand=False)
@@ -1106,6 +1092,15 @@ class STM_PT_waveform_main_settings(STM_Object_Panel, bpy.types.Panel):
         col1 = split.column(align=True)
         col1.alignment = 'RIGHT'
         col2 = split.column(align=True)
+
+        col1.label(text='Side')
+        row = col2.row(align=True)
+        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'a')
+        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'b')
+        row.prop_enum(obj.stm_spectro, "waveform_side_options", 'ab')
+
+        col1.separator()
+        col2.separator()
 
         
 

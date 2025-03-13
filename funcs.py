@@ -1763,6 +1763,9 @@ def set_active_waveform_list_index(self, value):
     context.view_layer.objects.active = wave_obj
 
 def remove_orphan_sounds():
+
+    
+
     seq = bpy.context.scene.sequence_editor
     for s in seq.sequences:
 
@@ -1790,12 +1793,7 @@ def update_active_audio_in_scene():
                 s.mute = True
 
 
-def stm_handler_functions(context):
 
-    find_spectrogram_objects()
-    # find_waveform_objects()
-    remove_orphan_sounds()
-    update_active_audio_in_scene()
 
 
 
