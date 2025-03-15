@@ -1763,9 +1763,6 @@ def set_active_waveform_list_index(self, value):
     context.view_layer.objects.active = wave_obj
 
 def remove_orphan_sounds():
-
-    
-
     seq = bpy.context.scene.sequence_editor
     for s in seq.sequences:
 
@@ -1780,6 +1777,9 @@ def update_active_audio_in_scene():
         return
     if not bpy.context.scene.stm_settings.doLiveSyncAudio:
         return
+    
+    if not bpy.context.scene.stm_settings.enable_audio_in_scene:
+        return
 
     stm_obj = get_stm_object(bpy.context.object)
     audio_file = stm_obj.stm_spectro.audio_file
@@ -1793,7 +1793,20 @@ def update_active_audio_in_scene():
                 s.mute = True
 
 
+def update_scene_audio_volume(self, context):
+    volume = context.scene.stm_settings.audio_volume
+    
 
+    seq = bpy.context.scene.sequence_editor
+    for s in seq.sequences:
+        s.volume = volume/100
+
+
+def toggle_enable_audio_in_scene(self, context):
+
+    seq = bpy.context.scene.sequence_editor
+    for s in seq.sequences:
+        s.mute = not context.scene.stm_settings.enable_audio_in_scene
 
 
 

@@ -83,19 +83,22 @@ def draw_spectro_item(context, layout, obj):
                 if s.stm_settings.spectrogram_object == obj:
                     is_audio_active = not s.mute
 
-        rrow = row.row()
-        rrow.prop(
-            obj.stm_spectro,
-            'audio_toggle', 
-            text='', 
-            icon='OUTLINER_OB_SPEAKER' if is_audio_active else 'OUTLINER_DATA_SPEAKER', 
-            emboss=False
-        )
-        # rrow.enabled = not context.scene.stm_settings.doLiveSyncAudio
+        if context.scene.stm_settings.enable_audio_in_scene:
+            rrow = row.row()
+            rrow.prop(
+                obj.stm_spectro,
+                'audio_toggle', 
+                text='', 
+                icon='OUTLINER_OB_SPEAKER' if is_audio_active else 'OUTLINER_DATA_SPEAKER', 
+                emboss=False
+            )
 
-    row.prop(obj.stm_spectro, 'hide_viewport_base', icon_only=True, emboss=False, icon='HIDE_ON' if obj.stm_spectro.hide_viewport_base else 'HIDE_OFF')
-    row.prop(obj, "hide_viewport", text="", emboss=False)
-    row.prop(obj, "hide_render", text="", emboss=False)
+    if context.scene.stm_settings.show_display_viewport_icon:
+        row.prop(obj.stm_spectro, 'hide_viewport_base', icon_only=True, emboss=False, icon='HIDE_ON' if obj.stm_spectro.hide_viewport_base else 'HIDE_OFF')
+    if context.scene.stm_settings.show_disable_viewport_icon:
+        row.prop(obj, "hide_viewport", text="", emboss=False)
+    if context.scene.stm_settings.show_disable_render_icon:
+        row.prop(obj, "hide_render", text="", emboss=False)
 
 
 def draw_waveform_item(context, layout, obj):
@@ -115,9 +118,13 @@ def draw_waveform_item(context, layout, obj):
     row.label(text='', icon='BLANK1')
     row.prop(obj, "name", icon_value=custom_icon, emboss=False, text="")
     # row.prop(obj.stm_spectro, 'is_parented_to_spectrogram', text='', icon=parent_icon, emboss=False)
-    row.prop(obj.stm_spectro, 'hide_viewport_base', icon_only=True, emboss=False, icon='HIDE_ON' if obj.stm_spectro.hide_viewport_base else 'HIDE_OFF')
-    row.prop(obj, "hide_viewport", text="", emboss=False)
-    row.prop(obj, "hide_render", text="", emboss=False)
+
+    if context.scene.stm_settings.show_display_viewport_icon:
+        row.prop(obj.stm_spectro, 'hide_viewport_base', icon_only=True, emboss=False, icon='HIDE_ON' if obj.stm_spectro.hide_viewport_base else 'HIDE_OFF')
+    if context.scene.stm_settings.show_disable_viewport_icon:
+        row.prop(obj, "hide_viewport", text="", emboss=False)
+    if context.scene.stm_settings.show_disable_render_icon:
+        row.prop(obj, "hide_render", text="", emboss=False)
 
 class STM_UL_draw_spectro_list(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -302,6 +309,7 @@ class STM_PT_eq_curve_popover(bpy.types.Panel):
             icon_value=preview_collections['presets_eq_curve']['2-hipass.png'].icon_id
         ).preset_name='hipass'
 
+
 class STM_PT_spectrogram_presets_menu(bpy.types.Panel):
     bl_idname = "STM_PT_spectrogram_presets_menu"
     bl_description = "Select preset"
@@ -394,6 +402,32 @@ class STM_PT_add_new_panel(STM_Panel, bpy.types.Panel):
         # row.emboss = 'NONE'
         # row.template_icon_view(scn, "icons_ui", show_labels=True, scale=6.0, scale_popup=17.0)
 
+        # row = layout.row()
+        # row.alignment = 'RIGHT'
+        # row.popover(
+        #         panel='STM_PT_settings_popover_menu',
+        #         # text='',
+        #         icon='PREFERENCES',
+                
+        #     )
+        
+
+        row = layout.row()
+        row.alignment = 'RIGHT'
+        
+        row1 = row.row(align=True)
+        row2 = row.row(align=True)
+
+        row1.prop(scn.stm_settings, 'enable_audio_in_scene', icon='OUTLINER_OB_SPEAKER', icon_only=True)
+        sub_row = row1.row(align=True)
+        sub_row.enabled = scn.stm_settings.enable_audio_in_scene
+        sub_row.prop(context.scene.stm_settings, 'doLiveSyncAudio', icon='UV_SYNC_SELECT', icon_only=True)
+        sub_row.prop(scn.stm_settings, 'audio_volume')
+
+        row2.prop(scn.stm_settings, 'show_display_viewport_icon', icon='HIDE_OFF', icon_only=True)
+        row2.prop(scn.stm_settings, 'show_disable_viewport_icon', icon='RESTRICT_VIEW_OFF', icon_only=True)
+        row2.prop(scn.stm_settings, 'show_disable_render_icon', icon='RESTRICT_RENDER_OFF', icon_only=True)
+
         
 
         row = layout.row()
@@ -442,6 +476,8 @@ class STM_PT_add_new_panel(STM_Panel, bpy.types.Panel):
             
         else:
             row.operator('stm.add_spectrogram', text='New Spectrogram', icon='ADD')
+
+        
        
     
 class STM_PT_viewport_settings(STM_Panel, bpy.types.Panel):

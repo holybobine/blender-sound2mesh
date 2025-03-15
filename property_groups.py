@@ -186,7 +186,11 @@ class STM_SPECTROGRAM_list_item(PropertyGroup):
 class STM_scene_props(PropertyGroup):
 
     doHandler : BoolProperty(default=True) # type: ignore
-    doLiveSyncAudio : BoolProperty(default=True) # type: ignore
+    doLiveSyncAudio : BoolProperty(  # type: ignore
+        default=True,
+        name='Audio live sync',
+        description='Enables audio for selected spectrogram only'
+    )
 
     active_object_tmp : StringProperty() # type: ignore
     
@@ -217,6 +221,28 @@ class STM_scene_props(PropertyGroup):
     is_ctrl_pressed : BoolProperty() # type: ignore
 
     is_scene_playing : BoolProperty() # type: ignore
+
+    enable_audio_in_scene : BoolProperty( # type: ignore
+        default=True, 
+        update=funcs.toggle_enable_audio_in_scene,
+        name='Enable audio',
+        description='Enables audio in scene'
+    )
+    audio_volume : bpy.props.FloatProperty( # type: ignore
+            name="Volume",
+            description='Set volume for all audio in scene',
+            subtype="PERCENTAGE",
+            default=60,
+            soft_min=0,
+            soft_max=100,
+            precision=0,
+            update=funcs.update_scene_audio_volume,
+        )
+    
+    show_display_viewport_icon : BoolProperty(default=True) # type: ignore
+    show_disable_viewport_icon : BoolProperty(default=True) # type: ignore
+    show_disable_render_icon : BoolProperty(default=True) # type: ignore
+
 
     presets_json_file : StringProperty(default=os.path.join(addon_path, 'presets_spectrogram.json')) # type: ignore
 
