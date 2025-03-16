@@ -1241,12 +1241,17 @@ def get_stm_material(stm_obj, mat_name):
 
 def get_wave_offset(context):
     stm_obj = get_stm_object(context.object)
-    stm_objects_list = context.scene.stm_settings.stm_objects_list
+    # stm_objects_list = context.scene.stm_settings.stm_objects_list
     nb_waveforms = 0
 
-    for item in stm_objects_list:
-        if item.object.stm_spectro.stm_type == 'waveform' and item.object.stm_spectro.spectrogram_object == stm_obj:
-            nb_waveforms += 1
+    # for item in stm_objects_list:
+    #     if item.object.stm_spectro.stm_type == 'waveform' and item.object.stm_spectro.spectrogram_object == stm_obj:
+    #         nb_waveforms += 1
+
+    for o in context.scene.objects:
+        if o.stm_spectro.stm_type == 'waveform':
+            if o.stm_spectro.spectrogram_object == stm_obj:
+                nb_waveforms += 1
 
     return float(nb_waveforms/20) if nb_waveforms > 0 else 0
 
