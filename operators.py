@@ -906,7 +906,8 @@ class STM_PT_user_audio_settings(bpy.types.Panel):
         layout = self.layout
         scn = context.scene
 
-        layout.label(text='mgnnnnnhello')
+        layout.label(text='Audio info')
+        layout.label(text='(not yet implemented)')
 
         split_fac = 0.35
 

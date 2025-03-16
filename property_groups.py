@@ -212,7 +212,7 @@ class STM_scene_props(PropertyGroup):
 
     ffmpegPath : StringProperty(default=os.path.join(addon_path, 'ffmpeg', 'ffmpeg.exe')) # type: ignore
     outputPath : StringProperty(default=os.path.join(addon_path, './output'), subtype="DIR_PATH") # type: ignore
-    assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v48.blend')) # type: ignore
+    assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v49.blend')) # type: ignore
 
     object_count_tmp : IntProperty() # type: ignore
 
