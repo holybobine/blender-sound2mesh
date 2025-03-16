@@ -1019,7 +1019,7 @@ class STM_PT_material_spectrogram(STM_Panel, bpy.types.Panel):
             row = layout.row()
             row.operator('stm.open_image', text='Open Image', icon='IMAGE_DATA')
             row.operator('stm.open_image_folder', text='Open Folder', icon='FILEBROWSER')
-            layout.operator('stm.prompt_spectrogram_popup', text='Re-bake Texture', icon='FILE_REFRESH', depress=False)
+            # layout.operator('stm.prompt_spectrogram_popup', text='Re-bake Texture', icon='FILE_REFRESH', depress=False)
 
 
         if stm_obj.stm_spectro.material_type == 'gradient':
@@ -1099,7 +1099,7 @@ class STM_PT_waveform_main_settings(STM_Object_Panel, bpy.types.Panel):
     bl_label = ""
     bl_idname = "STM_PT_waveform_main_settings"
     bl_parent_id = 'STM_PT_waveform_panel'
-    bl_options = {'DEFAULT_CLOSED'}
+    # bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(self, context):
