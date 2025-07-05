@@ -22,8 +22,8 @@ bl_info = {
     "category" : "3D View"
 }
 
-import bpy
-from bpy.props import *
+import bpy # type: ignore
+from bpy.props import * # type: ignore
 from sys import path
 
 from . import previews
@@ -31,7 +31,7 @@ from . import property_groups
 from . import operators
 from . import panels
 from . import funcs
-from bpy.app.handlers import persistent
+from bpy.app.handlers import persistent # type: ignore
 
 
 @persistent

@@ -1,7 +1,7 @@
-import bpy
+import bpy # type: ignore
 import os
-from bpy.types import Panel
-from bpy.types import UIList, PropertyGroup
+from bpy.types import Panel # type: ignore
+from bpy.types import UIList, PropertyGroup # type: ignore
 import json
 from . import funcs
 # from . funcs import *
@@ -12,7 +12,9 @@ from .previews import preview_collections
 def prop_geonode(context, gn_modifier, input_name, label_name='', enabled=True, label=True, icon='NONE', toggle=-1, invert_checkbox=False):
 
     # input_id = next(i.identifier for i in gn_modifier.node_group.inputs if i.name == input_name)                  # 3.6
-    input_id = next(i.identifier for i in gn_modifier.node_group.interface.items_tree if i.name == input_name)      # 4.0
+    # input_id = next(i.identifier for i in gn_modifier.node_group.interface.items_tree if i.name == input_name)      # 4.0
+    input = funcs.get_geonode_input_from_modifier(gn_modifier, input_name)
+    input_id = input.identifier
 
     # print(input_id)
 
@@ -103,7 +105,7 @@ def draw_spectro_item(context, layout, obj):
 
 def draw_waveform_item(context, layout, obj):
     side_values = ['A', 'B', 'AB']
-    side = side_values[int(funcs.get_geonode_value_proper(obj.modifiers['STM_waveform'], 'Side'))]
+    side = side_values[int(funcs.get_geonode_value(obj.modifiers['STM_waveform'], 'Side'))]
     custom_icon_name = obj.presets_waveform_style.replace('.png', f'_{side}.png')
 
     custom_icon = preview_collections['presets_waveform_style_AB'][custom_icon_name].icon_id
@@ -157,7 +159,7 @@ class STM_UL_draw_items(UIList):
                 
             elif obj.stm_spectro.stm_type == 'waveform':
                 side_values = ['A', 'B', 'AB']
-                side = side_values[int(funcs.get_geonode_value_proper(obj.modifiers['STM_waveform'], 'Side'))]
+                side = side_values[int(funcs.get_geonode_value(obj.modifiers['STM_waveform'], 'Side'))]
                 custom_icon_name = obj.presets_waveform_style.replace('.png', f'_{side}.png')
 
                 custom_icon = preview_collections['presets_waveform_style_AB'][custom_icon_name].icon_id
@@ -1081,7 +1083,7 @@ class STM_PT_waveform_main_settings(STM_Object_Panel, bpy.types.Panel):
         col1.separator()
         col2.separator()
 
-        if funcs.get_geonode_value_proper(modifier, 'waveform_style') == 0:
+        if funcs.get_geonode_value(modifier, 'waveform_style') == 0:
 
             col1.label(text='Handle Type')
             row = col2.row(align=True)
@@ -1091,7 +1093,7 @@ class STM_PT_waveform_main_settings(STM_Object_Panel, bpy.types.Panel):
             col1.separator()
             col2.separator()
 
-        if funcs.get_geonode_value_proper(modifier, 'waveform_style') == 2:
+        if funcs.get_geonode_value(modifier, 'waveform_style') == 2:
 
             col1.label(text='Ends')
             row = col2.row(align=True)
@@ -1106,7 +1108,7 @@ class STM_PT_waveform_main_settings(STM_Object_Panel, bpy.types.Panel):
 
         
 
-        if funcs.get_geonode_value_proper(modifier, 'waveform_style') == 2:
+        if funcs.get_geonode_value(modifier, 'waveform_style') == 2:
 
             col1.label(text='Width')
             prop_geonode(col2, modifier, 'Width', label=False)

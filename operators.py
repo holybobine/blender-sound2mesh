@@ -1,9 +1,9 @@
 from typing import Set
-import bpy
+import bpy # type: ignore
 
-from bpy.types import Context, Operator
-from bpy_extras.io_utils import ImportHelper
-from bpy.props import *
+from bpy.types import Context, Operator # type: ignore
+from bpy_extras.io_utils import ImportHelper # type: ignore
+from bpy.props import * # type: ignore
 
 import datetime
 import json

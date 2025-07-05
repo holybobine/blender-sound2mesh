@@ -1,10 +1,10 @@
-import bpy
+import bpy # type: ignore
 import os
 import json
 
 
-from bpy.props import *
-from bpy.types import PropertyGroup
+from bpy.props import * # type: ignore
+from bpy.types import PropertyGroup # type: ignore
 
 from . import funcs
 
@@ -212,7 +212,13 @@ class STM_scene_props(PropertyGroup):
 
     ffmpegPath : StringProperty(default=os.path.join(addon_path, 'ffmpeg', 'ffmpeg.exe')) # type: ignore
     outputPath : StringProperty(default=os.path.join(addon_path, './output'), subtype="DIR_PATH") # type: ignore
-    assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v49.blend')) # type: ignore
+
+    # if bpy.app.version < (4, 0, 0):
+    #     assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v49_b36.blend')) # type: ignore
+    # elif bpy.app.version >= (4, 0, 0):
+    #     assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v49_b42.blend')) # type: ignore
+    
+    assetFilePath : StringProperty(default=os.path.join(addon_path, 'asset_files', 'asset_files_v49_b36.blend')) # type: ignore
 
     object_count_tmp : IntProperty() # type: ignore
 

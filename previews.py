@@ -1,8 +1,8 @@
-import bpy
+import bpy # type: ignore
 import os
 import json
 
-from bpy.props import *
+from bpy.props import * # type: ignore
 from sys import path
 
 from . import funcs
@@ -105,7 +105,7 @@ def setup_new_preview_collection(name, dir):
 def register():
 
 
-    import bpy.utils.previews
+    import bpy.utils.previews # type: ignore
 
     setup_new_preview_collection(name="presets_setup", dir=r'.\icons\icons_setup_presets')
     setup_new_preview_collection(name="presets_geonodes", dir=r'.\icons\icons_geonode_presets')

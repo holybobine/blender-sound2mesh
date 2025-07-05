@@ -1,4 +1,4 @@
-import bpy
+import bpy # type: ignore
 import os
 import subprocess
 import math
@@ -288,15 +288,20 @@ def apply_spectrogram_preset_proper(stm_obj, preset_fpath):
     # print('')
 
     modifier = stm_obj.modifiers['STM_spectrogram']
+
+    if bpy.app.version < (4, 0, 0):
+        inputs = modifier.node_group.inputs
+    elif bpy.app.version >= (4, 0, 0):
+        inputs = modifier.node_group.interface.items_tree
     
-    for i in modifier.node_group.interface.items_tree:
+    for i in inputs:
         if type(i).__name__ != 'NodeTreeInterfaceSocketGeometry':
             if  i.name not in exclude_preset_inputs:
                 if not i.name:
                     pass
                 elif i.name in preset_values:
                     value = preset_values[i.name]
-                    set_geonode_value_proper(modifier, i.name, value)
+                    set_geonode_value(modifier, i.name, value)
                 else:
                     reset_geonode_value(modifier, i.name)
 
@@ -398,42 +403,53 @@ def reset_spectrogram_values(resetAll=False, values=[]):
     stm_modifier.show_viewport = False
     stm_modifier.show_viewport = True
 
-def set_geonode_value(gn_modifier, input, value):
 
+# geonodes funcs
+def get_geonode_input_from_modifier(modifier, input_name):
+    if bpy.app.version < (4, 0, 0):
+        inputs = modifier.node_group.inputs
+    elif bpy.app.version >= (4, 0, 0):
+        inputs = modifier.node_group.interface.items_tree
+
+    return inputs.get(input_name)
+
+def get_geonode_value(modifier, input_name):
+    input = get_geonode_input_from_modifier(modifier, input_name)
+    return modifier[input.identifier]
+
+def set_geonode_value(modifier, input_name, value):
+    input = get_geonode_input_from_modifier(modifier, input_name)
     input_type = type(input.default_value).__name__
+
+    if input_type == 'bool':
+        value = bool(value)
+    elif input_type == 'float':
+        value = float(value)
+    elif input_type == 'int':
+        value = int(value)
+
     value_type = type(value).__name__
 
-    if input_type == value_type:                    # if input type matches value type
-        gn_modifier[input.identifier] = value       # apply value to input
-
-        input.default_value = input.default_value   # "redraw" input by updating its default_value
-                                                    # (avoids problems like FACTOR inpus being drawn as floats
-                                                    # look into input "subtype" in geometry nodes ?? (factor, percentage...)
-
+    if input_type == value_type:
+        modifier[input.identifier] = value
     else:
-        print('-ERR- invalid type. can\'t apply %s (%s) on input "%s" (%s)'%(value, value_type, input.name, input_type))
+        print(f'-ERR- setting {input.name} value')
 
-def set_geonode_value_proper(modifier, input_name, value):
-    for i in modifier.node_group.interface.items_tree:
-        if i.name == input_name:
 
-            input_type = type(i.default_value).__name__
-            value_type = type(value).__name__
-
-            if input_type == value_type:
-                modifier[i.identifier] = value
-                i.default_value = i.default_value
-
-def get_geonode_value_proper(modifier, input_name):
-    for i in modifier.node_group.interface.items_tree:
-        if i.name == input_name:
-            return modifier[i.identifier]
 
 def reset_geonode_value(modifier, input_name):
-    for i in modifier.node_group.interface.items_tree:
-        if i.name == input_name:
-            modifier[i.identifier] = i.default_value
-            i.default_value = i.default_value
+
+    input = get_geonode_input_from_modifier(modifier, input_name)
+
+    modifier[input.identifier] = input.default_value
+    input.default_value = input.default_value
+
+
+
+
+
+
+
 
 
 def append_from_blend_file(blendfile, section, target, forceImport=False):
@@ -1180,7 +1196,7 @@ def set_waveform_side_options(self, context):
             side_options_value = obj.stm_spectro.waveform_side_options
             idx = get_idx_value_from_enum_prop(obj.stm_spectro, 'waveform_side_options', side_options_value)
             
-            set_geonode_value_proper(modifier, 'Side', idx)
+            set_geonode_value(modifier, 'Side', idx)
 
 
 
@@ -1287,8 +1303,8 @@ def stm_00_ffmetadata(self, context):
     # obj.modifiers['STM_spectrogram']['Input_60'] = obj.stm_spectro.audio_filename
     # obj.modifiers['STM_spectrogram']['Socket_30'] = obj.stm_spectro.audio_filename
 
-    set_geonode_value_proper(stm_mod, 'Audio Filename', obj.stm_spectro.audio_filename)
-    set_geonode_value_proper(stm_mod, 'Title', obj.stm_spectro.audio_filename)
+    set_geonode_value(stm_mod, 'Audio Filename', obj.stm_spectro.audio_filename)
+    set_geonode_value(stm_mod, 'Title', obj.stm_spectro.audio_filename)
 
 def stm_01_volume_data(self, context):
 
@@ -1359,7 +1375,7 @@ def add_new_speaker(name, audio_file):
 def adapt_timeline_length(context):
     print('ADAPT TIMELINE LENGTH')
     stm_obj = get_stm_object(context.object)
-    duration_seconds = get_geonode_value_proper(stm_obj.modifiers['STM_spectrogram'], 'Audio Duration')
+    duration_seconds = get_geonode_value(stm_obj.modifiers['STM_spectrogram'], 'Audio Duration')
     timeline_end = get_timeline_length_from_audio_duration(duration_seconds)
 
     context.scene.frame_start = 1
@@ -1470,10 +1486,10 @@ def add_spectrogram_object(context):
     
 
     # mat_gradient = get_stm_material(obj, 'STM_gradient')
-    # set_geonode_value_proper(mod, 'Material', mat_gradient)
+    # set_geonode_value(mod, 'Material', mat_gradient)
 
     mat_raw = get_stm_material(obj, 'STM_rawTexture')
-    set_geonode_value_proper(mod, 'Material', mat_raw)
+    set_geonode_value(mod, 'Material', mat_raw)
     
     mat = mat_raw
 
@@ -1894,16 +1910,16 @@ def toggle_parent_spectrogram(self, context):
     modifier = obj.modifiers['STM_waveform']
 
     stm_obj = get_stm_object(obj)
-    follow_spectrogram = get_geonode_value_proper(modifier, 'Follow Spectrogram')
+    follow_spectrogram = get_geonode_value(modifier, 'Follow Spectrogram')
     
 
     if not follow_spectrogram:
         # obj.parent = stm_obj
-        set_geonode_value_proper(modifier, 'Follow Spectrogram', True)
+        set_geonode_value(modifier, 'Follow Spectrogram', True)
         
     else:
         # obj.parent = None
-        set_geonode_value_proper(modifier, 'Follow Spectrogram', False)
+        set_geonode_value(modifier, 'Follow Spectrogram', False)
 
 def set_default_bake_resolution(self, context):
     context.scene.stm_settings.userWidth = 4096

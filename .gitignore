@@ -14,3 +14,5 @@ ffmpeg_reverse_engineering
 *.mp3
 *.mp4
 *.psd
+test.blend
+test_36.blend
