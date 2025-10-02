@@ -9,4 +9,5 @@ If you're interested in the full process I go into more details  [here](https://
 I was lucky enough to present my addon to the Blender Conference 2025 in Amsterdam.
 
 Here's the link to [my talk](https://www.youtube.com/watch?v=o_w_dbwUPmE)
+
 And here's the link to [my slides](https://docs.google.com/presentation/d/1FwJ8nPzd-3HfK3-O6sDAj-_m_rBh-mE8zShMwbCvqEM) (with updated visuals) 
